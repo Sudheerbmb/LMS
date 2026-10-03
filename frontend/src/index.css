@@ -1,0 +1,458 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════
+   ACHARYA-LMS ENTERPRISE DESIGN SYSTEM (AUTHENTIC PALETTE)
+   Inspired by the Sacred Acharya Motif:
+   - Deep Cosmic Obsidian Canvas (#06080F, #0B0F19, #111726)
+   - Radiant Surya Solar Gold (#F59E0B, #FBBF24, #D97706)
+   - Sacred Saffron / Kesari Robes (#EA580C, #FF6B35, #C2410C)
+   - Wisdom Leaves & Golden Sprout (#FEF08A, #FDE047, #F59E0B)
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+
+  /* ── Core Acharya-LMS Authentic Palette ── */
+  --omni-bg:          #06080F;
+  --omni-bg-sec:      #0B0F19;
+  --omni-surface:     #111726;
+  --omni-elevated:    #161E31;
+  --omni-accent:      #F59E0B;
+  --omni-accent-sec:  #EA580C;
+  --omni-accent-ai:   #FBBF24;
+  --omni-success:     #10B981;
+  --omni-warning:     #F59E0B;
+  --omni-danger:      #EF4444;
+  --omni-text:        #F8FAFC;
+  --omni-text-sec:    #CBD5E1;
+  --omni-muted:       #94A3B8;
+  --omni-border:      rgba(245, 158, 11, 0.12);
+  --omni-border-subtle: rgba(255, 255, 255, 0.06);
+  --omni-glass:       rgba(17, 23, 38, 0.7);
+  --omni-glass-hover: rgba(245, 158, 11, 0.08);
+
+  /* ── Gradients ── */
+  --omni-grad-primary: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+  --omni-grad-ai:      linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #EA580C 100%);
+  --omni-grad-surface: linear-gradient(180deg, rgba(22, 30, 49, 0.85) 0%, rgba(11, 15, 25, 0.95) 100%);
+
+  /* ── Role Mappings (All Unified in Dark Cosmic Base) ── */
+  /* Default / Global */
+  --bg:          var(--omni-bg);
+  --bg-sec:      var(--omni-bg-sec);
+  --surface:     var(--omni-surface);
+  --elevated:    var(--omni-elevated);
+  --border:      var(--omni-border);
+  --accent:      var(--omni-accent);
+  --accent-2:    var(--omni-accent-sec);
+  --accent-ai:   var(--omni-accent-ai);
+  --text:        var(--omni-text);
+  --text-sec:    var(--omni-text-sec);
+  --muted:       var(--omni-muted);
+  --sidebar:     #080C16;
+  --sidebar-t:   #CBD5E1;
+  --active-bg:   rgba(245, 158, 11, 0.16);
+  --active-t:    #FDE68A;
+
+  /* Geometry & Shadows */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 24px rgba(245, 158, 11, 0.25);
+  --shadow-ai-glow: 0 0 30px rgba(234, 88, 12, 0.22);
+
+  color-scheme: dark;
+}
+
+/* ── Role Customizations (Tailored Accents over Cosmic Dark Base) ── */
+[data-role="admin"] {
+  --sidebar:     #080C16;
+  --sidebar-t:   #CBD5E1;
+  --active-bg:   rgba(245, 158, 11, 0.18);
+  --active-t:    #FDE68A;
+  --accent:      #F59E0B;
+  --accent-2:    #D97706;
+  color-scheme: dark;
+}
+
+[data-role="teacher"] {
+  --sidebar:     #080C16;
+  --sidebar-t:   #CBD5E1;
+  --active-bg:   rgba(234, 88, 12, 0.18);
+  --active-t:    #FDBA74;
+  --accent:      #EA580C;
+  --accent-2:    #C2410C;
+  color-scheme: dark;
+}
+
+[data-role="student"] {
+  --sidebar:     #080C16;
+  --sidebar-t:   #CBD5E1;
+  --active-bg:   rgba(251, 191, 36, 0.16);
+  --active-t:    #FEF08A;
+  --accent:      #FBBF24;
+  --accent-2:    #F59E0B;
+  color-scheme: dark;
+}
+
+/* ── Base Reset & Global Styles ─────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--omni-bg);
+  color: var(--omni-text);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: var(--omni-bg);
+  color: var(--omni-text);
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Sleek Dark Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(8, 10, 18, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.4);
+}
+
+/* ── Typography Scale ───────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--omni-text);
+  font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ── Shared UI Primitives ───────────────────────────────── */
+
+/* Card */
+.lms-card {
+  background: var(--omni-surface);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.lms-card:hover {
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Glass Card */
+.lms-card-glass {
+  background: rgba(17, 23, 38, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* AI / Intelligent Cognitive Card */
+.lms-card-ai {
+  background: linear-gradient(180deg, rgba(22, 30, 49, 0.9) 0%, rgba(11, 15, 25, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(254, 240, 138, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.lms-card-ai::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--omni-grad-ai);
+  opacity: 0.95;
+}
+
+/* Primary Button */
+.lms-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  background: var(--omni-grad-primary);
+  color: #ffffff;
+  border: 1px solid rgba(254, 240, 138, 0.2);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(234, 88, 12, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
+}
+.lms-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.45);
+  filter: brightness(1.08);
+}
+.lms-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* AI Button */
+.lms-btn-ai {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  background: var(--omni-grad-ai);
+  color: #111827;
+  border: 1px solid rgba(254, 240, 138, 0.3);
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  box-shadow: 0 2px 14px rgba(245, 158, 11, 0.35);
+  transition: all 0.2s ease;
+}
+.lms-btn-ai:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 22px rgba(245, 158, 11, 0.55);
+  filter: brightness(1.05);
+}
+
+/* Ghost / Secondary Button */
+.lms-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--omni-text);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lms-btn-ghost:hover {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #ffffff;
+}
+
+/* Input */
+.lms-input {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  background: var(--omni-surface);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-md);
+  color: var(--omni-text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.lms-input:focus {
+  border-color: var(--omni-accent);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  background: var(--omni-elevated);
+}
+.lms-input::placeholder {
+  color: var(--omni-muted);
+}
+
+/* Badge */
+.lms-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+}
+
+/* Status colours (Acharya Authentic Palette) */
+.lms-badge-green  { background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.25); }
+.lms-badge-blue   { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+.lms-badge-violet { background: rgba(234, 88, 12, 0.15); color: #fdba74; border-color: rgba(234, 88, 12, 0.3); }
+.lms-badge-cyan   { background: rgba(251, 191, 36, 0.14); color: #fde047; border-color: rgba(251, 191, 36, 0.3); }
+.lms-badge-amber  { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+.lms-badge-red    { background: rgba(239, 68, 68, 0.12); color: #f87171; border-color: rgba(239, 68, 68, 0.25); }
+.lms-badge-gray   { background: rgba(255, 255, 255, 0.05); color: #94a3b8; border-color: rgba(255, 255, 255, 0.08); }
+
+/* ── Page wrapper ───────────────────────────────────────── */
+.lms-page {
+  padding: 1.75rem 2rem;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.lms-page-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--omni-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.lms-page-sub {
+  font-size: 0.8125rem;
+  color: var(--omni-text-sec);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.lms-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+.lms-table thead th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: var(--omni-bg-sec);
+  color: var(--omni-muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--omni-border);
+}
+.lms-table thead th:first-child { border-top-left-radius: var(--radius-md); }
+.lms-table thead th:last-child { border-top-right-radius: var(--radius-md); }
+.lms-table tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--omni-border);
+  color: var(--omni-text);
+  vertical-align: middle;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.lms-table tbody tr:hover td {
+  background: rgba(245, 158, 11, 0.04);
+}
+.lms-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Stat Card ──────────────────────────────────────────── */
+.lms-stat {
+  background: var(--omni-surface);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.lms-stat:hover {
+  border-color: rgba(245, 158, 11, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.15);
+}
+.lms-stat-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--omni-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.lms-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--omni-text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.lms-stat-sub {
+  font-size: 0.75rem;
+  color: var(--omni-text-sec);
+}
+
+/* ── Modal Overlay ──────────────────────────────────────── */
+.lms-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+.lms-modal {
+  background: var(--omni-elevated);
+  border: 1px solid var(--omni-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(0, 0, 0, 0.8);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--omni-text);
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+.lms-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 10000;
+  animation: omniSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+.lms-toast-success { background: rgba(34, 197, 94, 0.9); color: #ffffff; }
+.lms-toast-error   { background: rgba(239, 68, 68, 0.9); color: #ffffff; }
+.lms-toast-info    { background: rgba(139, 92, 246, 0.9); color: #ffffff; }
+
+@keyframes omniSlideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Transitions & Focus ────────────────────────────────── */
+button, a, input, select, textarea {
+  transition: all 0.15s ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--omni-accent);
+  outline-offset: 2px;
+}

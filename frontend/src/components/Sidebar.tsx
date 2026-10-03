@@ -1,0 +1,251 @@
+import React from 'react'
+import {
+  LayoutDashboard,
+  BookOpen,
+  CheckSquare,
+  FileText,
+  Building2,
+  Code2,
+  Video,
+  Users,
+  LogOut,
+  CalendarDays,
+  BrainCircuit,
+  Award,
+  ChevronRight,
+} from 'lucide-react'
+
+type SidebarProps = {
+  currentTab: string
+  setCurrentTab: (tab: string) => void
+  userRole?: 'admin' | 'teacher' | 'student'
+  onLogout: () => void
+}
+
+const ROLE_META = {
+  admin: {
+    label: 'Administrator',
+    badge: 'Admin',
+    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    initials: 'A',
+    avatarBg: 'bg-gradient-to-tr from-amber-600 to-yellow-500 text-white',
+  },
+  teacher: {
+    label: 'Faculty Portal',
+    badge: 'Teacher',
+    badgeBg: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+    initials: 'T',
+    avatarBg: 'bg-gradient-to-tr from-orange-600 to-amber-500 text-white',
+  },
+  student: {
+    label: 'Learning Portal',
+    badge: 'Student',
+    badgeBg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+    initials: 'S',
+    avatarBg: 'bg-gradient-to-tr from-yellow-500 to-amber-400 text-slate-950 font-black',
+  },
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentTab,
+  setCurrentTab,
+  userRole = 'student',
+  onLogout,
+}) => {
+  const meta = ROLE_META[userRole]
+
+  const timetableLabel =
+    userRole === 'admin'
+      ? 'Timetable Engine'
+      : userRole === 'teacher'
+      ? 'My Timetable'
+      : 'Class Schedule'
+
+  const navItems = [
+    { id: 'overview',              label: 'Dashboard',            icon: LayoutDashboard },
+    { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
+    { id: 'courses',               label: 'Course Catalog',        icon: BookOpen },
+    ...(userRole !== 'admin'
+      ? [{ id: 'assessments',      label: 'Assessments',          icon: CheckSquare }]
+      : []),
+    {
+      id: 'learning-intelligence',
+      label:
+        userRole === 'student'
+          ? 'My Learning Agent'
+          : userRole === 'admin'
+          ? 'School Cognitive Radar'
+          : 'Learning Intelligence',
+      icon: BrainCircuit,
+    },
+    ...(userRole !== 'admin'
+      ? [{ id: 'assignments',      label: 'Assignments',          icon: FileText }]
+      : []),
+    ...(userRole !== 'admin'
+      ? [{ id: 'certificates',     label: 'Certificates',         icon: Award }]
+      : []),
+    { id: 'organizations',         label: 'Organizations',        icon: Building2 },
+    { id: 'coding',                label: 'Coding Playground',    icon: Code2 },
+    { id: 'classroom',             label: 'Live Classrooms',      icon: Video },
+    ...(userRole === 'admin'
+      ? [{ id: 'admin',            label: 'User Management',      icon: Users }]
+      : []),
+  ]
+
+  return (
+    <aside
+      className="w-64 shrink-0 flex flex-col h-screen select-none"
+      style={{
+        background: '#06080F',
+        borderRight: '1px solid rgba(245, 158, 11, 0.12)',
+      }}
+    >
+      {/* ── Brand ──────────────────────────────────── */}
+      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(245, 158, 11, 0.12)' }}>
+        <div className="flex items-center gap-3">
+          {/* Logo mark */}
+          <div className="relative group">
+            <img
+              src="/acharya_logo.png"
+              alt="Acharya LMS"
+              className="w-10 h-10 rounded-xl object-cover select-none shadow-md ring-1 ring-amber-500/40"
+              style={{
+                boxShadow: '0 0 18px rgba(245, 158, 11, 0.25)',
+              }}
+            />
+          </div>
+          <div>
+            <p className="text-white font-extrabold text-[15px] leading-tight tracking-tight">Acharya LMS</p>
+            <p style={{ color: '#F59E0B', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              {meta.label}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Role pill ───────────────────────────────── */}
+      <div className="px-4 py-3">
+        <div
+          className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+          style={{ background: 'rgba(245, 158, 11, 0.04)', border: '1px solid rgba(245, 158, 11, 0.1)' }}
+        >
+          <div
+            className={`w-6 h-6 rounded-lg ${meta.avatarBg} flex items-center justify-center font-extrabold text-[11px] shadow-sm`}
+          >
+            {meta.initials}
+          </div>
+          <span style={{ color: '#F8FAFC', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
+            {meta.badge} Portal
+          </span>
+          <span className="ml-auto w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        </div>
+      </div>
+
+      {/* ── Navigation ──────────────────────────────── */}
+      <nav className="flex-1 px-3 pb-4 overflow-y-auto space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const active = currentTab === item.id
+          const isAiItem = item.id === 'learning-intelligence'
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCurrentTab(item.id)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 relative overflow-hidden"
+              style={{
+                background: active
+                  ? isAiItem
+                    ? 'linear-gradient(90deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.12) 100%)'
+                    : 'linear-gradient(90deg, rgba(245,158,11,0.2) 0%, rgba(234,88,12,0.1) 100%)'
+                  : 'transparent',
+                color: active ? '#FEF08A' : '#CBD5E1',
+                fontWeight: active ? 700 : 400,
+                fontSize: '0.8125rem',
+                border: active
+                  ? isAiItem
+                    ? '1px solid rgba(251,191,36,0.35)'
+                    : '1px solid rgba(245,158,11,0.35)'
+                  : '1px solid transparent',
+                cursor: 'pointer',
+                boxShadow: active ? '0 2px 12px rgba(245,158,11,0.15)' : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'rgba(245,158,11,0.06)'
+                  e.currentTarget.style.color = '#FFFFFF'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#CBD5E1'
+                }
+              }}
+            >
+              <Icon
+                style={{
+                  width: 16,
+                  height: 16,
+                  color: active
+                    ? isAiItem
+                      ? '#FDE047'
+                      : '#FBBF24'
+                    : '#94A3B8',
+                  flexShrink: 0,
+                  filter: active ? 'drop-shadow(0 0 6px rgba(245,158,11,0.6))' : 'none',
+                }}
+              />
+              <span className="flex-1 truncate">{item.label}</span>
+              {isAiItem && !active && (
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                  AI
+                </span>
+              )}
+              {active && (
+                <ChevronRight
+                  style={{
+                    width: 14,
+                    height: 14,
+                    color: isAiItem ? '#FDE047' : '#FBBF24',
+                    opacity: 0.9,
+                  }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </nav>
+
+      {/* ── Logout ──────────────────────────────────── */}
+      <div className="px-3 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+          style={{
+            background: 'transparent',
+            border: '1px solid transparent',
+            color: '#6B7280',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
+            e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'
+            e.currentTarget.style.color = '#FCA5A5'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.borderColor = 'transparent'
+            e.currentTarget.style.color = '#6B7280'
+          }}
+        >
+          <LogOut style={{ width: 15, height: 15, flexShrink: 0 }} />
+          Sign Out
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+export default Sidebar
