@@ -52,6 +52,121 @@ import {
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
+export const TRACK_TITLE_MAP: Record<number, string> = {
+  1: 'Python with Generative AI (GenAI)',
+  2: 'Salesforce Administration & Developer Track',
+  3: 'ServiceNow System Administrator & Dev Track',
+  4: 'Full Stack Web Engineering (React & Node.js)',
+  5: 'Cloud & DevOps Engineering (AWS & K8s)',
+  6: 'Python with Generative AI (Advanced)',
+  7: 'Salesforce Administration & Developer (Advanced)',
+  8: 'ServiceNow System Administrator (Advanced)',
+  9: 'Full Stack Web Engineering (Advanced)',
+  10: 'Cloud & DevOps Engineering (Advanced)',
+}
+
+export const getTrackDisplayName = (g: SchoolGrade | undefined | null) => {
+  if (!g) return 'Python with Generative AI (GenAI)'
+  if (g.grade_number && TRACK_TITLE_MAP[g.grade_number]) {
+    return TRACK_TITLE_MAP[g.grade_number]
+  }
+  const match = g.name?.match(/\d+/)
+  if (match) {
+    const num = parseInt(match[0], 10)
+    if (TRACK_TITLE_MAP[num]) return TRACK_TITLE_MAP[num]
+  }
+  return g.name || 'Technical Track'
+}
+
+const TRACK_TECH_MODULES: Record<number, Record<number, { code: string; name: string; teacher: string; color: string }>> = {
+  1: {
+    1: { code: 'PY-101', name: 'Python Core & Advanced OOP', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
+    2: { code: 'GEN-201', name: 'Prompt Engineering & LangChain', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
+    3: { code: 'RAG-301', name: 'RAG Architecture & Vector DBs', teacher: 'Prof. Alan Turing', color: '#10b981' },
+    4: { code: 'AI-401', name: 'Autonomous Agents & FastAPI', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
+    5: { code: 'AI-401', name: 'Agentic AI Capstone & Live Testing', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
+    6: { code: 'PY-101', name: 'Python Asynchronous Lab', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
+    7: { code: 'GEN-201', name: 'Tool Calling & Structured Outputs', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
+    8: { code: 'RAG-301', name: 'ChromaDB & Hybrid Search', teacher: 'Prof. Alan Turing', color: '#10b981' },
+    9: { code: 'AI-401', name: 'LangGraph Multi-Agent Workflows', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
+    10: { code: 'AI-401', name: 'Docker & FastAPI Cloud Deploy', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
+    11: { code: 'PY-101', name: 'Python Metaclasses & Decorators', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
+    12: { code: 'GEN-201', name: 'Few-Shot Prompt Engineering', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
+  },
+  2: {
+    1: { code: 'SF-ADM', name: 'Salesforce Admin Essentials', teacher: 'Marc Benioff', color: '#0284c7' },
+    2: { code: 'SF-DEV', name: 'Apex Programming & SOQL Queries', teacher: 'Marc Benioff', color: '#0ea5e9' },
+    3: { code: 'SF-LWC', name: 'Lightning Web Components (LWC)', teacher: 'Marc Benioff', color: '#38bdf8' },
+    4: { code: 'SF-DEV', name: 'Apex Triggers & Governor Limits', teacher: 'Marc Benioff', color: '#0ea5e9' },
+    5: { code: 'SF-LWC', name: 'LWC Enterprise Project Lab', teacher: 'Marc Benioff', color: '#38bdf8' },
+    6: { code: 'SF-ADM', name: 'Flow Builder Automation', teacher: 'Marc Benioff', color: '#0284c7' },
+    7: { code: 'SF-DEV', name: 'Asynchronous Apex & Batch Jobs', teacher: 'Marc Benioff', color: '#0ea5e9' },
+    8: { code: 'SF-LWC', name: 'LMS Message Channel & Events', teacher: 'Marc Benioff', color: '#38bdf8' },
+    9: { code: 'SF-DEV', name: 'Apex REST Integration', teacher: 'Marc Benioff', color: '#0ea5e9' },
+    10: { code: 'SF-LWC', name: 'Lightning Data Service & Wire', teacher: 'Marc Benioff', color: '#38bdf8' },
+    11: { code: 'SF-ADM', name: 'Role Hierarchy & Security', teacher: 'Marc Benioff', color: '#0284c7' },
+    12: { code: 'SF-DEV', name: 'Apex Unit Testing & Coverage', teacher: 'Marc Benioff', color: '#0ea5e9' },
+  },
+  3: {
+    1: { code: 'SN-FND', name: 'ServiceNow Platform Administration', teacher: 'Fred Luddy', color: '#14b8a6' },
+    2: { code: 'SN-DEV', name: 'Flow Designer & Scripting', teacher: 'Fred Luddy', color: '#06b6d4' },
+    3: { code: 'SN-DEV', name: 'Business Rules & Script Includes', teacher: 'Fred Luddy', color: '#06b6d4' },
+    4: { code: 'SN-FND', name: 'ITSM Incident & SLA Workshop', teacher: 'Fred Luddy', color: '#14b8a6' },
+    5: { code: 'SN-DEV', name: 'Service Portal Widget Lab', teacher: 'Fred Luddy', color: '#06b6d4' },
+    6: { code: 'SN-FND', name: 'CMDB & User Administration', teacher: 'Fred Luddy', color: '#14b8a6' },
+    7: { code: 'SN-DEV', name: 'GlideRecord & Server APIs', teacher: 'Fred Luddy', color: '#06b6d4' },
+    8: { code: 'SN-DEV', name: 'Client Scripts & UI Policies', teacher: 'Fred Luddy', color: '#06b6d4' },
+    9: { code: 'SN-FND', name: 'Change Advisory & Problem Mgmt', teacher: 'Fred Luddy', color: '#14b8a6' },
+    10: { code: 'SN-DEV', name: 'REST Integration Spokes', teacher: 'Fred Luddy', color: '#06b6d4' },
+    11: { code: 'SN-FND', name: 'Service Catalog Configuration', teacher: 'Fred Luddy', color: '#14b8a6' },
+    12: { code: 'SN-DEV', name: 'Automated Test Framework (ATF)', teacher: 'Fred Luddy', color: '#06b6d4' },
+  },
+  4: {
+    1: { code: 'FS-REA', name: 'React 19 & TypeScript Components', teacher: 'Dan Abramov', color: '#6366f1' },
+    2: { code: 'FS-NOD', name: 'Node.js & FastAPI Architecture', teacher: 'Dan Abramov', color: '#4f46e5' },
+    3: { code: 'FS-REA', name: 'Custom Hooks & State Management', teacher: 'Dan Abramov', color: '#6366f1' },
+    4: { code: 'FS-NOD', name: 'PostgreSQL, Prisma & Microservices', teacher: 'Dan Abramov', color: '#4f46e5' },
+    5: { code: 'FS-REA', name: 'Full Stack Capstone Lab', teacher: 'Dan Abramov', color: '#6366f1' },
+    6: { code: 'FS-REA', name: 'TailwindCSS Layouts & Glass UI', teacher: 'Dan Abramov', color: '#6366f1' },
+    7: { code: 'FS-NOD', name: 'JWT Authentication & Security', teacher: 'Dan Abramov', color: '#4f46e5' },
+    8: { code: 'FS-REA', name: 'React Router & Dynamic Routes', teacher: 'Dan Abramov', color: '#6366f1' },
+    9: { code: 'FS-NOD', name: 'Database Migrations & ORM', teacher: 'Dan Abramov', color: '#4f46e5' },
+    10: { code: 'FS-REA', name: 'Performance Optimization & Vite', teacher: 'Dan Abramov', color: '#6366f1' },
+    11: { code: 'FS-NOD', name: 'REST & GraphQL API Endpoints', teacher: 'Dan Abramov', color: '#4f46e5' },
+    12: { code: 'FS-REA', name: 'Full Stack Cloud Deployment', teacher: 'Dan Abramov', color: '#6366f1' },
+  },
+  5: {
+    1: { code: 'DO-CON', name: 'Linux Automation & Docker Containers', teacher: 'Linus Torvalds', color: '#ec4899' },
+    2: { code: 'DO-CICD', name: 'CI/CD GitHub Actions & Pipelines', teacher: 'Linus Torvalds', color: '#f43f5e' },
+    3: { code: 'DO-CON', name: 'Kubernetes Pods, Ingress & Helm', teacher: 'Linus Torvalds', color: '#ec4899' },
+    4: { code: 'DO-CICD', name: 'AWS Cloud Architecture & Terraform', teacher: 'Linus Torvalds', color: '#f43f5e' },
+    5: { code: 'DO-CON', name: 'DevOps Cloud Cluster Lab', teacher: 'Linus Torvalds', color: '#ec4899' },
+    6: { code: 'DO-CON', name: 'Multi-Stage Docker Builds', teacher: 'Linus Torvalds', color: '#ec4899' },
+    7: { code: 'DO-CICD', name: 'Automated Test & Release Workflows', teacher: 'Linus Torvalds', color: '#f43f5e' },
+    8: { code: 'DO-CON', name: 'Kubernetes ConfigMaps & Secrets', teacher: 'Linus Torvalds', color: '#ec4899' },
+    9: { code: 'DO-CICD', name: 'IAM Security & AWS S3/RDS', teacher: 'Linus Torvalds', color: '#f43f5e' },
+    10: { code: 'DO-CON', name: 'Helm Charts & Package Management', teacher: 'Linus Torvalds', color: '#ec4899' },
+    11: { code: 'DO-CICD', name: 'Infrastructure as Code with Terraform', teacher: 'Linus Torvalds', color: '#f43f5e' },
+    12: { code: 'DO-CON', name: 'Production DevOps Cluster Monitoring', teacher: 'Linus Torvalds', color: '#ec4899' },
+  }
+}
+
+const getNormalizedSlot = (slot: TimetableSlot, gradeNum: number = 1) => {
+  const normGrade = ((gradeNum - 1) % 5) + 1
+  const trackModules = TRACK_TECH_MODULES[normGrade] || TRACK_TECH_MODULES[1]
+  const moduleInfo = trackModules[slot.period_number] || trackModules[1]
+
+  const isLegacy = !slot.subject_code || ['MATH', 'ENG', 'HIN', 'SCI', 'PHY', 'CHEM', 'BIO', 'SST', 'HIST', 'GEOG', 'CS', 'CTAI', 'SKILL', 'ART', 'PET', 'EVS', 'VAL'].includes(slot.subject_code)
+
+  return {
+    code: isLegacy ? moduleInfo.code : slot.subject_code,
+    name: isLegacy ? moduleInfo.name : slot.subject_name,
+    teacher: isLegacy ? moduleInfo.teacher : (slot.teacher_name || moduleInfo.teacher),
+    color: isLegacy ? moduleInfo.color : (slot.subject_color || moduleInfo.color),
+    room: isLegacy ? `Tech Lab ${normGrade}01` : slot.room_or_venue
+  }
+}
+
 export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUser }) => {
   const role = currentUser?.role || 'student'
   const isAdmin = role === 'admin'
@@ -722,11 +837,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         setSelectedSectionId(g.sections[0].id)
                       }
                     }}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-semibold"
                   >
                     {grades.map((g) => (
                       <option key={g.id} value={g.id}>
-                        {g.name}
+                        {getTrackDisplayName(g)}
                       </option>
                     ))}
                   </select>
@@ -747,7 +862,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
-                        Batch {sec.name} ({sec.room_number})
+                        Batch {sec.name} ({sec.room_number || 'Tech Lab'})
                       </button>
                     ))}
                   </div>
@@ -774,9 +889,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 </button>
 
                 <div className="text-right pl-3 border-l border-slate-800">
-                  <div className="text-[11px] text-slate-400">Class Matrix</div>
+                  <div className="text-[11px] text-slate-400">Track Matrix</div>
                   <div className="text-sm font-bold text-slate-200">
-                    {currentGrade?.name} &bull; Section {currentSection?.name}
+                    {getTrackDisplayName(currentGrade)} &bull; Batch {currentSection?.name || 'A'}
                   </div>
                 </div>
               </div>
@@ -864,9 +979,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             )
                           }
 
+                          const norm = getNormalizedSlot(slot, currentGrade?.grade_number || 1)
                           const isSelectedForSwap = selectedSlotForSwap?.id === slot.id
-                          const isSports = slot.slot_type === 'sports' || slot.room_or_venue.includes('Sports Ground')
-                          const isLab = slot.slot_type === 'lab' || slot.room_or_venue.includes('Lab')
 
                           return (
                             <td
@@ -887,11 +1001,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                 className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative ${
                                   isSelectedForSwap
                                     ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
-                                    : isSports
-                                    ? 'bg-amber-950/20 border-amber-500/30 text-amber-200 group-hover:border-amber-400'
-                                    : isLab
-                                    ? 'bg-indigo-950/20 border-indigo-500/30 text-indigo-200 group-hover:border-indigo-400'
-                                    : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-cyan-500/60 group-hover:bg-slate-850'
+                                    : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
                                 }`}
                               >
                                 <div>
@@ -899,20 +1009,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                     <span
                                       className="font-bold text-xs px-2 py-0.5 rounded-md"
                                       style={{
-                                        backgroundColor: `${slot.subject_color || '#06b6d4'}20`,
-                                        color: slot.subject_color || '#38bdf8'
+                                        backgroundColor: `${norm.color || '#f59e0b'}20`,
+                                        color: norm.color || '#f59e0b'
                                       }}
                                     >
-                                      {slot.subject_code || 'TECH'}
+                                      {norm.code}
                                     </span>
-                                    {isLab && (
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-amber-400 font-bold uppercase tracking-wider">
-                                        LAB
-                                      </span>
-                                    )}
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
+                                      LAB
+                                    </span>
                                   </div>
                                   <div className="text-xs font-semibold text-slate-100 line-clamp-1">
-                                    {slot.subject_name || 'Technical Lecture'}
+                                    {norm.name}
                                   </div>
                                 </div>
 
@@ -921,8 +1029,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                   <div className="truncate font-medium text-slate-300 flex items-center justify-between">
                                     <span className="truncate">
                                       {isTeacher
-                                        ? `${slot.grade_name || 'Track'} • Batch ${slot.section_name || 'A'}`
-                                        : (slot.teacher_name || 'Assigned Faculty')}
+                                        ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}`
+                                        : norm.teacher}
                                     </span>
                                     {isAdmin && (
                                       <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
@@ -932,7 +1040,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                     )}
                                   </div>
                                   <div className="text-[10px] text-slate-500 truncate">
-                                    {slot.room_or_venue}
+                                    {norm.room}
                                   </div>
                                 </div>
                               </div>

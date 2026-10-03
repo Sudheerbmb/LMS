@@ -438,17 +438,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-yellow-300 border border-amber-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-amber-400" />
-                  Student Learning Portal
+                  Candidate Training Portal
                 </span>
-                <span className="text-xs text-slate-400">Academic Year 2025 - 2026</span>
+                <span className="text-xs text-slate-400">Professional Technology Track</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Hello, {user.display_name}
               </h1>
               <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-                Stay on top of your daily class schedule, join interactive WebRTC live lectures, watch past recordings, and practice coding exercises.
+                Track your course milestones, attend live Zoom interactive lectures, download faculty learning resources, and review past class recordings.
               </p>
             </div>
 
