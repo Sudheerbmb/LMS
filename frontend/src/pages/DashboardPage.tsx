@@ -238,7 +238,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
       await createSchoolLiveClass({
-        title: `${slot.subject_name} Live Lecture (Grade ${slot.grade_number}-${slot.section_name})`,
+        title: `${slot.subject_name} Live Session (Track ${slot.grade_number} • Batch ${slot.section_name})`,
         starts_at: now.toISOString(),
         ends_at: end.toISOString(),
         grade_number: slot.grade_number,
@@ -249,7 +249,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         room_number: slot.room_or_venue,
         status: 'live'
       })
-      showToast(`Launching Live Classroom for Grade ${slot.grade_number}-${slot.section_name}...`, 'success')
+      showToast(`Launching Live Session for Track ${slot.grade_number} • Batch ${slot.section_name}...`, 'success')
       setCurrentTab('classroom')
     } catch (err: any) {
       showToast(err.message || 'Could not launch class session.', 'error')
@@ -486,7 +486,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   CLASS LIVE NOW
                 </span>
                 <span className="text-xs text-slate-400">
-                  Grade {activeLiveClass.grade_number}-{activeLiveClass.section_name} &bull; Period {activeLiveClass.period_number || 1}
+                  Track {activeLiveClass.grade_number} • Batch {activeLiveClass.section_name} &bull; Period {activeLiveClass.period_number || 1}
                 </span>
               </div>
               <h3 className="text-lg font-bold text-white mt-1">
@@ -504,7 +504,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>Enter Classroom Room</span>
+              <span>Join Live Session</span>
             </button>
           </div>
         </div>
@@ -765,13 +765,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                         {slot.subject_name}
                       </h3>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Grade {slot.grade_number}-{slot.section_name} &bull; {slot.subject_code}
+                        Track {slot.grade_number} • Batch {slot.section_name} &bull; {slot.subject_code}
                       </p>
                     </div>
 
                     <div className="text-xs text-slate-400 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 flex items-center justify-between">
                       <span className="text-slate-500">Venue:</span>
-                      <span className="font-semibold text-slate-200">{slot.room_or_venue || 'Main Lecture Hall'}</span>
+                      <span className="font-semibold text-slate-200">{slot.room_or_venue || 'Technical Lab Hall'}</span>
                     </div>
                   </div>
 
@@ -941,7 +941,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
-                          Grade {cls.grade_number}-{cls.section_name}
+                          Track {cls.grade_number} • Batch {cls.section_name}
                         </span>
                         {cls.status === 'live' ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
@@ -1022,7 +1022,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[11px] font-bold">
-                        Grade {cls.grade_number}-{cls.section_name}
+                        Track {cls.grade_number} • Batch {cls.section_name}
                       </span>
                       <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Ready to Watch
@@ -1199,7 +1199,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div>
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <Bell className="w-5 h-5 text-amber-400" />
-              School Notice Board & Bulletins
+              Institute Announcements & Bulletins
             </h2>
             <p className="text-xs text-slate-400">Official updates from faculty and administrators</p>
           </div>
@@ -1261,14 +1261,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         />
       )}
 
-      {/* ── MODAL: BROADCAST SCHOOL ANNOUNCEMENT ─────────────────────────────── */}
+      {/* ── MODAL: BROADCAST INSTITUTIONAL ANNOUNCEMENT ──────────────────────── */}
       {showAnnouncementModal && (
         <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Bell className="w-5 h-5 text-amber-400" />
-                Broadcast School Announcement
+                Broadcast Institutional Notice
               </h3>
               <button
                 onClick={() => setShowAnnouncementModal(false)}
@@ -1368,7 +1368,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             <div className="bg-[#06080F] p-3 rounded-2xl border border-slate-800 space-y-1 text-xs">
               <p className="text-white font-bold">{leaveSlot.subject_name}</p>
               <p className="text-slate-400">
-                Period {leaveSlot.period_number} &bull; Grade {leaveSlot.grade_number}-{leaveSlot.section_name} ({leaveSlot.day_of_week})
+                Period {leaveSlot.period_number} &bull; Track {leaveSlot.grade_number} • Batch {leaveSlot.section_name} ({leaveSlot.day_of_week})
               </p>
             </div>
 

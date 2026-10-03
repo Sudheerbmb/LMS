@@ -6394,19 +6394,12 @@ const handleTriggerTeacherCopilot = async (
             <span className="p-2 rounded-xl bg-cyan-500/10 text-amber-400 border border-cyan-500/20">
 
               <Video className="w-5 h-5" />
-
             </span>
-
-            <h1 className="text-2xl font-black text-white tracking-tight">Live Interactive Classrooms</h1>
-
+            <h1 className="text-2xl font-black text-white tracking-tight">Live Interactive Training Sessions</h1>
           </div>
-
           <p className="text-sm text-slate-400">
-
-            Real-time interactive video sessions synchronized with school timetables, collaborative whiteboards & WebRTC voice/video.
-
+            Enterprise-grade live video training synchronized with batch schedules, interactive screen sharing, AI live transcripts, and technical whiteboard.
           </p>
-
         </div>
 
         <div className="flex items-center gap-3">

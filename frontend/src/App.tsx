@@ -331,7 +331,7 @@ export function App() {
           {currentTab === 'overview' && (
             <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
           )}
-          {currentTab === 'courses' && <CoursesPage user={user} />}
+          {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
           {currentTab === 'classroom' && <ClassroomPage user={user} />}
           {currentTab === 'timetable' && <TimetablePage user={user} />}
           {currentTab === 'coding' && <CodingPage user={user} />}

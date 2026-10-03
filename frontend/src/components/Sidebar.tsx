@@ -62,12 +62,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const coursesLabel =
     userRole === 'teacher'
       ? 'Courses Handled'
-      : 'Courses & Subjects'
+      : userRole === 'admin'
+      ? 'Courses & Subjects'
+      : 'Enrolled Courses & Tracks'
+
+  const liveSessionLabel =
+    userRole === 'teacher'
+      ? 'Live Training Sessions'
+      : userRole === 'admin'
+      ? 'Virtual Classrooms'
+      : 'Live Interactive Classes'
 
   const navItems = [
     { id: 'overview',              label: 'Dashboard',             icon: LayoutDashboard },
     { id: 'courses',               label: coursesLabel,            icon: BookOpen },
-    { id: 'classroom',             label: 'Live Zoom Classes',     icon: Video },
+    { id: 'classroom',             label: liveSessionLabel,        icon: Video },
     { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
     ...(userRole !== 'admin'
       ? [{ id: 'coding',           label: 'Coding Playground',     icon: Code2 }]

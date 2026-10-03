@@ -10,7 +10,6 @@ import {
   enrollInCourse,
 } from '../lib/api'
 import { 
-  BookOpen, 
   Search, 
   GraduationCap, 
   Layers, 
@@ -25,20 +24,21 @@ import {
   Code,
   Trash2,
   X,
-  FolderOpen,
-  Calendar,
-  Milestone,
-  Flag
+  Sparkles,
+  Play
 } from 'lucide-react'
 
 type CoursesPageProps = {
   user: User
+  setCurrentTab?: (tab: string) => void
 }
 
 export interface DayTopic {
   day_number: number
   title: string
+  subject_code?: string
   description?: string
+  lab_task?: string
   completed?: boolean
 }
 
@@ -66,220 +66,231 @@ export interface SharedResource {
 }
 
 const DEFAULT_ROADMAPS: Record<string, WeekendMilestone[]> = {
-  'track-python-genai': [
+  'python-genai': [
     {
       id: 'ms-py-1',
       week_label: 'Week 1 - 2',
-      title: 'Python 3.12 Core & Advanced OOP Concurrency',
-      deliverable: 'Build High-Performance Async Task Processing Engine',
+      title: 'Python 3.12 Advanced OOP, Concurrency & Data Modeling',
+      deliverable: 'High-Throughput Async Webhook Ingestion Engine with Pydantic V2',
       status: 'completed',
       due_date: 'Weekend 2',
       days: [
-        { day_number: 1, title: 'Day 1: Type Hinting, Pydantic V2 & Data Validation', description: 'Advanced schema validation and serialization', completed: true },
-        { day_number: 2, title: 'Day 2: AsyncIO, Event Loops & Concurrent Coroutines', description: 'High-speed async network requests and tasks', completed: true },
-        { day_number: 3, title: 'Day 3: Custom Metaclasses, Decorators & Generators', description: 'Metaprogramming patterns in production Python', completed: true },
-        { day_number: 4, title: 'Day 4: Memory Profiling & Performance Tuning', description: 'Optimizing memory footprint and garbage collection', completed: true },
+        { day_number: 1, subject_code: 'PY-101', title: 'Day 1: Type Hinting, Pydantic V2 & Data Validation Schemas', description: 'Advanced generic type checking, custom validators, and serialization pipelines.', lab_task: 'Implement strict API request/response models with nested schema validation.', completed: true },
+        { day_number: 2, subject_code: 'PY-101', title: 'Day 2: AsyncIO, Event Loops & Concurrent Coroutines', description: 'Mastering async/await, TaskGroups, Semaphores, and high-concurrency event loops.', lab_task: 'Build an async worker pulling and processing 1,000 mock events in parallel.', completed: true },
+        { day_number: 3, subject_code: 'PY-101', title: 'Day 3: Metaclasses, Class Decorators & Context Managers', description: 'Deep dive into Python runtime internals, dunder methods, and resource management.', lab_task: 'Write a custom timing & retry decorator with exponential backoff.', completed: true },
+        { day_number: 4, subject_code: 'PY-101', title: 'Day 4: Performance Profiling & Memory Optimization', description: 'Using cProfile, tracemalloc, and __slots__ for memory footprint reduction.', lab_task: 'Benchmark and optimize a 100k-record JSON transformation script.', completed: true },
       ],
       resources: [
-        { id: 'res-py-1', course_id: 'track-python-genai', milestone_id: 'ms-py-1', title: 'Python 3.12 AsyncIO Architecture Guide (PDF)', type: 'pdf', url_or_content: 'https://docs.python.org/3/library/asyncio.html', shared_by: 'Dr. Sarah Connor', shared_at: '2026-10-01' },
-        { id: 'res-py-2', course_id: 'track-python-genai', milestone_id: 'ms-py-1', title: 'Concurrent Engine Starter Template (GitHub)', type: 'github', url_or_content: 'https://github.com/python/cpython', shared_by: 'Dr. Sarah Connor', shared_at: '2026-10-02' }
+        { id: 'res-py-1', course_id: 'python-genai', milestone_id: 'ms-py-1', title: 'Python 3.12 Concurrency & AsyncIO Deep Dive (PDF)', type: 'pdf', url_or_content: 'https://docs.python.org/3/library/asyncio.html', shared_by: 'Dr. Sarah Connor', shared_at: '2026-10-01' },
+        { id: 'res-py-2', course_id: 'python-genai', milestone_id: 'ms-py-1', title: 'Async Worker Starter Architecture (GitHub)', type: 'github', url_or_content: 'https://github.com/python/cpython', shared_by: 'Dr. Sarah Connor', shared_at: '2026-10-02' }
       ]
     },
     {
       id: 'ms-py-2',
       week_label: 'Week 3 - 4',
-      title: 'Prompt Engineering, LLMs & LangChain 0.3',
-      deliverable: 'Autonomous Tool-Calling LLM Service with Streaming',
+      title: 'Prompt Engineering, LLMs & LangChain 0.3 Framework',
+      deliverable: 'Autonomous Tool-Calling LLM Agent Service with Real-Time Streaming',
       status: 'in_progress',
       due_date: 'Weekend 4',
       days: [
-        { day_number: 5, title: 'Day 5: Tokenization, System Prompts & Few-Shot Prompting', description: 'Mastering temperature, top_p, and JSON mode', completed: true },
-        { day_number: 6, title: 'Day 6: OpenAI & Gemini Function Calling & Tool Binding', description: 'Invoking external python tools and database query functions', completed: true },
-        { day_number: 7, title: 'Day 7: LangChain LCEL (Expression Language) Pipelines', description: 'Composing deterministic chains, fallbacks, and runnables', completed: false },
-        { day_number: 8, title: 'Day 8: Conversation History & Memory Retention Strategies', description: 'Zep, Redis, and sliding window chat buffers', completed: false },
+        { day_number: 5, subject_code: 'GEN-201', title: 'Day 5: Tokenization, Temperature, System Prompts & Structured Output', description: 'Controlling LLM generation, JSON mode, few-shot prompting, and chain-of-thought reasoning.', lab_task: 'Create deterministic data extraction prompts using OpenAI & Gemini APIs.', completed: true },
+        { day_number: 6, subject_code: 'GEN-201', title: 'Day 6: OpenAI & Gemini Function Calling & Tool Binding', description: 'Binding Python functions to LLMs for automated database lookups and calculation tools.', lab_task: 'Build a weather and stock ticker tool bound to Gemini 1.5 Pro.', completed: true },
+        { day_number: 7, subject_code: 'GEN-201', title: 'Day 7: LangChain LCEL (Expression Language) Pipelines', description: 'Composing deterministic chains with RunnablePassthrough, RunnableParallel, and fallbacks.', lab_task: 'Assemble a multi-step document translation and summary LCEL chain.', completed: false },
+        { day_number: 8, subject_code: 'GEN-201', title: 'Day 8: Conversation History & Context Window Management', description: 'Implementing sliding window memory, Redis chat histories, and summary buffers.', lab_task: 'Build a persistent stateful customer service chatbot with session isolation.', completed: false },
       ],
       resources: [
-        { id: 'res-py-3', course_id: 'track-python-genai', milestone_id: 'ms-py-2', title: 'LangChain LCEL Cheat Sheet & Patterns', type: 'code_snippet', url_or_content: 'https://python.langchain.com/docs/concepts/lcel/', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
+        { id: 'res-py-3', course_id: 'python-genai', milestone_id: 'ms-py-2', title: 'LangChain LCEL & Function Calling Cheat Sheet', type: 'code_snippet', url_or_content: 'https://python.langchain.com/docs/concepts/lcel/', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
       ]
     },
     {
       id: 'ms-py-3',
       week_label: 'Week 5 - 6',
-      title: 'Enterprise RAG Architecture & Vector DBs',
-      deliverable: 'Production Multi-Document RAG Search with ChromaDB/Pinecone',
+      title: 'Enterprise RAG Architecture & Vector Databases',
+      deliverable: 'Production Multi-Document RAG Search with ChromaDB & Re-ranking',
       status: 'scheduled',
       due_date: 'Weekend 6',
       days: [
-        { day_number: 9, title: 'Day 9: Recursive Document Chunking & Text Splitting', description: 'Semantic chunking for complex PDFs, code, and markdown', completed: false },
-        { day_number: 10, title: 'Day 10: Sentence Transformers & Embedding Generation', description: 'Dense embeddings vs Sparse BM25 indexing', completed: false },
-        { day_number: 11, title: 'Day 11: Vector DB Queries & Hybrid Search with ChromaDB', description: 'Metadata filtering, cosine similarity, and MMR rerank', completed: false },
-        { day_number: 12, title: 'Day 12: Cross-Encoder Re-Ranking & Evaluation Metrics', description: 'Ragas evaluation framework and context recall testing', completed: false },
+        { day_number: 9, subject_code: 'RAG-301', title: 'Day 9: Document Ingestion, Recursive Chunking & Token Splitting', description: 'Parsing PDFs, Markdown, and tabular data with semantic boundary preservation.', lab_task: 'Ingest 50-page enterprise technical manual and create chunks.', completed: false },
+        { day_number: 10, subject_code: 'RAG-301', title: 'Day 10: Sentence Transformers & Embedding Generation', description: 'Comparing OpenAI text-embedding-3-small, BGE, and dense vs sparse vectors.', lab_task: 'Generate embeddings and evaluate cosine similarity across search queries.', completed: false },
+        { day_number: 11, subject_code: 'RAG-301', title: 'Day 11: Vector DB Queries & Hybrid Search with ChromaDB', description: 'Indexing embeddings with HNSW, metadata filtering, and BM25 hybrid ranking.', lab_task: 'Implement ChromaDB vector collection with metadata filtering on departments.', completed: false },
+        { day_number: 12, subject_code: 'RAG-301', title: 'Day 12: Cross-Encoder Re-Ranking & RAG Evaluation Metrics', description: 'Using Cohere/Flashrank rerankers and Ragas evaluation for hallucinations.', lab_task: 'Evaluate RAG retrieval accuracy and context relevancy scores.', completed: false },
       ],
       resources: [
-        { id: 'res-py-4', course_id: 'track-python-genai', milestone_id: 'ms-py-3', title: 'ChromaDB Vector Indexing Lab Exercise', type: 'lab_manual', url_or_content: 'https://docs.trychroma.com/', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
+        { id: 'res-py-4', course_id: 'python-genai', milestone_id: 'ms-py-3', title: 'ChromaDB Hybrid Search Lab Manual', type: 'lab_manual', url_or_content: 'https://docs.trychroma.com/', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
       ]
     },
     {
       id: 'ms-py-4',
       week_label: 'Week 7 - 8',
-      title: 'Multi-Agent Workflows with LangGraph',
-      deliverable: 'Multi-Agent Supervisor System with Human-in-the-Loop',
+      title: 'Autonomous Multi-Agent Systems with LangGraph',
+      deliverable: 'Multi-Agent Supervisor System with Human-in-the-Loop Approval',
       status: 'scheduled',
       due_date: 'Weekend 8',
       days: [
-        { day_number: 13, title: 'Day 13: State Graphs, Nodes, Edges & Reducers', description: 'Constructing stateful computational agent graphs', completed: false },
-        { day_number: 14, title: 'Day 14: Multi-Agent Collaboration & Supervisor Routing', description: 'Orchestrating specialized researcher, coder, and critic agents', completed: false },
-        { day_number: 15, title: 'Day 15: Human-in-the-Loop Interrupts & State Checkpoints', description: 'Approving sensitive operations with persistent thread storage', completed: false },
+        { day_number: 13, subject_code: 'AI-401', title: 'Day 13: LangGraph State Graphs, Nodes, Edges & Reducers', description: 'Constructing stateful computational agent graphs with checkpoint persistence.', lab_task: 'Build a two-node cyclical writer/reviewer agent graph.', completed: false },
+        { day_number: 14, subject_code: 'AI-401', title: 'Day 14: Supervisor Architecture & Multi-Agent Delegation', description: 'Orchestrating specialized researcher, coder, and validation agents.', lab_task: 'Create a supervisor agent delegating tasks based on user intent.', completed: false },
+        { day_number: 15, subject_code: 'AI-401', title: 'Day 15: Human-in-the-Loop Interrupts & Tool Confirmation', description: 'Safely pausing execution graph before sensitive DB write operations.', lab_task: 'Implement interactive approval interrupt for SQL modification queries.', completed: false },
       ],
       resources: [
-        { id: 'res-py-5', course_id: 'track-python-genai', milestone_id: 'ms-py-4', title: 'LangGraph Supervisor Architecture Repo (GitHub)', type: 'github', url_or_content: 'https://github.com/langchain-ai/langgraph', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
+        { id: 'res-py-5', course_id: 'python-genai', milestone_id: 'ms-py-4', title: 'LangGraph Supervisor Architecture Starter Repo', type: 'github', url_or_content: 'https://github.com/langchain-ai/langgraph', shared_by: 'Prof. Alan Turing', shared_at: '2026-10-03' }
       ]
     },
     {
       id: 'ms-py-5',
       week_label: 'Week 9 - 10',
-      title: 'FastAPI Production Deployment & Capstone',
-      deliverable: 'Final Capstone Project & Certified Developer Portfolio',
+      title: 'FastAPI Production Deployment & Capstone Defense',
+      deliverable: 'Containerized Enterprise GenAI Microservice with JWT & Streaming',
       status: 'scheduled',
       due_date: 'Weekend 10',
       days: [
-        { day_number: 16, title: 'Day 16: Async FastAPI Endpoints & Streaming SSE', description: 'Building low-latency agent streaming APIs with JWT auth', completed: false },
-        { day_number: 17, title: 'Day 17: Docker Containerization & Cloud Deployment', description: 'Multi-stage Docker builds and cloud deployment', completed: false },
-        { day_number: 18, title: 'Day 18: Final Capstone Demo & Certificate Evaluation', description: 'Live project defense and industry review', completed: false },
+        { day_number: 16, subject_code: 'AI-401', title: 'Day 16: Async FastAPI Endpoints & Server-Sent Events (SSE)', description: 'Streaming tokens in real-time to frontends with token usage metering.', lab_task: 'Build /chat/stream SSE endpoint with bearer token authentication.', completed: false },
+        { day_number: 17, subject_code: 'AI-401', title: 'Day 17: Multi-Stage Docker Builds & Cloud Deployment', description: 'Optimizing container image size, env vars, and healthcheck endpoints.', lab_task: 'Write production Dockerfile and deploy to cloud container runner.', completed: false },
+        { day_number: 18, subject_code: 'AI-401', title: 'Day 18: Final Capstone Project Defense & Certification', description: 'End-to-end presentation and code review of autonomous AI agent platform.', lab_task: 'Complete technical live demo and receive verified credential.', completed: false },
       ],
       resources: []
     }
   ],
-  'track-salesforce-dev': [
+  'salesforce-developer': [
     {
       id: 'ms-sf-1',
       week_label: 'Week 1 - 3',
-      title: 'Salesforce Admin Essentials, Security & Flow Builder',
-      deliverable: 'Configured Enterprise Org with Complex Flow Automation',
+      title: 'Salesforce Admin Core, Security Model & Flow Builder',
+      deliverable: 'Enterprise CRM Architecture with Complex Multi-Object Flow Automation',
       status: 'completed',
       due_date: 'Weekend 3',
       days: [
-        { day_number: 1, title: 'Day 1: Custom Objects, Master-Detail & Schema Builder', completed: true },
-        { day_number: 2, title: 'Day 2: Profiles, Permission Sets & Record-Level Security', completed: true },
-        { day_number: 3, title: 'Day 3: Screen Flows, Record-Triggered Flows & Invocables', completed: true }
+        { day_number: 1, subject_code: 'SF-ADM', title: 'Day 1: Custom Objects, Junction Objects & Schema Architecture', description: 'Mastering master-detail vs lookup relationships, roll-up summaries, and schema design.', lab_task: 'Design and deploy a complete recruitment CRM data model with 5 custom objects.', completed: true },
+        { day_number: 2, subject_code: 'SF-ADM', title: 'Day 2: Profiles, Permission Sets, OWD & Record-Level Security', description: 'Implementing Organization-Wide Defaults, Role Hierarchy, and Criteria-Based Sharing Rules.', lab_task: 'Configure multi-tier sales visibility where managers view sub-team deals.', completed: true },
+        { day_number: 3, subject_code: 'SF-ADM', title: 'Day 3: Screen Flows, Record-Triggered Flows & Custom Invocables', description: 'Building modern low-code automated flows with before-save and after-save optimization.', lab_task: 'Build automated onboarding flow creating child tasks upon candidate qualification.', completed: true },
       ],
-      resources: []
+      resources: [
+        { id: 'res-sf-1', course_id: 'salesforce-developer', milestone_id: 'ms-sf-1', title: 'Salesforce Flow Builder Best Practices Guide', type: 'pdf', url_or_content: 'https://developer.salesforce.com/docs', shared_by: 'Marc Benioff', shared_at: '2026-10-01' }
+      ]
     },
     {
       id: 'ms-sf-2',
       week_label: 'Week 4 - 7',
-      title: 'Apex OOP, Triggers & SOQL Database Operations',
-      deliverable: 'One-Trigger-Per-Object Architecture with 90%+ Test Coverage',
+      title: 'Apex OOP, Trigger Frameworks & SOQL Optimization',
+      deliverable: 'One-Trigger-Per-Object Framework with 95%+ Test Coverage & Mocking',
       status: 'in_progress',
       due_date: 'Weekend 7',
       days: [
-        { day_number: 4, title: 'Day 4: Apex Syntax, Collections & Governor Limits', completed: true },
-        { day_number: 5, title: 'Day 5: Trigger Handler Frameworks & Context Variables', completed: false },
-        { day_number: 6, title: 'Day 6: SOQL/SOSL Queries, Aggregates & Database Methods', completed: false }
+        { day_number: 4, subject_code: 'SF-DEV', title: 'Day 4: Apex Core, Collections, Maps & Governor Limit Management', description: 'Writing bulkified code that avoids SOQL inside loops and 101 query exceptions.', lab_task: 'Process list of 200 account records with efficient Map indexing.', completed: true },
+        { day_number: 5, subject_code: 'SF-DEV', title: 'Day 5: Enterprise Trigger Handler Pattern & Context Enums', description: 'Separating business logic from trigger dispatchers with recursion guards.', lab_task: 'Implement OpportunityTriggerHandler with static Set recursion protection.', completed: false },
+        { day_number: 6, subject_code: 'SF-DEV', title: 'Day 6: SOQL/SOSL Queries, Aggregate Queries & Database Methods', description: 'Writing dynamic SOQL, binding variables, and partial-success Database.insert operations.', lab_task: 'Create SOQL query calculating quarterly revenue totals grouped by region.', completed: false },
+        { day_number: 7, subject_code: 'SF-DEV', title: 'Day 7: Asynchronous Apex: Queueable, Batch & Scheduled Jobs', description: 'Processing millions of records asynchronously with State and error chaining.', lab_task: 'Build Batch Apex job archiving stale leads older than 90 days.', completed: false },
       ],
-      resources: []
+      resources: [
+        { id: 'res-sf-2', course_id: 'salesforce-developer', milestone_id: 'ms-sf-2', title: 'Apex Trigger Handler Pattern Starter Template', type: 'code_snippet', url_or_content: 'https://github.com/developerforce', shared_by: 'Marc Benioff', shared_at: '2026-10-02' }
+      ]
     },
     {
       id: 'ms-sf-3',
       week_label: 'Week 8 - 10',
       title: 'Lightning Web Components (LWC) & Event Architecture',
-      deliverable: 'Custom Interactive LWC Application Deployed to Lightning App Builder',
+      deliverable: 'Custom Interactive LWC Application with Wire Adapters & LDS',
       status: 'scheduled',
       due_date: 'Weekend 10',
       days: [
-        { day_number: 7, title: 'Day 7: Modern JavaScript ES6+, Shadow DOM & Component Lifecycle', completed: false },
-        { day_number: 8, title: 'Day 8: Wire Service, Apex Integration & LMS Pub/Sub', completed: false },
-        { day_number: 9, title: 'Day 9: Lightning Data Service & Modal Components', completed: false }
+        { day_number: 8, subject_code: 'SF-LWC', title: 'Day 8: Modern ES6+ JavaScript, Shadow DOM & LWC Lifecycle Hooks', description: 'Mastering constructor, connectedCallback, renderedCallback, and reactive @api/@track.', lab_task: 'Build responsive product search card component with custom CSS variables.', completed: false },
+        { day_number: 9, subject_code: 'SF-LWC', title: 'Day 9: Wire Service, Apex Method Integration & Lightning Data Service', description: 'Fetching cached server data with @wire and invoking imperative Apex on button click.', lab_task: 'Build interactive candidate review grid that saves notes directly via LDS.', completed: false },
+        { day_number: 10, subject_code: 'SF-LWC', title: 'Day 10: Lightning Message Service (LMS) & Event Pub/Sub', description: 'Cross-component communication between decoupled LWCs, Aura, and Visualforce.', lab_task: 'Create global notification broadcast channel across dashboard widgets.', completed: false },
       ],
       resources: []
     }
   ],
-  'track-servicenow': [
+  'servicenow-sysadmin': [
     {
       id: 'ms-sn-1',
       week_label: 'Week 1 - 4',
-      title: 'ServiceNow Platform Administration & ITSM Core',
-      deliverable: 'Complete ITSM Service Desk Configuration with SLA Engine',
+      title: 'ServiceNow Platform Core, CMDB & ITSM Workflows',
+      deliverable: 'Configured Enterprise ITSM Suite with Custom SLA Matrix & Service Catalog',
       status: 'in_progress',
       due_date: 'Weekend 4',
       days: [
-        { day_number: 1, title: 'Day 1: Users, Roles, Groups & CMDB Architecture', completed: true },
-        { day_number: 2, title: 'Day 2: Incident, Problem & Change Management Lifecycles', completed: true },
-        { day_number: 3, title: 'Day 3: UI Policies, Data Policies & Dictionary Overrides', completed: false }
+        { day_number: 1, subject_code: 'SN-FND', title: 'Day 1: Platform Navigation, Users, Groups, Roles & CMDB Architecture', description: 'Configuring configuration items (CIs), relationships, and discovery foundations.', lab_task: 'Build hardware asset hierarchy with mapped dependency relationships in CMDB.', completed: true },
+        { day_number: 2, subject_code: 'SN-FND', title: 'Day 2: Incident, Problem & Change Management Lifecycles', description: 'Implementing ITIL v4 processes, state model transitions, and resolution codes.', lab_task: 'Configure Emergency Change Advisory Board approval routing rules.', completed: true },
+        { day_number: 3, subject_code: 'SN-FND', title: 'Day 3: UI Policies, Data Policies, UI Actions & Dictionary Overrides', description: 'Enforcing client-side form behavior and mandatory field rules dynamically.', lab_task: 'Create dynamic form hiding VIP fields unless caller has Executive role.', completed: false },
       ],
-      resources: []
+      resources: [
+        { id: 'res-sn-1', course_id: 'servicenow-sysadmin', milestone_id: 'ms-sn-1', title: 'ServiceNow CSA Quick Reference Manual', type: 'pdf', url_or_content: 'https://developer.servicenow.com', shared_by: 'Fred Luddy', shared_at: '2026-10-01' }
+      ]
     },
     {
       id: 'ms-sn-2',
       week_label: 'Week 5 - 8',
-      title: 'Flow Designer Automation & Business Rules',
-      deliverable: 'Automated Service Catalog Workflow with Custom Spokes',
+      title: 'Server Scripting, GlideRecord & Flow Designer Automation',
+      deliverable: 'Automated Multi-Stage Service Catalog Workflow with Custom Script Includes',
       status: 'scheduled',
       due_date: 'Weekend 8',
       days: [
-        { day_number: 4, title: 'Day 4: Server-Side Scripting with GlideRecord & GlideSystem', completed: false },
-        { day_number: 5, title: 'Day 5: Client Scripts, GlideAjax & UI Actions', completed: false },
-        { day_number: 6, title: 'Day 6: Flow Designer Subflows & Integration Hub', completed: false }
+        { day_number: 4, subject_code: 'SN-DEV', title: 'Day 4: Server-Side JavaScript: GlideRecord & GlideSystem (gs)', description: 'Querying and modifying records server-side with efficient encoded queries.', lab_task: 'Write Business Rule auto-assigning high-priority tickets to on-call squads.', completed: false },
+        { day_number: 5, subject_code: 'SN-DEV', title: 'Day 5: Client Scripts, GlideAjax & Asynchronous Server Calls', description: 'Building responsive forms using GlideAjax to query server data without freezing UI.', lab_task: 'Implement onLoad Client Script fetching user department via GlideAjax.', completed: false },
+        { day_number: 6, subject_code: 'SN-DEV', title: 'Day 6: Flow Designer Subflows, Integration Hub & REST Spokes', description: 'Creating automated no-code/low-code trigger flows and webhook actions.', lab_task: 'Build Flow Designer catalog workflow requesting manager approval via Slack/Teams.', completed: false },
       ],
       resources: []
     }
   ],
-  'track-fullstack-web': [
+  'fullstack-web': [
     {
       id: 'ms-fs-1',
       week_label: 'Week 1 - 4',
       title: 'React 19, Modern TypeScript & State Management',
-      deliverable: 'Full-Featured Responsive Web Application with TailwindCSS',
+      deliverable: 'Production Responsive Web Platform with Custom Hooks & Tailwind UI',
       status: 'in_progress',
       due_date: 'Weekend 4',
       days: [
-        { day_number: 1, title: 'Day 1: TypeScript Interfaces, Generics & React Hooks', completed: true },
-        { day_number: 2, title: 'Day 2: TailwindCSS Layouts, Glassmorphism & Animations', completed: true },
-        { day_number: 3, title: 'Day 3: Global State Management with Zustand & React Query', completed: false }
+        { day_number: 1, subject_code: 'FS-REA', title: 'Day 1: TypeScript Deep Dive: Generics, Utility Types & Type Guards', description: 'Structuring scalable frontend codebases with robust type safety.', lab_task: 'Write generic API client wrapper with strictly typed query parameters.', completed: true },
+        { day_number: 2, subject_code: 'FS-REA', title: 'Day 2: React 19 Component Architecture, Custom Hooks & TailwindCSS', description: 'Composing reusable UI atoms, compound components, and sleek glassmorphic themes.', lab_task: 'Build responsive data table component with sorting, filtering, and pagination.', completed: true },
+        { day_number: 3, subject_code: 'FS-REA', title: 'Day 3: Global State Management with Zustand & React Query (TanStack)', description: 'Server-state caching, optimistic updates, and client-side stores.', lab_task: 'Implement shopping cart & notification store with instant optimistic updates.', completed: false },
       ],
-      resources: []
+      resources: [
+        { id: 'res-fs-1', course_id: 'fullstack-web', milestone_id: 'ms-fs-1', title: 'React 19 & TypeScript Architecture Starter', type: 'github', url_or_content: 'https://github.com/facebook/react', shared_by: 'Dan Abramov', shared_at: '2026-10-01' }
+      ]
     },
     {
       id: 'ms-fs-2',
       week_label: 'Week 5 - 8',
       title: 'Node.js, FastAPI & PostgreSQL Microservices',
-      deliverable: 'Scalable REST API Backend with JWT & WebSocket Support',
+      deliverable: 'Scalable REST API Backend with JWT Auth, Prisma/SQLAlchemy & WebSockets',
       status: 'scheduled',
       due_date: 'Weekend 8',
       days: [
-        { day_number: 4, title: 'Day 4: API Architecture, Middleware & Error Handling', completed: false },
-        { day_number: 5, title: 'Day 5: SQLAlchemy / Prisma ORM & Database Migrations', completed: false },
-        { day_number: 6, title: 'Day 6: Real-time WebSockets & Background Job Queues', completed: false }
+        { day_number: 4, subject_code: 'FS-NOD', title: 'Day 4: RESTful API Architecture, Middleware & Request Validation', description: 'Designing clean routing controllers, error handlers, and CORS headers.', lab_task: 'Build modular auth controller with password hashing and refresh tokens.', completed: false },
+        { day_number: 5, subject_code: 'FS-NOD', title: 'Day 5: PostgreSQL Database Modeling, Migrations & Indexing', description: 'Relational data modeling, foreign keys, cascade rules, and query optimization.', lab_task: 'Write database migrations for e-commerce orders and items schema.', completed: false },
+        { day_number: 6, subject_code: 'FS-NOD', title: 'Day 6: Real-Time WebSockets & Background Job Workers', description: 'Bi-directional real-time communication and asynchronous task queues.', lab_task: 'Implement live notification stream pushing status updates to React clients.', completed: false },
       ],
       resources: []
     }
   ],
-  'track-cloud-devops': [
+  'cloud-devops': [
     {
       id: 'ms-do-1',
       week_label: 'Week 1 - 4',
-      title: 'Linux Automation, Docker & Multi-Stage Containers',
-      deliverable: 'Hardened Containerized Microservice Suite',
+      title: 'Linux Automation, Docker Containerization & Microservices',
+      deliverable: 'Hardened Containerized Microservice Suite with Multi-Stage Builds',
       status: 'in_progress',
       due_date: 'Weekend 4',
       days: [
-        { day_number: 1, title: 'Day 1: Linux Administration, Bash Scripting & SSH Keys', completed: true },
-        { day_number: 2, title: 'Day 2: Dockerfile Optimization & Multi-Stage Builds', completed: true },
-        { day_number: 3, title: 'Day 3: Docker Compose Networking & Volume Persistence', completed: false }
+        { day_number: 1, subject_code: 'DO-CON', title: 'Day 1: Linux Administration, Bash Automation & SSH Security', description: 'Systemd service management, file permissions, networking tools, and shell scripts.', lab_task: 'Write automated bash script setting up server firewall and user access keys.', completed: true },
+        { day_number: 2, subject_code: 'DO-CON', title: 'Day 2: Dockerfile Optimization & Multi-Stage Production Builds', description: 'Minimizing image size, layer caching, non-root users, and vulnerability scanning.', lab_task: 'Create 25MB production Alpine Docker container for FastAPI backend.', completed: true },
+        { day_number: 3, subject_code: 'DO-CON', title: 'Day 3: Docker Compose Multi-Container Orchestration & Volumes', description: 'Connecting app, PostgreSQL database, and Redis cache with healthchecks.', lab_task: 'Assemble complete 3-tier local development environment via docker-compose.', completed: false },
       ],
-      resources: []
+      resources: [
+        { id: 'res-do-1', course_id: 'cloud-devops', milestone_id: 'ms-do-1', title: 'Docker Multi-Stage Best Practices Guide', type: 'pdf', url_or_content: 'https://docs.docker.com', shared_by: 'Linus Torvalds', shared_at: '2026-10-01' }
+      ]
     },
     {
       id: 'ms-do-2',
       week_label: 'Week 5 - 8',
-      title: 'Kubernetes Cluster Orchestration & Helm Charts',
-      deliverable: 'Production Kubernetes Cluster with Ingress & Auto-Scaling',
+      title: 'Kubernetes Orchestration, Helm & CI/CD Pipelines',
+      deliverable: 'Production Kubernetes Cluster with Ingress TLS, HPA & GitHub Actions',
       status: 'scheduled',
       due_date: 'Weekend 8',
       days: [
-        { day_number: 4, title: 'Day 4: Pods, Deployments, ReplicaSets & Services', completed: false },
-        { day_number: 5, title: 'Day 5: Ingress Nginx, TLS Certificates & ConfigMaps', completed: false },
-        { day_number: 6, title: 'Day 6: Helm Packaging & CI/CD with GitHub Actions', completed: false }
+        { day_number: 4, subject_code: 'DO-CICD', title: 'Day 4: Kubernetes Pods, Deployments, Services & ConfigMaps', description: 'Declarative YAML manifests, rolling updates, readiness/liveness probes.', lab_task: 'Deploy high-availability 3-replica web app with zero-downtime rolling update.', completed: false },
+        { day_number: 5, subject_code: 'DO-CICD', title: 'Day 5: Ingress Nginx, Let’s Encrypt TLS & Horizontal Pod Autoscaling (HPA)', description: 'Routing traffic by host and path, automated SSL renewal, and CPU autoscaling.', lab_task: 'Configure Ingress controller and stress-test auto-scaling from 2 to 10 pods.', completed: false },
+        { day_number: 6, subject_code: 'DO-CICD', title: 'Day 6: Automated CI/CD Pipelines with GitHub Actions & AWS ECR/EKS', description: 'End-to-end continuous integration running tests, building containers, and deploying.', lab_task: 'Build automated GitHub Actions pipeline that deploys on push to main branch.', completed: false },
       ],
       resources: []
     }
@@ -337,28 +348,28 @@ const DEFAULT_TECH_TRACKS: AdminInstituteCourse[] = [
   },
   {
     id: 'track-fullstack-web',
-    title: 'Full Stack Web Development (MERN & TypeScript)',
+    title: 'Full Stack Web Development (React & FastAPI)',
     slug: 'fullstack-web',
     level: 'Beginner',
     price: 0,
     is_free: true,
     status: 'published',
-    description: 'Modern full stack software engineering with React, Next.js, Node.js, Express, PostgreSQL, Prisma, and REST/GraphQL APIs.',
+    description: 'Modern full stack software engineering with React 19, TypeScript, TailwindCSS, Node.js, FastAPI, PostgreSQL, and REST/WebSocket APIs.',
     enrolled_count: 45,
     subjects: [
-      { id: 'sub-fs-rea', code: 'FS-REA', name: 'React, TypeScript & Modern State Management', color: '#6366f1', description: 'Component lifecycles, custom hooks, TailwindCSS, Zustand/Redux, and client-side performance optimization.', teacher_name: 'Dan Abramov' },
-      { id: 'sub-fs-nod', code: 'FS-NOD', name: 'Node.js, Express, PostgreSQL & Microservices', color: '#4f46e5', description: 'RESTful API architecture, JWT authentication, SQL migrations with Prisma ORM, and WebSocket real-time streams.', teacher_name: 'Dan Abramov' }
+      { id: 'sub-fs-rea', code: 'FS-REA', name: 'React 19, TypeScript & Modern UI Architecture', color: '#6366f1', description: 'Component lifecycles, custom hooks, TailwindCSS, state stores, and client-side performance optimization.', teacher_name: 'Dan Abramov' },
+      { id: 'sub-fs-nod', code: 'FS-NOD', name: 'Node.js, FastAPI, PostgreSQL & Microservices', color: '#4f46e5', description: 'RESTful API architecture, JWT authentication, SQL migrations with SQLAlchemy ORM, and WebSocket real-time streams.', teacher_name: 'Dan Abramov' }
     ]
   },
   {
     id: 'track-cloud-devops',
-    title: 'Cloud & DevOps Engineering',
+    title: 'Cloud & DevOps Engineering (AWS & Kubernetes)',
     slug: 'cloud-devops',
     level: 'Advanced',
     price: 0,
     is_free: true,
     status: 'published',
-    description: 'Enterprise container orchestration, Infrastructure as Code (Terraform), CI/CD pipelines, Docker, Kubernetes, and AWS/Azure cloud architecture.',
+    description: 'Enterprise container orchestration, Infrastructure as Code (Terraform), CI/CD pipelines, Docker, Kubernetes, and AWS cloud architecture.',
     enrolled_count: 31,
     subjects: [
       { id: 'sub-do-con', code: 'DO-CON', name: 'Linux Automation, Docker & Kubernetes Clusters', color: '#ec4899', description: 'Multi-stage Docker builds, Pods, Deployments, Services, Ingress controllers, and Helm charts.', teacher_name: 'Linus Torvalds' },
@@ -367,40 +378,64 @@ const DEFAULT_TECH_TRACKS: AdminInstituteCourse[] = [
   }
 ]
 
-export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
+// Helper to resolve canonical roadmap key
+function getRoadmapTrackKey(course: AdminInstituteCourse): string {
+  const str = `${course.slug || ''} ${course.title || ''} ${course.id || ''}`.toLowerCase()
+  if (str.includes('python') || str.includes('genai') || str.includes('ai')) return 'python-genai'
+  if (str.includes('salesforce') || str.includes('sf-')) return 'salesforce-developer'
+  if (str.includes('servicenow') || str.includes('csa') || str.includes('sn-')) return 'servicenow-sysadmin'
+  if (str.includes('full') || str.includes('web') || str.includes('react') || str.includes('frontend')) return 'fullstack-web'
+  if (str.includes('devops') || str.includes('cloud') || str.includes('aws') || str.includes('docker')) return 'cloud-devops'
+  return course.slug || course.id
+}
+
+export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab }) => {
   const [courses, setCourses] = useState<AdminInstituteCourse[]>(DEFAULT_TECH_TRACKS)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all')
   const [activeCourseId, setActiveCourseId] = useState<string>(DEFAULT_TECH_TRACKS[0].id)
   const [enrollingId, setEnrollingId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'roadmap' | 'modules'>('roadmap')
+  const [viewMode, setViewMode] = useState<'roadmap' | 'subjects' | 'resources'>('roadmap')
 
   // Roadmaps Master State
   const [roadmaps, setRoadmaps] = useState<Record<string, WeekendMilestone[]>>(() => {
     try {
-      const saved = localStorage.getItem('acharya_course_roadmaps')
+      const saved = localStorage.getItem('acharya_tech_roadmaps_v2')
       return saved ? JSON.parse(saved) : DEFAULT_ROADMAPS
     } catch {
       return DEFAULT_ROADMAPS
     }
   })
 
+  // Completed Days Tracker State
+  const [completedDayKeys, setCompletedDayKeys] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('acharya_completed_days')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
+
   // Modal: Add Milestone (Teacher / Admin)
   const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false)
-  const [milestoneWeekLabel, setMilestoneWeekLabel] = useState('Week 11 - 12')
+  const [milestoneWeekLabel, setMilestoneWeekLabel] = useState('Week 9 - 10')
   const [milestoneTitle, setMilestoneTitle] = useState('')
   const [milestoneDeliverable, setMilestoneDeliverable] = useState('')
-  const [milestoneDueDate, setMilestoneDueDate] = useState('Weekend 12')
+  const [milestoneDueDate, setMilestoneDueDate] = useState('Weekend 10')
 
   // Modal: Add Day Topic (Teacher / Admin)
   const [targetMilestoneId, setTargetMilestoneId] = useState<string | null>(null)
   const [showAddDayModal, setShowAddDayModal] = useState(false)
   const [newDayNumber, setNewDayNumber] = useState(1)
   const [newDayTitle, setNewDayTitle] = useState('')
+  const [newDaySubjectCode, setNewDaySubjectCode] = useState('')
   const [newDayDesc, setNewDayDesc] = useState('')
+  const [newDayLabTask, setNewDayLabTask] = useState('')
 
   // Modal: Share Resource (Teacher / Admin)
   const [showShareModal, setShowShareModal] = useState(false)
@@ -420,11 +455,19 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('acharya_course_roadmaps', JSON.stringify(roadmaps))
+      localStorage.setItem('acharya_tech_roadmaps_v2', JSON.stringify(roadmaps))
     } catch (e) {
       console.warn('Storage error:', e)
     }
   }, [roadmaps])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('acharya_completed_days', JSON.stringify(completedDayKeys))
+    } catch (e) {
+      console.warn('Storage error:', e)
+    }
+  }, [completedDayKeys])
 
   const loadCourseData = async () => {
     try {
@@ -450,130 +493,124 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
     }
   }
 
+  const showNotification = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3500)
+  }
+
   const handleEnroll = async (courseId: string) => {
     try {
       setEnrollingId(courseId)
       await enrollInCourse(courseId)
-      const updated = await getMyEnrollments().catch(() => [])
-      setEnrollments(updated)
-      showToast('Successfully enrolled in training track!')
+      const fresh = await getMyEnrollments().catch(() => [])
+      setEnrollments(fresh)
+      showNotification('Successfully enrolled in training track!')
     } catch (err: any) {
-      showToast(err.message || 'Enrollment successful')
+      showNotification(err.message || 'Enrollment processed.')
     } finally {
       setEnrollingId(null)
     }
   }
 
-  const showToast = (msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3500)
-  }
-
-  const isEnrolled = (courseId: string) => {
-    return enrollments.some(e => e.course_id === courseId || (e.course && e.course.id === courseId))
-  }
-
   const activeCourse = courses.find((c) => c.id === activeCourseId) || courses[0] || DEFAULT_TECH_TRACKS[0]
-  const currentRoadmap = roadmaps[activeCourse.id] || DEFAULT_ROADMAPS[activeCourse.id] || DEFAULT_ROADMAPS['track-python-genai'] || []
+  const trackKey = getRoadmapTrackKey(activeCourse)
+
+  // Retrieve current active roadmap or synthesize full default
+  const activeMilestones: WeekendMilestone[] = roadmaps[trackKey] || DEFAULT_ROADMAPS[trackKey] || [
+    {
+      id: `ms-${activeCourse.id}-1`,
+      week_label: 'Week 1 - 4',
+      title: `${activeCourse.title} — Foundation & Applied Engineering`,
+      deliverable: 'Comprehensive Hands-On Lab Deliverable & Architecture Implementation',
+      status: 'in_progress',
+      due_date: 'Weekend 4',
+      days: activeCourse.subjects.map((sub, idx) => ({
+        day_number: idx + 1,
+        subject_code: sub.code,
+        title: `Day ${idx + 1}: ${sub.name} Foundations & Architecture`,
+        description: sub.description || 'Core concepts, practical configuration, and implementation patterns.',
+        lab_task: `Complete hands-on exercise and repository deployment for ${sub.name}.`,
+        completed: false
+      })),
+      resources: []
+    }
+  ]
+
+  // Calculate Overall Course Day Statistics
+  const allDaysList = activeMilestones.flatMap(m => m.days)
+  const totalDaysCount = allDaysList.length
+  const completedDaysCount = allDaysList.filter(d => {
+    const key = `${trackKey}_d${d.day_number}`
+    return completedDayKeys[key] ?? d.completed ?? false
+  }).length
+  const progressPercent = totalDaysCount > 0 ? Math.round((completedDaysCount / totalDaysCount) * 100) : 0
+
+  const toggleDayCompletion = (dayNum: number) => {
+    const key = `${trackKey}_d${dayNum}`
+    const current = completedDayKeys[key] ?? allDaysList.find(d => d.day_number === dayNum)?.completed ?? false
+    setCompletedDayKeys(prev => ({
+      ...prev,
+      [key]: !current
+    }))
+    showNotification(`Day ${dayNum} marked as ${!current ? 'Completed' : 'Pending'}`)
+  }
 
   // Add Milestone Handler
-  const handleAddMilestone = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!milestoneTitle.trim() || !milestoneDeliverable.trim()) return
-
+  const handleAddMilestone = () => {
+    if (!milestoneTitle.trim()) return
     const newMs: WeekendMilestone = {
       id: `ms-${Date.now()}`,
-      week_label: milestoneWeekLabel.trim(),
+      week_label: milestoneWeekLabel.trim() || 'Phase Next',
       title: milestoneTitle.trim(),
-      deliverable: milestoneDeliverable.trim(),
+      deliverable: milestoneDeliverable.trim() || 'Production Technical Deliverable',
       status: 'scheduled',
-      due_date: milestoneDueDate.trim(),
+      due_date: milestoneDueDate.trim() || 'Scheduled',
       days: [],
       resources: []
     }
-
     setRoadmaps(prev => ({
       ...prev,
-      [activeCourse.id]: [...(prev[activeCourse.id] || []), newMs]
+      [trackKey]: [...(prev[trackKey] || activeMilestones), newMs]
     }))
-
-    showToast(`Added Milestone: "${milestoneTitle}" to track roadmap!`)
     setShowAddMilestoneModal(false)
     setMilestoneTitle('')
     setMilestoneDeliverable('')
-  }
-
-  // Toggle Milestone Status (Scheduled -> In Progress -> Completed)
-  const handleToggleMilestoneStatus = (msId: string) => {
-    setRoadmaps(prev => {
-      const list = prev[activeCourse.id] || []
-      const updated = list.map(m => {
-        if (m.id !== msId) return m
-        const nextStatus: WeekendMilestone['status'] = 
-          m.status === 'scheduled' ? 'in_progress' : m.status === 'in_progress' ? 'completed' : 'scheduled'
-        return { ...m, status: nextStatus }
-      })
-      return { ...prev, [activeCourse.id]: updated }
-    })
-    showToast('Milestone status updated!')
-  }
-
-  // Delete Milestone
-  const handleDeleteMilestone = (msId: string) => {
-    setRoadmaps(prev => ({
-      ...prev,
-      [activeCourse.id]: (prev[activeCourse.id] || []).filter(m => m.id !== msId)
-    }))
-    showToast('Milestone removed from roadmap.')
+    showNotification('New milestone added successfully!')
   }
 
   // Add Day Topic Handler
-  const handleAddDayTopic = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!targetMilestoneId || !newDayTitle.trim()) return
-
+  const handleAddDayTopic = () => {
+    if (!newDayTitle.trim() || !targetMilestoneId) return
     const newDay: DayTopic = {
-      day_number: newDayNumber,
+      day_number: newDayNumber || (totalDaysCount + 1),
+      subject_code: newDaySubjectCode || activeCourse.subjects[0]?.code,
       title: newDayTitle.trim(),
-      description: newDayDesc.trim(),
+      description: newDayDesc.trim() || undefined,
+      lab_task: newDayLabTask.trim() || undefined,
       completed: false
     }
 
     setRoadmaps(prev => {
-      const list = prev[activeCourse.id] || []
-      const updated = list.map(m => {
-        if (m.id !== targetMilestoneId) return m
-        return { ...m, days: [...m.days, newDay] }
+      const currentList = prev[trackKey] || activeMilestones
+      const updated = currentList.map(ms => {
+        if (ms.id === targetMilestoneId) {
+          return { ...ms, days: [...ms.days, newDay] }
+        }
+        return ms
       })
-      return { ...prev, [activeCourse.id]: updated }
+      return { ...prev, [trackKey]: updated }
     })
 
-    showToast(`Added Day ${newDayNumber} topic to milestone!`)
     setShowAddDayModal(false)
     setNewDayTitle('')
     setNewDayDesc('')
+    setNewDayLabTask('')
+    showNotification(`Day ${newDay.day_number} topic added to syllabus!`)
   }
 
-  // Toggle Day Completed
-  const handleToggleDayComplete = (msId: string, dayNum: number) => {
-    setRoadmaps(prev => {
-      const list = prev[activeCourse.id] || []
-      const updated = list.map(m => {
-        if (m.id !== msId) return m
-        return {
-          ...m,
-          days: m.days.map(d => d.day_number === dayNum ? { ...d, completed: !d.completed } : d)
-        }
-      })
-      return { ...prev, [activeCourse.id]: updated }
-    })
-  }
-
-  // Share Resource to Milestone / Course
-  const handleShareResource = (e: React.FormEvent) => {
-    e.preventDefault()
+  // Share Resource Handler
+  const handleAddResource = () => {
     if (!resourceTitle.trim() || !resourceUrl.trim()) return
-
     const newRes: SharedResource = {
       id: `res-${Date.now()}`,
       course_id: activeCourse.id,
@@ -581,109 +618,149 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
       title: resourceTitle.trim(),
       type: resourceType,
       url_or_content: resourceUrl.trim(),
-      shared_by: user.display_name || 'Faculty Member',
+      shared_by: user.display_name,
       shared_at: new Date().toISOString().split('T')[0]
     }
 
     setRoadmaps(prev => {
-      const list = prev[activeCourse.id] || []
-      const updated = list.map(m => {
-        if (resourceMilestoneId && m.id === resourceMilestoneId) {
-          return { ...m, resources: [newRes, ...(m.resources || [])] }
+      const currentList = prev[trackKey] || activeMilestones
+      const updated = currentList.map(ms => {
+        if (!resourceMilestoneId || ms.id === resourceMilestoneId) {
+          return { ...ms, resources: [...(ms.resources || []), newRes] }
         }
-        return m
+        return ms
       })
-      return { ...prev, [activeCourse.id]: updated }
+      return { ...prev, [trackKey]: updated }
     })
 
-    showToast(`Published resource: "${resourceTitle}" to roadmap!`)
     setShowShareModal(false)
     setResourceTitle('')
     setResourceUrl('')
+    showNotification('Resource shared with batch candidates!')
   }
 
+  // Delete Day Topic
+  const handleDeleteDay = (milestoneId: string, dayNum: number) => {
+    setRoadmaps(prev => {
+      const currentList = prev[trackKey] || activeMilestones
+      const updated = currentList.map(ms => {
+        if (ms.id === milestoneId) {
+          return { ...ms, days: ms.days.filter(d => d.day_number !== dayNum) }
+        }
+        return ms
+      })
+      return { ...prev, [trackKey]: updated }
+    })
+    showNotification(`Day ${dayNum} removed.`)
+  }
+
+  // Filter Courses
   const filteredCourses = courses.filter((c) => {
-    const matchesSearch =
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
-    const matchesLevel = selectedLevel === 'all' || c.level.toLowerCase() === selectedLevel.toLowerCase()
-    return matchesSearch && matchesLevel
+    const searchLower = search.toLowerCase()
+    const matchSearch =
+      (c.title || '').toLowerCase().includes(searchLower) ||
+      (c.description || '').toLowerCase().includes(searchLower) ||
+      (c.subjects || []).some(s => (s.name || '').toLowerCase().includes(searchLower) || (s.code || '').toLowerCase().includes(searchLower))
+    const matchLevel =
+      selectedLevel === 'all' ||
+      (c.level || '').toLowerCase() === selectedLevel.toLowerCase()
+    return matchSearch && matchLevel
   })
 
+  // All Shared Resources for Active Course
+  const allCourseResources: SharedResource[] = activeMilestones.flatMap(m => m.resources || [])
+
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
-      {/* Toast */}
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto min-h-screen">
+      {/* ── Toast Notification ────────────────────────────────────────────── */}
       {toast && (
-        <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl bg-amber-950/90 border border-amber-500/40 text-amber-200 text-xs font-bold shadow-2xl flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-amber-400" />
+        <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl bg-amber-950/95 border border-amber-500/40 text-amber-200 shadow-2xl backdrop-blur-md text-xs font-bold flex items-center gap-2.5 animate-in slide-in-from-top-4 duration-200">
+          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <span>{toast}</span>
         </div>
       )}
 
-      {/* ── Header Banner ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-2xl relative overflow-hidden">
-        <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
-            <Milestone className="w-3.5 h-3.5" />
-            {canControl ? 'Curriculum & Roadmap Control Center' : 'Learning Roadmap & Milestones'}
+      {/* ── Hero Banner Header ────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-[#0B0F19] via-[#161E31] to-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-amber-400" />
+                Technical Track Curriculum & Roadmap Center
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
+                <Check className="w-3 h-3 text-cyan-400" />
+                {courses.length} Certified Technical Tracks
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              {isTeacher ? 'Courses Handled & Technical Syllabi' : 'Professional Technology Tracks & Roadmaps'}
+            </h1>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Explore day-wise technical curriculums, manage concurrent subject modules, access code repositories and slide decks, and track your milestone deliverables.
+            </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            {canControl ? 'Courses Handled & Dynamic Track Roadmaps' : 'Course Learning Roadmaps & Milestones'}
-          </h1>
-          <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-            {canControl
-              ? 'Manage day-wise curriculum topics, define weekend milestone deliverables, attach repository & slide resources, and update progress for enrolled batches.'
-              : 'Follow your day-by-day learning journey, complete weekend milestone capstones, access faculty shared resources, and earn certified course credentials.'}
-          </p>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
-          {canControl && (
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {canControl && (
+              <>
+                <button
+                  onClick={() => setShowAddMilestoneModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Milestone Phase</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setResourceMilestoneId(activeMilestones[0]?.id)
+                    setShowShareModal(true)
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Share2 className="w-4 h-4 text-amber-400" />
+                  <span>Share Resources</span>
+                </button>
+              </>
+            )}
+
             <button
-              onClick={() => setShowAddMilestoneModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              onClick={loadCourseData}
+              disabled={loading}
+              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all"
+              title="Refresh course data"
             >
-              <Plus className="w-4 h-4 text-slate-950" />
-              <span>Add Roadmap Milestone</span>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-400' : ''}`} />
             </button>
-          )}
-
-          <span className="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            <span>{courses.length} Certified Tracks</span>
-          </span>
-          <button
-            onClick={loadCourseData}
-            title="Refresh Courses"
-            className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Search & Filter Controls ──────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
+      {/* ── Search & Filter Controls ───────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+        <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Search tracks, milestones, subjects..."
+            placeholder="Search tracks, subjects (e.g. LangChain, Apex, Docker)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((lvl) => (
             <button
               key={lvl}
               onClick={() => setSelectedLevel(lvl)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all shrink-0 ${
                 selectedLevel === lvl
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200'
               }`}
             >
               {lvl === 'all' ? 'All Levels' : lvl}
@@ -692,598 +769,809 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* ── Courses Master & Detail View ──────────────────────────────────── */}
-      {filteredCourses.length === 0 ? (
-        <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-500 space-y-3">
-          <BookOpen className="w-10 h-10 mx-auto text-slate-600" />
-          <p className="text-sm">No course tracks found matching your search.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Course Track Cards List (4/12) */}
-          <div className="lg:col-span-4 space-y-3">
+      {/* ── Main Layout: Tracks List (Left) + Detailed Showcase (Right) ──────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Column: Course Tracks Selector (4 Cols) */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Technology Tracks ({filteredCourses.length})
+            </h3>
+            <span className="text-[11px] text-amber-400 font-semibold">Select to View Roadmap</span>
+          </div>
+
+          <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
             {filteredCourses.map((c) => {
-              const enrolled = isEnrolled(c.id)
-              const isActive = activeCourse?.id === c.id
+              const isActive = c.id === activeCourseId
+              const isEnrolled = enrollments.some(e => e.course_id === c.id)
 
               return (
                 <div
                   key={c.id}
-                  onClick={() => setActiveCourseId(c.id)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                  onClick={() => {
+                    setActiveCourseId(c.id)
+                    setSelectedSubjectFilter('all')
+                  }}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border-amber-500/50 shadow-xl'
-                      : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                      ? 'bg-slate-900 border-amber-500/50 shadow-xl shadow-amber-500/5 ring-1 ring-amber-500/30'
+                      : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'
                   }`}
                 >
+                  {isActive && (
+                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500" />
+                  )}
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
                         {c.level}
                       </span>
-                      {enrolled && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                          <Check className="w-3 h-3" />
-                          Enrolled
+                      {isEnrolled && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                          <CheckCircle2 className="w-3 h-3" /> Enrolled
                         </span>
                       )}
                     </div>
 
-                    <h3 className="font-bold text-sm text-white">{c.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2">{c.description}</p>
+                    <h4 className="text-sm font-black text-slate-100 group-hover:text-amber-300 transition-colors">
+                      {c.title}
+                    </h4>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
-                      <span>{currentRoadmap.length} Milestones</span>
-                      <span>{c.enrolled_count || 38} Candidates</span>
+                    <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                      {c.description}
+                    </p>
+
+                    {/* Concurrent Subject Chips */}
+                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-1.5">
+                      {c.subjects.map(s => (
+                        <span
+                          key={s.id}
+                          className="px-2 py-0.5 rounded text-[9px] font-bold"
+                          style={{
+                            backgroundColor: `${s.color || '#3b82f6'}15`,
+                            color: s.color || '#3b82f6',
+                            border: `1px solid ${s.color || '#3b82f6'}30`
+                          }}
+                        >
+                          {s.code}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>{c.subjects.length} Concurrent Subjects</span>
+                      <span>{c.enrolled_count || 0} Candidates</span>
                     </div>
                   </div>
                 </div>
               )
             })}
           </div>
+        </div>
 
-          {/* Right: Active Course Interactive Roadmap (8/12) */}
-          {activeCourse && (
-            <div className="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
-              {/* Header & Controls */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
-                      {activeCourse.level}
-                    </span>
-                    <span className="text-xs text-slate-500">Track: /{activeCourse.slug}</span>
-                  </div>
-                  <h2 className="text-xl font-extrabold text-white">{activeCourse.title}</h2>
-                </div>
-
+        {/* Right Column: Active Course Dynamic Stage (8 Cols) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Active Course Spotlight Card */}
+          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-                    <button
-                      onClick={() => setViewMode('roadmap')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        viewMode === 'roadmap' ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Day-Wise Roadmap
-                    </button>
-                    <button
-                      onClick={() => setViewMode('modules')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        viewMode === 'modules' ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Subject Syllabi
-                    </button>
-                  </div>
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    {activeCourse.level}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Track: /{activeCourse.slug}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white">
+                  {activeCourse.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                  {activeCourse.description}
+                </p>
+              </div>
 
-                  {isStudent && !isEnrolled(activeCourse.id) && (
+              <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0">
+                {isStudent && (
+                  enrollments.some(e => e.course_id === activeCourse.id) ? (
+                    <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" /> Active Candidate
+                    </div>
+                  ) : (
                     <button
                       onClick={() => handleEnroll(activeCourse.id)}
                       disabled={enrollingId === activeCourse.id}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all"
                     >
-                      <Plus className="w-3.5 h-3.5 text-slate-950" />
-                      <span>{enrollingId === activeCourse.id ? 'Enrolling...' : 'Enroll'}</span>
+                      <GraduationCap className="w-4 h-4" />
+                      <span>{enrollingId === activeCourse.id ? 'Enrolling...' : 'Enroll in Track'}</span>
                     </button>
-                  )}
+                  )
+                )}
+
+                {setCurrentTab && (
+                  <button
+                    onClick={() => setCurrentTab('classroom')}
+                    className="px-4 py-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 text-xs font-bold flex items-center gap-1.5 transition-all"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span>Live Classrooms</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Progress Metrics Bar */}
+            <div className="mt-6 pt-5 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] font-bold">
+                  <span className="text-slate-400">Syllabus Completion</span>
+                  <span className="text-amber-400">{progressPercent}%</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                  <div
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
               </div>
 
-              {/* ── ROADMAP VIEW (Day-wise & Weekend Milestones) ─────────────── */}
-              {viewMode === 'roadmap' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                      <Flag className="w-4 h-4 text-amber-400" />
-                      <span>Curriculum Phases & Weekend Milestones ({currentRoadmap.length})</span>
-                    </div>
+              <div className="text-center sm:text-left">
+                <span className="text-xs text-slate-400 font-medium">Days Completed: </span>
+                <span className="text-xs font-bold text-white">{completedDaysCount} / {totalDaysCount} Days</span>
+              </div>
 
-                    {canControl && (
-                      <button
-                        onClick={() => setShowAddMilestoneModal(true)}
-                        className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Phase / Milestone</span>
-                      </button>
-                    )}
-                  </div>
+              <div className="flex justify-end gap-1.5">
+                <button
+                  onClick={() => setViewMode('roadmap')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    viewMode === 'roadmap'
+                      ? 'bg-amber-500 text-slate-950 shadow-md'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Day-Wise Roadmap
+                </button>
+                <button
+                  onClick={() => setViewMode('subjects')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    viewMode === 'subjects'
+                      ? 'bg-amber-500 text-slate-950 shadow-md'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Parallel Subjects
+                </button>
+                <button
+                  onClick={() => setViewMode('resources')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    viewMode === 'resources'
+                      ? 'bg-amber-500 text-slate-950 shadow-md'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Resources ({allCourseResources.length})
+                </button>
+              </div>
+            </div>
+          </div>
 
-                  {/* Timeline Roadmap Cards */}
-                  <div className="space-y-5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-gradient-to-b before:from-amber-500 before:via-slate-800 before:to-slate-800">
-                    {currentRoadmap.map((ms, msIdx) => {
-                      const isCompleted = ms.status === 'completed'
-                      const isInProgress = ms.status === 'in_progress'
-
-                      return (
-                        <div key={ms.id} className="relative pl-10 space-y-3 group">
-                          {/* Node Icon */}
-                          <div
-                            onClick={() => canControl && handleToggleMilestoneStatus(ms.id)}
-                            className={`absolute left-0 top-1 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border cursor-pointer transition-all shadow-md ${
-                              isCompleted
-                                ? 'bg-amber-500 text-slate-950 border-amber-400'
-                                : isInProgress
-                                ? 'bg-slate-950 text-amber-400 border-amber-400 animate-pulse ring-2 ring-amber-500/40'
-                                : 'bg-slate-950 text-slate-500 border-slate-700'
-                            }`}
-                            title={canControl ? 'Click to toggle milestone status' : ''}
-                          >
-                            {isCompleted ? <Check className="w-4 h-4 text-slate-950" /> : msIdx + 1}
-                          </div>
-
-                          {/* Milestone Box */}
-                          <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/30 transition-all space-y-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-900 pb-3">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                                    {ms.week_label}
-                                  </span>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                      isCompleted
-                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                        : isInProgress
-                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                        : 'bg-slate-800 text-slate-400'
-                                    }`}
-                                  >
-                                    {ms.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <h3 className="font-bold text-sm text-white mt-1">{ms.title}</h3>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                {canControl && (
-                                  <>
-                                    <button
-                                      onClick={() => {
-                                        setTargetMilestoneId(ms.id)
-                                        setNewDayNumber((ms.days?.length || 0) + 1)
-                                        setShowAddDayModal(true)
-                                      }}
-                                      className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                                      title="Add Day Topic"
-                                    >
-                                      <Plus className="w-3 h-3 text-amber-400" />
-                                      <span>Add Day</span>
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setResourceMilestoneId(ms.id)
-                                        setShowShareModal(true)
-                                      }}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                                      title="Attach Resource to this phase"
-                                    >
-                                      <Share2 className="w-3 h-3 text-amber-400" />
-                                      <span>Share</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteMilestone(ms.id)}
-                                      className="p-1 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
-                                      title="Delete Milestone"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Weekend Milestone Deliverable Banner */}
-                            <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/30 flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-2.5">
-                                <Flag className="w-4 h-4 text-amber-400 shrink-0" />
-                                <div>
-                                  <p className="text-[10px] uppercase font-black text-amber-400 tracking-wider">
-                                    Weekend Milestone Capstone Deliverable:
-                                  </p>
-                                  <p className="text-xs font-bold text-slate-200">{ms.deliverable}</p>
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-mono text-slate-400 px-2 py-0.5 bg-slate-950 rounded border border-slate-800 shrink-0">
-                                Target: {ms.due_date}
-                              </span>
-                            </div>
-
-                            {/* Day-wise Schedule Breakdown */}
-                            {ms.days && ms.days.length > 0 && (
-                              <div className="space-y-2 pt-1">
-                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                  Day-Wise Curriculum Breakdown:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {ms.days.map((day) => (
-                                    <div
-                                      key={day.day_number}
-                                      onClick={() => canControl && handleToggleDayComplete(ms.id, day.day_number)}
-                                      className={`p-2.5 rounded-xl border flex items-start gap-2 text-xs transition-all ${
-                                        day.completed
-                                          ? 'bg-slate-950/60 border-emerald-500/30 text-slate-300'
-                                          : 'bg-slate-950/90 border-slate-800/80 text-slate-300'
-                                      } ${canControl ? 'cursor-pointer hover:border-amber-500/40' : ''}`}
-                                    >
-                                      <div
-                                        className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center text-[9px] shrink-0 ${
-                                          day.completed ? 'bg-emerald-500 text-slate-950 font-black' : 'border border-slate-700 bg-slate-900'
-                                        }`}
-                                      >
-                                        {day.completed && <Check className="w-3 h-3 text-slate-950" />}
-                                      </div>
-                                      <div>
-                                        <p className="font-semibold leading-tight text-white">{day.title}</p>
-                                        {day.description && (
-                                          <p className="text-[10px] text-slate-400 mt-0.5">{day.description}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Attached Resources for this Milestone */}
-                            {ms.resources && ms.resources.length > 0 && (
-                              <div className="pt-2 border-t border-slate-900 space-y-2">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                  <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
-                                  Phase Learning Materials & Code Repositories:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {ms.resources.map((res) => (
-                                    <div
-                                      key={res.id}
-                                      className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/20 flex items-center justify-between gap-2 hover:border-amber-500/40 transition-all"
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        {res.type === 'github' ? (
-                                          <GitBranch className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                                        ) : res.type === 'code_snippet' ? (
-                                          <Code className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                                        ) : (
-                                          <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                        )}
-                                        <div className="truncate">
-                                          <p className="text-[11px] font-bold text-slate-200 truncate">{res.title}</p>
-                                          <p className="text-[9px] text-slate-500">{res.shared_by}</p>
-                                        </div>
-                                      </div>
-
-                                      <a
-                                        href={res.url_or_content}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-slate-950 transition-colors shrink-0"
-                                        title="Open / Download Resource"
-                                      >
-                                        <ExternalLink className="w-3 h-3" />
-                                      </a>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+          {/* ── SHOWCASE VIEW 1: DAY-WISE TECHNICAL ROADMAP ────────────────── */}
+          {viewMode === 'roadmap' && (
+            <div className="space-y-6">
+              {/* Subject quick filter buttons */}
+              {activeCourse.subjects.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">Filter Subject:</span>
+                  <button
+                    onClick={() => setSelectedSubjectFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                      selectedSubjectFilter === 'all'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    All Subjects ({activeCourse.subjects.length})
+                  </button>
+                  {activeCourse.subjects.map(sub => (
+                    <button
+                      key={sub.id}
+                      onClick={() => setSelectedSubjectFilter(sub.code)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                        selectedSubjectFilter === sub.code
+                          ? 'bg-slate-800 text-white border'
+                          : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                      style={{
+                        borderColor: selectedSubjectFilter === sub.code ? sub.color : undefined,
+                        color: selectedSubjectFilter === sub.code ? sub.color : undefined
+                      }}
+                    >
+                      {sub.code}: {sub.name.slice(0, 20)}...
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {/* ── MODULES VIEW (Subject Syllabi Breakdown) ────────────────── */}
-              {viewMode === 'modules' && (
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
-                    Subject Modules & Faculty Assignments ({activeCourse.subjects.length})
-                  </h4>
+              {/* Milestones and Days Container */}
+              <div className="space-y-6">
+                {activeMilestones.map((milestone, mIdx) => {
+                  const filteredDays = selectedSubjectFilter === 'all'
+                    ? milestone.days
+                    : milestone.days.filter(d => d.subject_code === selectedSubjectFilter || !d.subject_code)
 
-                  <div className="space-y-3">
-                    {activeCourse.subjects.map((sub, idx) => (
-                      <div
-                        key={sub.id || idx}
-                        className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all space-y-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase"
-                              style={{
-                                backgroundColor: `${sub.color || '#f59e0b'}20`,
-                                borderColor: `${sub.color || '#f59e0b'}40`,
-                                borderWidth: '1px',
-                                color: sub.color || '#f59e0b',
-                              }}
-                            >
-                              {sub.code}
+                  if (selectedSubjectFilter !== 'all' && filteredDays.length === 0) return null
+
+                  return (
+                    <div
+                      key={milestone.id}
+                      className="p-5 sm:p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all space-y-4"
+                    >
+                      {/* Milestone Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-extrabold text-xs flex items-center justify-center border border-amber-500/30">
+                              {mIdx + 1}
                             </span>
-                            <h5 className="font-bold text-xs text-white">{sub.name}</h5>
+                            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-950 text-amber-400 border border-amber-500/20">
+                              {milestone.week_label}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                              milestone.status === 'completed'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : milestone.status === 'in_progress'
+                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {milestone.status.replace('_', ' ')}
+                            </span>
                           </div>
-
-                          <span className="text-[11px] text-slate-400 font-medium">
-                            Instructor: <strong className="text-amber-300">{sub.teacher_name || 'Assigned Faculty'}</strong>
-                          </span>
+                          <h3 className="text-base sm:text-lg font-black text-white">
+                            {milestone.title}
+                          </h3>
                         </div>
 
-                        {sub.description && (
-                          <p className="text-[11px] text-slate-400 pl-1">{sub.description}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-slate-400 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
+                            Deliverable: <strong className="text-slate-200">{milestone.deliverable}</strong>
+                          </span>
+
+                          {canControl && (
+                            <button
+                              onClick={() => {
+                                setTargetMilestoneId(milestone.id)
+                                setNewDayNumber(totalDaysCount + 1)
+                                setShowAddDayModal(true)
+                              }}
+                              className="p-1.5 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 transition-all"
+                              title="Add Day Topic to this milestone"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Day Topics Timeline Grid */}
+                      <div className="space-y-3 pt-1">
+                        {filteredDays.length === 0 ? (
+                          <p className="text-xs text-slate-500 italic py-2">No day topics configured for this filter.</p>
+                        ) : (
+                          filteredDays.map((day) => {
+                            const isChecked = completedDayKeys[`${trackKey}_d${day.day_number}`] ?? day.completed ?? false
+                            const subjectMeta = activeCourse.subjects.find(s => s.code === day.subject_code)
+
+                            return (
+                              <div
+                                key={day.day_number}
+                                className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-3 ${
+                                  isChecked
+                                    ? 'bg-slate-950/90 border-emerald-500/30 shadow-sm'
+                                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3 flex-1">
+                                  {/* Checkbox */}
+                                  <button
+                                    onClick={() => toggleDayCompletion(day.day_number)}
+                                    className={`w-6 h-6 rounded-lg shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                                      isChecked
+                                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                                        : 'bg-slate-900 border border-slate-700 hover:border-amber-400 text-transparent'
+                                    }`}
+                                  >
+                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  </button>
+
+                                  <div className="space-y-1 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-xs font-black text-white">
+                                        Day {day.day_number}
+                                      </span>
+
+                                      {day.subject_code && (
+                                        <span
+                                          className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase"
+                                          style={{
+                                            backgroundColor: `${subjectMeta?.color || '#3b82f6'}20`,
+                                            color: subjectMeta?.color || '#3b82f6',
+                                            border: `1px solid ${subjectMeta?.color || '#3b82f6'}40`
+                                          }}
+                                        >
+                                          {day.subject_code}
+                                        </span>
+                                      )}
+
+                                      {isChecked && (
+                                        <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3" /> Completed
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <h4 className="text-sm font-bold text-slate-200">
+                                      {day.title}
+                                    </h4>
+
+                                    {day.description && (
+                                      <p className="text-xs text-slate-400 leading-relaxed">
+                                        {day.description}
+                                      </p>
+                                    )}
+
+                                    {day.lab_task && (
+                                      <div className="mt-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-amber-300 flex items-start gap-2">
+                                        <Code className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                        <span><strong>Hands-On Lab:</strong> {day.lab_task}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {canControl && (
+                                  <button
+                                    onClick={() => handleDeleteDay(milestone.id, day.day_number)}
+                                    className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                                    title="Delete Day"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })
                         )}
                       </div>
-                    ))}
+
+                      {/* Milestone Attached Resources */}
+                      {milestone.resources && milestone.resources.length > 0 && (
+                        <div className="pt-3 border-t border-slate-800/80 flex flex-wrap gap-2 items-center">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Phase Resources:</span>
+                          {milestone.resources.map(res => (
+                            <a
+                              key={res.id}
+                              href={res.url_or_content}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium transition-all"
+                            >
+                              {res.type === 'github' ? <GitBranch className="w-3 h-3 text-cyan-400" /> : <FileText className="w-3 h-3 text-amber-400" />}
+                              <span>{res.title}</span>
+                              <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── SHOWCASE VIEW 2: PARALLEL RUNNING SUBJECTS & MODULES ─────── */}
+          {viewMode === 'subjects' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-amber-400" />
+                  Concurrently Executed Technical Modules ({activeCourse.subjects.length})
+                </h3>
+                <p className="text-xs text-slate-400">
+                  This training track incorporates parallel subjects taught concurrently by certified domain experts throughout the cohort.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeCourse.subjects.map((subj, idx) => (
+                  <div
+                    key={subj.id || idx}
+                    className="p-5 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase"
+                          style={{
+                            backgroundColor: `${subj.color || '#3b82f6'}20`,
+                            color: subj.color || '#3b82f6',
+                            border: `1px solid ${subj.color || '#3b82f6'}40`
+                          }}
+                        >
+                          {subj.code}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500">
+                          Module {idx + 1}
+                        </span>
+                      </div>
+
+                      <h4 className="text-sm font-black text-white">
+                        {subj.name}
+                      </h4>
+
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {subj.description || 'Comprehensive technical syllabus module covering hands-on labs, real-world case studies, and code assessments.'}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center text-[10px]">
+                          {(subj.teacher_name || 'F').charAt(0)}
+                        </div>
+                        <span className="text-slate-300 font-semibold">{subj.teacher_name || 'Faculty Specialist'}</span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedSubjectFilter(subj.code)
+                          setViewMode('roadmap')
+                        }}
+                        className="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                      >
+                        View Syllabus
+                      </button>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── SHOWCASE VIEW 3: SHARED TECHNICAL RESOURCES ─────────────── */}
+          {viewMode === 'resources' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-amber-400" />
+                    Technical Repositories, Slide Decks & Lab Manuals
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Official learning assets, starter boilerplates, and reference documentation for {activeCourse.title}.
+                  </p>
+                </div>
+
+                {canControl && (
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Upload Resource</span>
+                  </button>
+                )}
+              </div>
+
+              {allCourseResources.length === 0 ? (
+                <div className="p-8 text-center rounded-3xl bg-slate-900/40 border border-slate-800 text-slate-500 text-xs italic">
+                  No resources uploaded yet for this course track.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {allCourseResources.map((res) => (
+                    <a
+                      key={res.id}
+                      href={res.url_or_content}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/40 hover:bg-slate-900 transition-all flex items-start gap-3 group"
+                    >
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 group-hover:border-amber-500/30 shrink-0">
+                        {res.type === 'github' ? (
+                          <GitBranch className="w-5 h-5 text-cyan-400" />
+                        ) : res.type === 'pdf' || res.type === 'slides' ? (
+                          <FileText className="w-5 h-5 text-amber-400" />
+                        ) : (
+                          <Code className="w-5 h-5 text-emerald-400" />
+                        )}
+                      </div>
+
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                            {res.type.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] text-slate-500">{res.shared_at}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                          {res.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          By {res.shared_by}
+                        </p>
+                      </div>
+
+                      <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white shrink-0 mt-1" />
+                    </a>
+                  ))}
                 </div>
               )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* ── MODAL: ADD ROADMAP MILESTONE (Teacher / Admin) ──────────────────── */}
+      {/* ── MODAL: ADD MILESTONE PHASE ────────────────────────────────────── */}
       {showAddMilestoneModal && (
-        <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-amber-400" />
-                Add Curriculum Milestone to Roadmap
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Plus className="w-4 h-4 text-amber-400" />
+                Add Milestone Phase to {activeCourse.title}
               </h3>
               <button onClick={() => setShowAddMilestoneModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddMilestone} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Week Duration</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Week 7 - 8"
-                    value={milestoneWeekLabel}
-                    onChange={(e) => setMilestoneWeekLabel(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Target Due Date</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Weekend 8"
-                    value={milestoneDueDate}
-                    onChange={(e) => setMilestoneDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Week Range Label</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Week 11 - 12"
+                  value={milestoneWeekLabel}
+                  onChange={e => setMilestoneWeekLabel(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Milestone Phase Title</label>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Milestone Focus Title</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g., Multi-Agent Systems & LangGraph Workflows"
+                  placeholder="e.g. Multi-Agent Workflows with LangGraph"
                   value={milestoneTitle}
-                  onChange={(e) => setMilestoneTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setMilestoneTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Weekend Capstone Deliverable</label>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Weekend Deliverable / Lab Target</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g., Build Autonomous Researcher Agent with Human Approval"
+                  placeholder="e.g. Autonomous Supervisor System Deployment"
                   value={milestoneDeliverable}
-                  onChange={(e) => setMilestoneDeliverable(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setMilestoneDeliverable(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddMilestoneModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20"
-                >
-                  Publish Milestone
-                </button>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Milestone Target Due</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Weekend 10"
+                  value={milestoneDueDate}
+                  onChange={e => setMilestoneDueDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                />
               </div>
-            </form>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowAddMilestoneModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMilestone}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black"
+              >
+                Save Milestone
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── MODAL: ADD DAY TOPIC (Teacher / Admin) ───────────────────────────── */}
+      {/* ── MODAL: ADD DAY TOPIC ──────────────────────────────────────────── */}
       {showAddDayModal && (
-        <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-400" />
-                Add Day-Wise Topic to Milestone
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Code className="w-4 h-4 text-amber-400" />
+                Add Daily Syllabus Topic
               </h3>
               <button onClick={() => setShowAddDayModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddDayTopic} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Day Number</label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  value={newDayNumber}
-                  onChange={(e) => setNewDayNumber(parseInt(e.target.value, 10) || 1)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
-                />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">Day Number</label>
+                  <input
+                    type="number"
+                    value={newDayNumber}
+                    onChange={e => setNewDayNumber(parseInt(e.target.value) || 1)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">Subject Module</label>
+                  <select
+                    value={newDaySubjectCode}
+                    onChange={e => setNewDaySubjectCode(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">Default Module</option>
+                    {activeCourse.subjects.map(s => (
+                      <option key={s.id} value={s.code}>{s.code} - {s.name.slice(0, 18)}...</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Topic Title</label>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Topic Title</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g., Day 12: Reranking with Cross-Encoders"
+                  placeholder="e.g. AsyncIO Coroutines & Event Loops"
                   value={newDayTitle}
-                  onChange={(e) => setNewDayTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setNewDayTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Description / Focus Outcome</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Precision scoring and evaluating context recall"
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Core concepts covered during instruction..."
                   value={newDayDesc}
-                  onChange={(e) => setNewDayDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setNewDayDesc(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddDayModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20"
-                >
-                  Save Day Topic
-                </button>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Hands-on Lab Exercise</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Build async worker processing 1,000 tasks"
+                  value={newDayLabTask}
+                  onChange={e => setNewDayLabTask(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                />
               </div>
-            </form>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowAddDayModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddDayTopic}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black"
+              >
+                Add Topic
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── MODAL: SHARE RESOURCE TO MILESTONE ─────────────────────────────── */}
+      {/* ── MODAL: SHARE RESOURCE ─────────────────────────────────────────── */}
       {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-amber-400" />
-                Publish Learning Resource to Roadmap
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-amber-400" />
+                Share Learning Material
               </h3>
               <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleShareResource} className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Resource Title</label>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Resource Title</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g., Week 4 LangChain & Agent Architecture Slides (PDF)"
+                  placeholder="e.g. LangChain LCEL Cheatsheet (PDF)"
                   value={resourceTitle}
-                  onChange={(e) => setResourceTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setResourceTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Resource Type</label>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">Type</label>
                   <select
                     value={resourceType}
-                    onChange={(e) => setResourceType(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                    onChange={e => setResourceType(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="pdf">PDF Document / Slides</option>
-                    <option value="github">GitHub Repository</option>
-                    <option value="lab_manual">Lab Manual / Exercise</option>
-                    <option value="code_snippet">Code Snippet / Gist</option>
-                    <option value="notes">Lecture Notes</option>
+                    <option value="pdf">PDF Document</option>
+                    <option value="github">GitHub Repo</option>
+                    <option value="lab_manual">Lab Manual</option>
+                    <option value="slides">Presentation Slides</option>
+                    <option value="code_snippet">Code Snippet</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Published By</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={user.display_name || 'Faculty Member'}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-400"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">Target Phase</label>
+                  <select
+                    value={resourceMilestoneId || ''}
+                    onChange={e => setResourceMilestoneId(e.target.value || undefined)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">General Course</option>
+                    {activeMilestones.map(m => (
+                      <option key={m.id} value={m.id}>{m.week_label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Resource URL / Link</label>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">URL / Resource Link</label>
                 <input
-                  type="url"
-                  required
-                  placeholder="https://github.com/... or https://drive.google.com/..."
+                  type="text"
+                  placeholder="https://..."
                   value={resourceUrl}
-                  onChange={(e) => setResourceUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={e => setResourceUrl(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowShareModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20"
-                >
-                  Publish Resource
-                </button>
-              </div>
-            </form>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddResource}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black"
+              >
+                Share Resource
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   )
 }
-
-export default CoursesPage
