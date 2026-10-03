@@ -4,13 +4,11 @@ import {
   BookOpen,
   CheckSquare,
   FileText,
-  Building2,
   Code2,
   Video,
   Users,
   LogOut,
   CalendarDays,
-  BrainCircuit,
   Award,
   ChevronRight,
 } from 'lucide-react'
@@ -58,37 +56,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
     userRole === 'admin'
       ? 'Timetable Engine'
       : userRole === 'teacher'
-      ? 'My Timetable'
-      : 'Class Schedule'
+      ? 'Faculty Schedule'
+      : 'Batch Timetable'
 
   const navItems = [
-    { id: 'overview',              label: 'Dashboard',            icon: LayoutDashboard },
+    { id: 'overview',              label: 'Dashboard',             icon: LayoutDashboard },
+    { id: 'courses',               label: 'Courses & Subjects',    icon: BookOpen },
+    { id: 'classroom',             label: 'Live Zoom Classes',     icon: Video },
     { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
-    { id: 'courses',               label: 'Course Catalog',        icon: BookOpen },
+    { id: 'coding',                label: 'Coding Playground',     icon: Code2 },
     ...(userRole !== 'admin'
-      ? [{ id: 'assessments',      label: 'Assessments',          icon: CheckSquare }]
-      : []),
-    {
-      id: 'learning-intelligence',
-      label:
-        userRole === 'student'
-          ? 'My Learning Agent'
-          : userRole === 'admin'
-          ? 'School Cognitive Radar'
-          : 'Learning Intelligence',
-      icon: BrainCircuit,
-    },
-    ...(userRole !== 'admin'
-      ? [{ id: 'assignments',      label: 'Assignments',          icon: FileText }]
+      ? [{ id: 'assignments',      label: 'Assignments',           icon: FileText }]
       : []),
     ...(userRole !== 'admin'
-      ? [{ id: 'certificates',     label: 'Certificates',         icon: Award }]
+      ? [{ id: 'assessments',      label: 'Assessments',           icon: CheckSquare }]
       : []),
-    { id: 'organizations',         label: 'Organizations',        icon: Building2 },
-    { id: 'coding',                label: 'Coding Playground',    icon: Code2 },
-    { id: 'classroom',             label: 'Live Classrooms',      icon: Video },
+    ...(userRole !== 'admin'
+      ? [{ id: 'certificates',     label: 'Certificates',          icon: Award }]
+      : []),
     ...(userRole === 'admin'
-      ? [{ id: 'admin',            label: 'User Management',      icon: Users }]
+      ? [{ id: 'admin',            label: 'Institute Admin',       icon: Users }]
       : []),
   ]
 
@@ -107,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="relative group">
             <img
               src="/acharya_logo.png"
-              alt="Acharya LMS"
+              alt="Acharya Institute LMS"
               className="w-10 h-10 rounded-xl object-cover select-none shadow-md ring-1 ring-amber-500/40"
               style={{
                 boxShadow: '0 0 18px rgba(245, 158, 11, 0.25)',
@@ -146,7 +133,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {navItems.map((item) => {
           const Icon = item.icon
           const active = currentTab === item.id
-          const isAiItem = item.id === 'learning-intelligence'
           return (
             <button
               key={item.id}
@@ -154,17 +140,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 relative overflow-hidden"
               style={{
                 background: active
-                  ? isAiItem
-                    ? 'linear-gradient(90deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.12) 100%)'
-                    : 'linear-gradient(90deg, rgba(245,158,11,0.2) 0%, rgba(234,88,12,0.1) 100%)'
+                  ? 'linear-gradient(90deg, rgba(245,158,11,0.2) 0%, rgba(234,88,12,0.1) 100%)'
                   : 'transparent',
                 color: active ? '#FEF08A' : '#CBD5E1',
                 fontWeight: active ? 700 : 400,
                 fontSize: '0.8125rem',
                 border: active
-                  ? isAiItem
-                    ? '1px solid rgba(251,191,36,0.35)'
-                    : '1px solid rgba(245,158,11,0.35)'
+                  ? '1px solid rgba(245,158,11,0.35)'
                   : '1px solid transparent',
                 cursor: 'pointer',
                 boxShadow: active ? '0 2px 12px rgba(245,158,11,0.15)' : 'none',
@@ -186,27 +168,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                   width: 16,
                   height: 16,
-                  color: active
-                    ? isAiItem
-                      ? '#FDE047'
-                      : '#FBBF24'
-                    : '#94A3B8',
+                  color: active ? '#FBBF24' : '#94A3B8',
                   flexShrink: 0,
                   filter: active ? 'drop-shadow(0 0 6px rgba(245,158,11,0.6))' : 'none',
                 }}
               />
               <span className="flex-1 truncate">{item.label}</span>
-              {isAiItem && !active && (
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                  AI
-                </span>
-              )}
               {active && (
                 <ChevronRight
                   style={{
                     width: 14,
                     height: 14,
-                    color: isAiItem ? '#FDE047' : '#FBBF24',
+                    color: '#FBBF24',
                     opacity: 0.9,
                   }}
                 />

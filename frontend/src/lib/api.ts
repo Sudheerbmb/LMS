@@ -130,8 +130,6 @@ export type CourseListResponse = { items: Course[]; total: number; page: number;
 
 export type DashboardSummary = { role: User['role']; user: User; stats: Record<string, number> }
 
-export type AdminUser = User & { created_at: string }
-
 export type Notification = { id: string; notification_type: string; title: string; body: string; read_at: string | null; created_at: string }
 
 export type AssessmentQuestion = { id: string; question_text: string; question_type: string; options?: any; points: number }
@@ -345,18 +343,117 @@ export const createAnnouncement = (
 
 export const getDashboardSummary = () => request<DashboardSummary>('/api/v1/dashboard/summary')
 
-export const getAdminUsers = () => request<AdminUser[]>('/api/v1/admin/users')
+export type AdminInstituteSubject = {
+  id: string
+  code: string
+  name: string
+  description?: string
+  color: string
+  teacher_id?: string | null
+  teacher_name?: string
+}
+
+export type AdminInstituteCourse = {
+  id: string
+  title: string
+  slug: string
+  description?: string
+  level: string
+  price: number
+  is_free: boolean
+  status: string
+  enrolled_count: number
+  subjects: AdminInstituteSubject[]
+}
+
+export type AdminInstituteUser = User & {
+  created_at: string
+  enrolled_courses?: Array<{ id: string; title: string; slug: string }>
+  assigned_subjects?: Array<{ id: string; code: string; name: string; course_title: string }>
+}
+
+export type AdminUser = AdminInstituteUser
+
+export const getAdminUsers = () => request<AdminInstituteUser[]>('/api/v1/admin/users')
+
+export const createAdminUser = (payload: {
+  email: string
+  display_name: string
+  password: string
+  role: 'admin' | 'teacher' | 'student'
+  phone_number?: string
+  course_ids?: string[]
+}) => request<AdminInstituteUser>('/api/v1/admin/users', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+})
+
+export const updateAdminUser = (
+  userId: string,
+  payload: {
+    display_name?: string
+    phone_number?: string
+    password?: string
+    role?: 'admin' | 'teacher' | 'student'
+    status?: 'active' | 'pending' | 'suspended' | 'rejected'
+    course_ids?: string[]
+  }
+) => request<AdminInstituteUser>(`/api/v1/admin/users/${userId}`, {
+  method: 'PUT',
+  body: JSON.stringify(payload),
+})
+
+export const deleteAdminUser = (userId: string) =>
+  request<{ id: string; deleted: boolean }>(`/api/v1/admin/users/${userId}`, {
+    method: 'DELETE',
+  })
+
+export const getAdminCourses = () => request<AdminInstituteCourse[]>('/api/v1/admin/courses')
+
+export const createAdminCourse = (payload: {
+  title: string
+  slug?: string
+  description?: string
+  level?: string
+  price?: number
+  subjects?: Array<{ code: string; name: string; description?: string; color?: string; teacher_id?: string | null }>
+}) => request<AdminInstituteCourse>('/api/v1/admin/courses', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+})
+
+export const addAdminCourseSubject = (
+  courseId: string,
+  payload: { code: string; name: string; description?: string; color?: string; teacher_id?: string | null }
+) => request<AdminInstituteSubject>(`/api/v1/admin/courses/${courseId}/subjects`, {
+  method: 'POST',
+  body: JSON.stringify(payload),
+})
+
+export const deleteAdminCourseSubject = (courseId: string, subjectId: string) =>
+  request<{ id: string; deleted: boolean }>(`/api/v1/admin/courses/${courseId}/subjects/${subjectId}`, {
+    method: 'DELETE',
+  })
+
+export const enrollStudentInCourse = (userId: string, courseId: string) =>
+  request<{ user_id: string; course_id: string; status: string }>(
+    `/api/v1/admin/enrollments?user_id=${userId}&course_id=${courseId}`,
+    { method: 'POST' }
+  )
+
+export const unenrollStudentFromCourse = (userId: string, courseId: string) =>
+  request<{ user_id: string; course_id: string; status: string }>(
+    `/api/v1/admin/enrollments/${userId}/${courseId}`,
+    { method: 'DELETE' }
+  )
 
 export const approveUser = (userId: string, role: 'student' | 'teacher') =>
-
   request<{ id: string; role: string; status: string }>(`/api/v1/admin/users/${userId}/approve`, {
-
-    method: 'POST', body: JSON.stringify({ role }),
-
+    method: 'POST',
+    body: JSON.stringify({ role }),
   })
 
 export const rejectUser = (userId: string) =>
-
   request<{ id: string; status: string }>(`/api/v1/admin/users/${userId}/reject`, { method: 'POST' })
 
 export const getNotifications = () => request<Notification[]>('/api/v1/notifications')

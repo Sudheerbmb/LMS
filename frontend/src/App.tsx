@@ -17,12 +17,10 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { AssessmentsPage } from './pages/AssessmentsPage'
 import { AssignmentsPage } from './pages/AssignmentsPage'
-import { OrganizationsPage } from './pages/OrganizationsPage'
 import { CodingPage } from './pages/CodingPage'
 import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
-import { LearningIntelligencePage } from './pages/LearningIntelligencePage'
 import { CertificatesPage } from './pages/CertificatesPage'
 import { OmniCopilot } from './components/OmniCopilot'
 
@@ -115,7 +113,7 @@ export function App() {
       <div style={{ minHeight: '100vh', background: '#080A12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#8B5CF6', borderRightColor: '#22D3EE', animation: 'spin 0.75s linear infinite', margin: '0 auto 16px', boxShadow: '0 0 20px rgba(139,92,246,0.3)' }} />
-          <p style={{ fontSize: 11, color: '#A7B0C0', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading Acharya LMS...</p>
+          <p style={{ fontSize: 11, color: '#A7B0C0', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading Acharya Institute LMS...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -128,7 +126,6 @@ export function App() {
       <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", background: '#080A12', color: '#F8FAFC' }}>
 
         {/* Left branding panel */}
-        {/* Left branding panel */}
         <div style={{ width: 420, background: '#06080F', borderRight: '1px solid rgba(245,158,11,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 3rem', color: '#F8FAFC', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
           {/* Subtle Ambient Glow */}
           <div style={{ position: 'absolute', top: -100, left: -100, width: 320, height: 320, background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -138,7 +135,7 @@ export function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '2.5rem', position: 'relative', zIndex: 1 }}>
             <img
               src="/acharya_logo.png"
-              alt="Acharya LMS Logo"
+              alt="Acharya Institute LMS Logo"
               style={{
                 width: 52,
                 height: 52,
@@ -150,24 +147,24 @@ export function App() {
             />
             <div>
               <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em', color: '#F8FAFC' }}>Acharya LMS</div>
-              <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Academic AI OS</div>
+              <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Training Institute OS</div>
             </div>
           </div>
 
           <h2 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.25, marginBottom: 14, letterSpacing: '-0.02em', color: '#F8FAFC', position: 'relative', zIndex: 1 }}>
-            Illuminating Minds Through Knowledge & AI
+            Professional Technical Education & Live Classrooms
           </h2>
           <p style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.75, marginBottom: '2.25rem', position: 'relative', zIndex: 1 }}>
-            Rooted in timeless scholarly traditions, Acharya LMS empowers educators, enriches student learning, and unifies institutional intelligence with real-time classrooms and cognitive defense agents.
+            Engineered for modern training institutes. Manage full-stack courses, multi-subject modules, live Zoom lectures, cloud recordings, assignments, and verified certificates seamlessly.
           </p>
 
-          {/* Feature list — sleek dark border items */}
+          {/* Feature list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', zIndex: 1 }}>
             {[
-              { label: 'Cognitive Learner Radar', desc: 'Real-time telemetry and adaptive learning paths' },
-              { label: 'Live Video Classrooms', desc: 'Cloud recording, attendance, and interaction streams' },
-              { label: 'School-Wide AI Analytics', desc: 'Predictive performance and institutional oversight' },
-              { label: 'Autonomous Timetabling', desc: 'Conflict-free constraint-satisfaction scheduling' },
+              { label: 'Modular Course & Subject Architecture', desc: 'Group multiple classes (Python, HTML, JS, APIs) under each course track' },
+              { label: 'HD Zoom Live Video Sessions', desc: 'Synchronized live streams, cloud recording playback, and AI dialogue transcripts' },
+              { label: 'Flexible Batch Enrollment', desc: 'Enroll students and assign specialized faculty per subject module' },
+              { label: 'Integrated Coding & Labs', desc: 'Live code executions, interactive assessments, and automated grading' },
             ].map(f => (
               <div key={f.label} style={{ paddingLeft: 14, borderLeft: '2px solid rgba(245,158,11,0.6)' }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: '#F8FAFC' }}>{f.label}</div>
@@ -184,10 +181,10 @@ export function App() {
             {/* Heading */}
             <div style={{ marginBottom: 28 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.02em' }}>
-                {authMode === 'login' ? 'Sign in to Acharya LMS' : 'Create an Account'}
+                {authMode === 'login' ? 'Sign in to Acharya Institute' : 'Create an Account'}
               </h1>
               <p style={{ fontSize: 13, color: '#CBD5E1' }}>
-                {authMode === 'login' ? 'Enter your credentials to access your portal.' : 'Fill in your details to register.'}
+                {authMode === 'login' ? 'Enter your credentials to access your institute portal.' : 'Fill in your details to register.'}
               </p>
             </div>
 
@@ -212,17 +209,17 @@ export function App() {
                     <button type="button"
                       onClick={() => { setAuthEmail('admin@example.com'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
                       style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, color: '#FDE68A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                      System Admin
+                      System Administrator
                     </button>
                   </div>
 
                   {/* Teachers */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FB923C', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Faculty</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FB923C', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Faculty / Instructors</p>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                       {[
-                        ['sarah.connor@school.edu', 'Dr. Sarah — Math'],
-                        ['alan.turing@school.edu', 'Prof. Turing — CS'],
+                        ['sarah.connor@school.edu', 'Dr. Sarah — Python & Backend'],
+                        ['alan.turing@school.edu', 'Prof. Turing — Web & Data'],
                       ].map(([email, label]) => (
                         <button key={email} type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Teacher123!'); setAuthError(''); }}
@@ -235,12 +232,12 @@ export function App() {
 
                   {/* Students */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FDE047', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Students</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FDE047', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Enrolled Students</p>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                       {[
-                        ['student.class1@school.edu', 'Class 1-A'],
-                        ['student.class6@school.edu', 'Class 6-A'],
-                        ['student.class10@school.edu', 'Class 10-A'],
+                        ['student@example.com', 'Alex — Python Fullstack'],
+                        ['student.class1@school.edu', 'Aarav — Data Science'],
+                        ['student.class6@school.edu', 'Sanya — DevOps & Cloud'],
                       ].map(([email, label]) => (
                         <button key={email} type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Student123!'); setAuthError(''); }}
@@ -281,7 +278,7 @@ export function App() {
               )}
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Email Address</label>
-                <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="you@school.edu"
+                <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="you@institute.com"
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }} />
               </div>
               <div>
@@ -291,7 +288,7 @@ export function App() {
               </div>
               <button type="submit" disabled={submittingAuth}
                 style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)', color: '#111827', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: submittingAuth ? 'not-allowed' : 'pointer', opacity: submittingAuth ? 0.7 : 1, marginTop: 6, boxShadow: '0 4px 18px rgba(245,158,11,0.35)', letterSpacing: '-0.01em' }}>
-                {submittingAuth ? 'Signing in...' : authMode === 'login' ? 'Sign In to Workspace' : 'Create Account'}
+                {submittingAuth ? 'Signing in...' : authMode === 'login' ? 'Sign In to Institute' : 'Create Account'}
               </button>
             </form>
 
@@ -335,15 +332,13 @@ export function App() {
           {currentTab === 'overview' && (
             <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
           )}
-          {currentTab === 'timetable' && <TimetablePage user={user} />}
           {currentTab === 'courses' && <CoursesPage user={user} />}
-          {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
-          {currentTab === 'learning-intelligence' && <LearningIntelligencePage user={user} />}
-          {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
-          {currentTab === 'certificates' && user.role !== 'admin' && <CertificatesPage user={user} />}
-          {currentTab === 'organizations' && <OrganizationsPage user={user} />}
-          {currentTab === 'coding' && <CodingPage user={user} />}
           {currentTab === 'classroom' && <ClassroomPage user={user} />}
+          {currentTab === 'timetable' && <TimetablePage user={user} />}
+          {currentTab === 'coding' && <CodingPage user={user} />}
+          {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
+          {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
+          {currentTab === 'certificates' && user.role !== 'admin' && <CertificatesPage user={user} />}
           {currentTab === 'admin' && <AdminPage user={user} />}
         </main>
       </div>

@@ -252,9 +252,95 @@ async def _bootstrap_defaults() -> None:
             t.status = "active"
             t.email_verified = True
 
-        await session.commit()
+        # 7. Seed Training Institute Courses & Subjects
+        try:
+            from app.courses.models import Course, CourseSubject, CourseVersion
+            from app.enrollment.models import Enrollment
 
-        # 7. Generate Master Timetable if empty
+            institute_courses = [
+                {
+                    "title": "Full Stack Web Development with Python",
+                    "slug": "full-stack-python",
+                    "description": "Comprehensive full stack engineering program covering Python core, modern frontend (HTML5/CSS3/React), and FastAPI REST architecture.",
+                    "level": "intermediate",
+                    "subjects": [
+                        {"code": "PY-101", "name": "Python Core & Object-Oriented Programming", "color": "#3b82f6", "desc": "Data types, control flow, functions, OOP paradigms, and decorators."},
+                        {"code": "WEB-101", "name": "HTML5, CSS3 & Responsive Design", "color": "#f59e0b", "desc": "Semantic HTML, Flexbox, CSS Grid, Tailwind, and UI layouts."},
+                        {"code": "JS-201", "name": "JavaScript ES6+ & React Framework", "color": "#10b981", "desc": "DOM manipulation, async JS, React hooks, state management, and Vite."},
+                        {"code": "API-301", "name": "FastAPI, PostgreSQL & REST Services", "color": "#8b5cf6", "desc": "Async endpoints, SQLAlchemy ORM, migrations, JWT auth, and Docker."}
+                    ]
+                },
+                {
+                    "title": "Data Science & Artificial Intelligence",
+                    "slug": "data-science-ai",
+                    "description": "Master data manipulation, statistical modeling, machine learning algorithms, deep neural networks, and generative AI systems.",
+                    "level": "advanced",
+                    "subjects": [
+                        {"code": "DS-101", "name": "Data Analysis with Python & Pandas", "color": "#06b6d4", "desc": "NumPy arrays, Pandas DataFrames, data cleaning, and Matplotlib visualization."},
+                        {"code": "ML-201", "name": "Machine Learning & Scikit-Learn", "color": "#ec4899", "desc": "Supervised, unsupervised algorithms, regression, classification, and evaluation."},
+                        {"code": "AI-301", "name": "Deep Learning, PyTorch & LLMs", "color": "#f43f5e", "desc": "Neural networks, CNNs, Transformers, prompt engineering, and LLM fine-tuning."}
+                    ]
+                },
+                {
+                    "title": "Cloud Computing & DevOps Masterclass",
+                    "slug": "devops-cloud-mastery",
+                    "description": "Hands-on cloud infrastructure, continuous integration/continuous delivery, container orchestration with Kubernetes, and AWS deployment.",
+                    "level": "intermediate",
+                    "subjects": [
+                        {"code": "LNX-101", "name": "Linux Administration & Shell Scripting", "color": "#eab308", "desc": "Bash scripting, process management, permissions, and network troubleshooting."},
+                        {"code": "K8S-201", "name": "Docker Containerization & Kubernetes", "color": "#0284c7", "desc": "Dockerfiles, multi-stage builds, pods, deployments, services, and ingress."},
+                        {"code": "AWS-301", "name": "AWS Cloud Architecture & CI/CD Pipelines", "color": "#ea580c", "desc": "EC2, S3, RDS, GitHub Actions pipelines, and Terraform Infrastructure as Code."}
+                    ]
+                }
+            ]
+
+            teacher_list = (await session.scalars(select(User).where(User.role == "teacher"))).all()
+            teacher_idx = 0
+
+            for c_data in institute_courses:
+                existing_c = await session.scalar(select(Course).where(Course.slug == c_data["slug"]))
+                if not existing_c:
+                    c = Course(
+                        slug=c_data["slug"],
+                        status="published",
+                        level=c_data["level"],
+                        price=0.0,
+                        is_free=True,
+                    )
+                    session.add(c)
+                    await session.flush()
+
+                    v = CourseVersion(
+                        course_id=c.id,
+                        version_number=1,
+                        title=c_data["title"],
+                        description=c_data["description"]
+                    )
+                    session.add(v)
+
+                    for idx, s_info in enumerate(c_data["subjects"], start=1):
+                        t_id = teacher_list[teacher_idx % len(teacher_list)].id if teacher_list else None
+                        teacher_idx += 1
+                        session.add(CourseSubject(
+                            course_id=c.id,
+                            teacher_id=t_id,
+                            code=s_info["code"],
+                            name=s_info["name"],
+                            description=s_info["desc"],
+                            color=s_info["color"],
+                            order_index=idx
+                        ))
+
+                    # Enroll all existing students into the first course
+                    all_students = (await session.scalars(select(User).where(User.role == "student"))).all()
+                    for stu in all_students:
+                        session.add(Enrollment(user_id=stu.id, course_id=c.id, status="active"))
+
+            await session.commit()
+        except Exception as err:
+            print(f"[Bootstrap] seed institute courses error: {err}")
+
+        # 8. Generate Master Timetable if empty
         try:
             slot_count = await session.scalar(select(func.count(TimetableSlot.id)))
             if not slot_count or slot_count == 0:

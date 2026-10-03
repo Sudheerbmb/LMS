@@ -25,16 +25,16 @@ class Category(UUIDMixin, TimestampMixin, Base):
 
 class Course(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "courses"
-    __table_args__ = (UniqueConstraint("organization_id", "slug"),)
+    __table_args__ = (UniqueConstraint("slug"),)
 
-    organization_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True
     )
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
-    slug: Mapped[str] = mapped_column(String(160), nullable=False)
-    status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False)
+    slug: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(32), default="published", nullable=False)
     current_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     # Metadata
@@ -62,7 +62,29 @@ class Course(UUIDMixin, TimestampMixin, Base):
     reviews: Mapped[list["CourseReview"]] = relationship(
         back_populates="course", cascade="all, delete-orphan"
     )
+    subjects: Mapped[list["CourseSubject"]] = relationship(
+        "CourseSubject", back_populates="course", cascade="all, delete-orphan", order_by="CourseSubject.order_index"
+    )
     category_rel: Mapped[Category | None] = relationship(back_populates="courses")
+
+
+class CourseSubject(UUIDMixin, TimestampMixin, Base):
+    """Subjects / modules taught inside a training institute course."""
+    __tablename__ = "course_subjects"
+
+    course_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    teacher_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    code: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    color: Mapped[str] = mapped_column(String(32), default="#3b82f6", nullable=False)
+
+    course: Mapped["Course"] = relationship("Course", back_populates="subjects")
 
 
 class CourseVersion(UUIDMixin, TimestampMixin, Base):
