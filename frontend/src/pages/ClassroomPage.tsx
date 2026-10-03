@@ -419,13 +419,13 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [loading, setLoading] = useState(true)
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-
+  const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('timetable')
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
-
+  const [instantGrade, setInstantGrade] = useState<number>(5)
+  const [instantSection, setInstantSection] = useState<string>('A')
+  const [instantSubject, setInstantSubject] = useState<string>('Mathematics')
   const [customTitle, setCustomTitle] = useState('')
-
   const [instantLaunch, setInstantLaunch] = useState(true)
-
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
 
   
@@ -3843,73 +3843,64 @@ const handleTriggerTeacherCopilot = async (
   }
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
-
     e.preventDefault()
-
-    if (teacherSlots.length === 0) return
-
     setSubmittingSchedule(true)
 
     try {
-
-      const selectedSlot = teacherSlots[selectedSlotIndex]
-
       const now = new Date()
-
       const startIso = now.toISOString()
-
       const endIso = new Date(now.getTime() + 45 * 60 * 1000).toISOString()
 
-      const title = customTitle.trim() || `${selectedSlot.subject_name} (Grade ${selectedSlot.grade_number}-${selectedSlot.section_name})`
+      let grade_number = 5
+      let section_name = 'A'
+      let subject_code = 'MATH'
+      let subject_name = 'Mathematics'
+      let period_number: number | undefined = undefined
+      let room_number = 'Virtual Zoom Room'
+
+      if (scheduleMode === 'timetable' && teacherSlots.length > 0) {
+        const selectedSlot = teacherSlots[selectedSlotIndex]
+        grade_number = selectedSlot.grade_number
+        section_name = selectedSlot.section_name
+        subject_code = selectedSlot.subject_code
+        subject_name = selectedSlot.subject_name
+        period_number = selectedSlot.period_number
+        room_number = selectedSlot.room_or_venue
+      } else {
+        grade_number = instantGrade
+        section_name = instantSection
+        subject_name = instantSubject
+        subject_code = instantSubject.slice(0, 4).toUpperCase()
+      }
+
+      const title = customTitle.trim() || `${subject_name} (Grade ${grade_number}-${section_name})`
 
       const created = await createSchoolLiveClass({
-
         title,
-
         starts_at: startIso,
-
         ends_at: endIso,
-
-        grade_number: selectedSlot.grade_number,
-
-        section_name: selectedSlot.section_name,
-
-        subject_code: selectedSlot.subject_code,
-
-        subject_name: selectedSlot.subject_name,
-
-        period_number: selectedSlot.period_number,
-
-        room_number: selectedSlot.room_or_venue,
-
+        grade_number,
+        section_name,
+        subject_code,
+        subject_name,
+        period_number,
+        room_number,
         status: instantLaunch ? 'live' : 'scheduled'
-
       })
 
       setShowScheduleModal(false)
-
       setCustomTitle('')
-
       await loadClassroomData()
 
       if (instantLaunch) {
-
         await handleJoinClass(created)
-
       }
-
     } catch (err) {
-
       console.error('Failed to schedule class:', err)
-
-      alert('Failed to schedule class. Please verify timetable constraints.')
-
+      alert('Failed to schedule class. Please verify constraints.')
     } finally {
-
       setSubmittingSchedule(false)
-
     }
-
   }
 
   const formatTimer = (totalSeconds: number) => {
@@ -6728,151 +6719,161 @@ const handleTriggerTeacherCopilot = async (
           <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
 
             <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-
               <Sparkles className="w-5 h-5 text-amber-400" />
-
               Schedule / Launch Live Class
-
             </h2>
-
             <p className="text-xs text-slate-400 mb-4">
-
-              Select your assigned timetable period to auto-populate curriculum and section details.
-
+              Conduct a curriculum-aligned class from your timetable or launch an instant on-the-spot session on Zoom.
             </p>
 
+            {/* Mode Switcher */}
+            <div className="grid grid-cols-2 gap-2 mb-4 p-1 rounded-2xl bg-slate-900 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setScheduleMode('timetable')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  scheduleMode === 'timetable'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>From Timetable</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduleMode('instant')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  scheduleMode === 'instant'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>On-The-Spot Instant</span>
+              </button>
+            </div>
+
             <form onSubmit={handleScheduleSubmit} className="space-y-4">
+              {scheduleMode === 'timetable' ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Select Timetable Slot
+                  </label>
+                  {teacherSlots.length === 0 ? (
+                    <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                      No active timetable slots assigned. Switch to <strong>On-The-Spot Instant</strong> to launch a class immediately.
+                    </p>
+                  ) : (
+                    <select
+                      value={selectedSlotIndex}
+                      onChange={e => setSelectedSlotIndex(Number(e.target.value))}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    >
+                      {teacherSlots.map((s, idx) => (
+                        <option key={idx} value={idx}>
+                          Grade {s.grade_number}-{s.section_name} &bull; {s.subject_name} (Period {s.period_number}, {s.day_of_week})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-slate-900/80 border border-blue-500/20">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        Select Grade
+                      </label>
+                      <select
+                        value={instantGrade}
+                        onChange={e => setInstantGrade(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => (
+                          <option key={g} value={g}>Class / Grade {g}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        Section
+                      </label>
+                      <select
+                        value={instantSection}
+                        onChange={e => setInstantSection(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                      >
+                        {['A', 'B', 'C'].map(sec => (
+                          <option key={sec} value={sec}>Section {sec}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                      Subject
+                    </label>
+                    <select
+                      value={instantSubject}
+                      onChange={e => setInstantSubject(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    >
+                      {['Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science', 'Physics', 'Chemistry', 'Biology'].map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div>
-
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-
-                  Select Timetable Slot
-
+                  Session Topic / Title (Optional)
                 </label>
-
-                {teacherSlots.length === 0 ? (
-
-                  <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-
-                    No active timetable slots assigned to your profile yet.
-
-                  </p>
-
-                ) : (
-
-                  <select
-
-                    value={selectedSlotIndex}
-
-                    onChange={e => setSelectedSlotIndex(Number(e.target.value))}
-
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-xs text-white focus:outline-none focus:border-cyan-500"
-
-                  >
-
-                    {teacherSlots.map((s, idx) => (
-
-                      <option key={idx} value={idx}>
-
-                        Grade {s.grade_number}-{s.section_name} &bull; {s.subject_name} (Period {s.period_number}, {s.day_of_week})
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                )}
-
-              </div>
-
-              <div>
-
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-
-                  Session Title (Optional override)
-
-                </label>
-
                 <input
-
                   type="text"
-
                   value={customTitle}
-
                   onChange={e => setCustomTitle(e.target.value)}
-
-                  placeholder="e.g. Chapter 4: Live Practical Demonstration"
-
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-
+                  placeholder="e.g. Chapter 4: Live Discussion & Practice"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
-
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-
+              <div className="flex items-center gap-2 pt-1">
                 <input
-
                   type="checkbox"
-
                   id="instantLaunch"
-
                   checked={instantLaunch}
-
                   onChange={e => setInstantLaunch(e.target.checked)}
-
-                  className="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500 bg-slate-950"
-
+                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-950"
                 />
-
                 <label htmlFor="instantLaunch" className="text-xs font-medium text-slate-300">
-
-                  Launch session immediately and enter room
-
+                  Launch Zoom meeting immediately upon creation
                 </label>
-
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-
                 <button
-
                   type="button"
-
                   onClick={() => setShowScheduleModal(false)}
-
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
-
                 >
-
                   Cancel
-
                 </button>
-
                 <button
-
                   type="submit"
-
-                  disabled={submittingSchedule || teacherSlots.length === 0}
-
-                  className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-lg shadow-cyan-500/20 disabled:opacity-50"
-
+                  disabled={submittingSchedule}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2"
                 >
-
-                  {submittingSchedule ? 'Launching...' : 'Confirm & Launch'}
-
+                  <Video className="w-4 h-4 text-blue-200" />
+                  <span>{submittingSchedule ? 'Provisioning Zoom...' : (instantLaunch ? 'Launch Zoom Meeting' : 'Schedule Live Class')}</span>
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
 
             {/* ── MODAL: TEACHER AI COPILOT & CLASSROOM ENHANCER (TEACHER ONLY) ─────────────────── */}

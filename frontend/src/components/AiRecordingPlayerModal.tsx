@@ -294,18 +294,42 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
           <div className="lg:col-span-7 flex flex-col bg-black/40 overflow-y-auto">
-            <div className="relative aspect-video w-full bg-black flex items-center justify-center group">
-              <video
-                ref={videoRef}
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain"
-                src={recordingUrl}
-              >
-                Your browser does not support HTML5 video playback.
-              </video>
-            </div>
+            {recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('/rec/')) ? (
+              <div className="relative aspect-video w-full bg-slate-950 flex flex-col items-center justify-center p-6 text-center border-b border-slate-800">
+                <div className="w-16 h-16 rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-lg shadow-blue-500/20">
+                  <Video className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1">Zoom Cloud Recording Stream</h3>
+                <p className="text-xs text-slate-400 max-w-md mb-5">
+                  This lecture was recorded to Zoom Cloud with synchronized video, screen sharing, and audio transcription.
+                </p>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={recordingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Watch in Zoom Cloud Player</span>
+                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="relative aspect-video w-full bg-black flex items-center justify-center group">
+                <video
+                  ref={videoRef}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                  src={recordingUrl}
+                >
+                  Your browser does not support HTML5 video playback.
+                </video>
+              </div>
+            )}
 
             {/* VIDEO METADATA & QUICK INFO */}
             <div className="p-4 sm:p-5 space-y-4">
