@@ -52,68 +52,97 @@ async def init_database() -> None:
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-        if "sqlite" in settings.database_url:
-            await connection.run_sync(_patch_sqlite_columns)
+        await connection.run_sync(_patch_missing_columns)
 
     await _bootstrap_defaults()
 
 
-def _patch_sqlite_columns(connection: Connection) -> None:
-    """Apply schema patches that Alembic would handle in production."""
+def _patch_missing_columns(connection: Connection) -> None:
+    """Apply schema patches and missing column additions for both SQLite and PostgreSQL."""
+    is_postgres = "postgresql" in connection.dialect.name.lower()
+    uuid_type = "UUID" if is_postgres else "CHAR(32)"
+    json_type = "JSONB" if is_postgres else "JSON"
+    dt_type = "TIMESTAMP WITH TIME ZONE" if is_postgres else "DATETIME"
+    bool_false = "false" if is_postgres else "0"
+    bool_true = "true" if is_postgres else "1"
+
     inspector = inspect(connection)
-    tables = inspector.get_table_names()
+    tables = set(inspector.get_table_names())
 
+    def _add_column(table: str, col_name: str, col_def: str, existing_cols: set[str]) -> None:
+        if col_name not in existing_cols:
+            try:
+                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}"))
+            except Exception as e:
+                # Some engines / states might error if column already exists or table is locked
+                print(f"[Schema Patch] Failed to add {col_name} to {table}: {e}")
+
+    # 1. Users Table
     if "users" in tables:
-        columns = {c["name"] for c in inspector.get_columns("users")}
-        if "role" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(32) DEFAULT 'student' NOT NULL"))
-        if "phone_number" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN phone_number VARCHAR(32)"))
-        if "avatar_url" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
-        if "bio" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN bio TEXT"))
-        if "timezone" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN timezone VARCHAR(64) DEFAULT 'UTC'"))
-        if "locale" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN locale VARCHAR(16) DEFAULT 'en'"))
-        if "email_verified" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0"))
-        if "last_login_at" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN last_login_at DATETIME"))
-        if "login_count" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0"))
-        if "failed_login_count" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN failed_login_count INTEGER DEFAULT 0"))
-        if "locked_until" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN locked_until DATETIME"))
+        cols = {c["name"] for c in inspector.get_columns("users")}
+        _add_column("users", "role", "VARCHAR(32) DEFAULT 'student' NOT NULL", cols)
+        _add_column("users", "phone_number", "VARCHAR(32)", cols)
+        _add_column("users", "avatar_url", "VARCHAR(500)", cols)
+        _add_column("users", "bio", "TEXT", cols)
+        _add_column("users", "timezone", "VARCHAR(64) DEFAULT 'UTC'", cols)
+        _add_column("users", "locale", "VARCHAR(16) DEFAULT 'en'", cols)
+        _add_column("users", "headline", "VARCHAR(200)", cols)
+        _add_column("users", "website_url", "VARCHAR(500)", cols)
+        _add_column("users", "linkedin_url", "VARCHAR(500)", cols)
+        _add_column("users", "github_url", "VARCHAR(500)", cols)
+        _add_column("users", "email_verified", f"BOOLEAN DEFAULT {bool_false}", cols)
+        _add_column("users", "email_verify_token", "VARCHAR(255)", cols)
+        _add_column("users", "email_verify_expires", dt_type, cols)
+        _add_column("users", "password_reset_token", "VARCHAR(255)", cols)
+        _add_column("users", "password_reset_expires", dt_type, cols)
+        _add_column("users", "last_login_at", dt_type, cols)
+        _add_column("users", "login_count", "INTEGER DEFAULT 0", cols)
+        _add_column("users", "failed_login_count", "INTEGER DEFAULT 0", cols)
+        _add_column("users", "locked_until", dt_type, cols)
+        _add_column("users", "notify_email", f"BOOLEAN DEFAULT {bool_true}", cols)
+        _add_column("users", "notify_inapp", f"BOOLEAN DEFAULT {bool_true}", cols)
 
+    # 2. Courses Table
     if "courses" in tables:
-        columns = {c["name"] for c in inspector.get_columns("courses")}
-        if "category" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN category VARCHAR(100)"))
-        if "tags" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN tags JSON"))
-        if "thumbnail_url" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN thumbnail_url VARCHAR(500)"))
-        if "level" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN level VARCHAR(32) DEFAULT 'beginner'"))
-        if "language" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN language VARCHAR(16) DEFAULT 'en'"))
-        if "estimated_hours" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN estimated_hours REAL"))
-        if "max_students" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN max_students INTEGER"))
-        if "price" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN price REAL DEFAULT 0.0"))
-        if "is_free" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN is_free BOOLEAN DEFAULT 1"))
-        if "rating_avg" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN rating_avg REAL DEFAULT 0.0"))
-        if "rating_count" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN rating_count INTEGER DEFAULT 0"))
-        if "enrolled_count" not in columns:
-            connection.execute(text("ALTER TABLE courses ADD COLUMN enrolled_count INTEGER DEFAULT 0"))
+        cols = {c["name"] for c in inspector.get_columns("courses")}
+        _add_column("courses", "category", "VARCHAR(100)", cols)
+        _add_column("courses", "tags", json_type, cols)
+        _add_column("courses", "thumbnail_url", "VARCHAR(500)", cols)
+        _add_column("courses", "level", "VARCHAR(32) DEFAULT 'beginner'", cols)
+        _add_column("courses", "language", "VARCHAR(16) DEFAULT 'en'", cols)
+        _add_column("courses", "estimated_hours", "REAL", cols)
+        _add_column("courses", "max_students", "INTEGER", cols)
+        _add_column("courses", "price", "REAL DEFAULT 0.0", cols)
+        _add_column("courses", "is_free", f"BOOLEAN DEFAULT {bool_true}", cols)
+        _add_column("courses", "rating_avg", "REAL DEFAULT 0.0", cols)
+        _add_column("courses", "rating_count", "INTEGER DEFAULT 0", cols)
+        _add_column("courses", "enrolled_count", "INTEGER DEFAULT 0", cols)
+
+    # 3. Live Classes Table
+    if "live_classes" in tables:
+        cols = {c["name"] for c in inspector.get_columns("live_classes")}
+        _add_column("live_classes", "organization_id", uuid_type, cols)
+        _add_column("live_classes", "course_id", uuid_type, cols)
+        _add_column("live_classes", "grade_number", "INTEGER", cols)
+        _add_column("live_classes", "section_name", "VARCHAR(16)", cols)
+        _add_column("live_classes", "subject_code", "VARCHAR(16)", cols)
+        _add_column("live_classes", "subject_name", "VARCHAR(128)", cols)
+        _add_column("live_classes", "period_number", "INTEGER", cols)
+        _add_column("live_classes", "room_number", "VARCHAR(64)", cols)
+        _add_column("live_classes", "recording_url", "VARCHAR(1000)", cols)
+        _add_column("live_classes", "transcript_text", "TEXT", cols)
+        _add_column("live_classes", "summary_json", json_type, cols)
+        _add_column("live_classes", "transcript_segments", json_type, cols)
+        # Zoom Integration Columns
+        _add_column("live_classes", "zoom_meeting_id", "VARCHAR(64)", cols)
+        _add_column("live_classes", "zoom_meeting_uuid", "VARCHAR(128)", cols)
+        _add_column("live_classes", "zoom_host_user_id", "VARCHAR(128)", cols)
+        _add_column("live_classes", "zoom_join_url", "VARCHAR(1000)", cols)
+        _add_column("live_classes", "zoom_start_url", "TEXT", cols)
+        _add_column("live_classes", "zoom_password", "VARCHAR(64)", cols)
+        _add_column("live_classes", "zoom_status", "VARCHAR(32) DEFAULT 'scheduled'", cols)
+        _add_column("live_classes", "zoom_last_synced_at", dt_type, cols)
+        _add_column("live_classes", "zoom_settings_json", json_type, cols)
 
 
 async def _bootstrap_defaults() -> None:
