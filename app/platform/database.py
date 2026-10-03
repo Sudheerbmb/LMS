@@ -170,8 +170,9 @@ async def _bootstrap_defaults() -> None:
             session.add(Organization(
                 name="Acharya Global Academy",
                 slug="acharya-academy",
-                domain="school.edu",
-                is_active=True,
+                website="https://school.edu",
+                status="active",
+                is_public=True,
             ))
             await session.flush()
 
