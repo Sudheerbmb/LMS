@@ -257,8 +257,17 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
             )
             session.add(user)
             await session.flush()
+        else:
+            user.display_name = t_data["name"]
+            user.role = "teacher"
+            user.status = "active"
 
-        profile = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
+        # Check if TeacherProfile already exists by user_id OR employee_id
+        profile = await session.scalar(
+            select(TeacherProfile).where(
+                (TeacherProfile.user_id == user.id) | (TeacherProfile.employee_id == t_data["emp_id"])
+            )
+        )
         if not profile:
             profile = TeacherProfile(
                 user_id=user.id,
@@ -270,25 +279,25 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
             )
             session.add(profile)
             await session.flush()
-
-            for sub_code in t_data["subjects"]:
-                sub = subject_map.get(sub_code)
-                if sub:
-                    session.add(TeacherSubjectSkill(teacher_id=profile.id, subject_id=sub.id))
         else:
+            profile.user_id = user.id
+            profile.employee_id = t_data["emp_id"]
             profile.rating_avg = t_data["rating"]
             profile.complaint_count = 3 if t_data["rating"] < 3.0 else 0
-            for sub_code in t_data["subjects"]:
-                sub = subject_map.get(sub_code)
-                if sub:
-                    existing_skill = await session.scalar(
-                        select(TeacherSubjectSkill).where(
-                            TeacherSubjectSkill.teacher_id == profile.id,
-                            TeacherSubjectSkill.subject_id == sub.id
-                        )
+            await session.flush()
+
+        for sub_code in t_data["subjects"]:
+            sub = subject_map.get(sub_code)
+            if sub:
+                existing_skill = await session.scalar(
+                    select(TeacherSubjectSkill).where(
+                        TeacherSubjectSkill.teacher_id == profile.id,
+                        TeacherSubjectSkill.subject_id == sub.id,
                     )
-                    if not existing_skill:
-                        session.add(TeacherSubjectSkill(teacher_id=profile.id, subject_id=sub.id))
+                )
+                if not existing_skill:
+                    session.add(TeacherSubjectSkill(teacher_id=profile.id, subject_id=sub.id))
+        await session.flush()
 
         teachers_created.append(profile)
 

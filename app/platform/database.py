@@ -176,94 +176,118 @@ async def _bootstrap_defaults() -> None:
 
     async with SessionFactory() as session:
         # 1. Ensure Admins
-        for email, name, pwd in admins:
-            u = await session.scalar(select(User).where(User.email == email.lower()))
-            if not u:
-                session.add(User(
-                    email=email.lower(),
-                    display_name=name,
-                    password_hash=hash_password(pwd),
-                    role="admin",
-                    status="active",
-                    email_verified=True,
-                ))
-            else:
-                u.password_hash = hash_password(pwd)
-                u.role = "admin"
-                u.status = "active"
-                u.email_verified = True
+        try:
+            for email, name, pwd in admins:
+                u = await session.scalar(select(User).where(User.email == email.lower()))
+                if not u:
+                    session.add(User(
+                        email=email.lower(),
+                        display_name=name,
+                        password_hash=hash_password(pwd),
+                        role="admin",
+                        status="active",
+                        email_verified=True,
+                    ))
+                else:
+                    u.password_hash = hash_password(pwd)
+                    u.role = "admin"
+                    u.status = "active"
+                    u.email_verified = True
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure admins: {err}")
 
         # 2. Ensure default Organization
-        org = await session.scalar(select(Organization).where(Organization.slug == "acharya-academy"))
-        if not org:
-            session.add(Organization(
-                name="Acharya Global Academy",
-                slug="acharya-academy",
-                website="https://school.edu",
-                status="active",
-                is_public=True,
-            ))
-            await session.flush()
+        try:
+            org = await session.scalar(select(Organization).where(Organization.slug == "acharya-academy"))
+            if not org:
+                session.add(Organization(
+                    name="Acharya Global Academy",
+                    slug="acharya-academy",
+                    website="https://school.edu",
+                    status="active",
+                    is_public=True,
+                ))
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure organization: {err}")
 
         # 3. Seed school structure, grades, sections, subjects, rules, and teachers
         try:
             await seed_school_defaults(session)
+            await session.commit()
         except Exception as err:
+            await session.rollback()
             print(f"[Bootstrap] seed_school_defaults: {err}")
 
         # 4. Ensure Students
-        for s_data in student_seeds:
-            stu = await session.scalar(select(User).where(User.email == s_data["email"].lower()))
-            if not stu:
+        try:
+            for s_data in student_seeds:
+                stu = await session.scalar(select(User).where(User.email == s_data["email"].lower()))
+                if not stu:
+                    session.add(User(
+                        email=s_data["email"].lower(),
+                        display_name=s_data["name"],
+                        password_hash=hash_password("Student123!"),
+                        role="student",
+                        status="active",
+                        email_verified=True,
+                    ))
+                else:
+                    stu.password_hash = hash_password("Student123!")
+                    stu.role = "student"
+                    stu.status = "active"
+                    stu.email_verified = True
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure students: {err}")
+
+        # 5. Ensure Generic teacher account & active status
+        try:
+            gen_t = await session.scalar(select(User).where(User.email == "teacher@example.com"))
+            if not gen_t:
                 session.add(User(
-                    email=s_data["email"].lower(),
-                    display_name=s_data["name"],
-                    password_hash=hash_password("Student123!"),
-                    role="student",
+                    email="teacher@example.com",
+                    display_name="Dr. Sarah Connor",
+                    password_hash=hash_password("Teacher123!"),
+                    role="teacher",
                     status="active",
                     email_verified=True,
                 ))
             else:
-                stu.password_hash = hash_password("Student123!")
-                stu.role = "student"
-                stu.status = "active"
-                stu.email_verified = True
+                gen_t.password_hash = hash_password("Teacher123!")
+                gen_t.role = "teacher"
+                gen_t.status = "active"
 
-        # 5. Ensure Generic teacher account
-        gen_t = await session.scalar(select(User).where(User.email == "teacher@example.com"))
-        if not gen_t:
-            session.add(User(
-                email="teacher@example.com",
-                display_name="Dr. Sarah Connor",
-                password_hash=hash_password("Teacher123!"),
-                role="teacher",
-                status="active",
-                email_verified=True,
-            ))
-        else:
-            gen_t.password_hash = hash_password("Teacher123!")
-            gen_t.role = "teacher"
-            gen_t.status = "active"
+            teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
+            for t in teachers:
+                t.password_hash = hash_password("Teacher123!")
+                t.status = "active"
+                t.email_verified = True
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure teachers: {err}")
 
-        # 6. Ensure all teachers have password Teacher123!
-        teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
-        for t in teachers:
-            t.password_hash = hash_password("Teacher123!")
-            t.status = "active"
-            t.email_verified = True
-
-        # 7. Seed Training Institute Technical Courses & Subjects
+        # 6. Seed Training Institute Technical Courses & Subjects
         try:
             from app.admin import seed_tech_courses_internal
             await seed_tech_courses_internal(session)
+            await session.commit()
         except Exception as err:
+            await session.rollback()
             print(f"[Bootstrap] seed tech courses error: {err}")
 
-        # 8. Generate Master Timetable if empty
+        # 7. Generate Master Timetable if empty
         try:
             slot_count = await session.scalar(select(func.count(TimetableSlot.id)))
             if not slot_count or slot_count == 0:
                 await generate_school_timetable(session)
+                await session.commit()
         except Exception as err:
+            await session.rollback()
             print(f"[Bootstrap] generate_school_timetable: {err}")
 
