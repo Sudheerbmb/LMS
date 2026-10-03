@@ -3732,26 +3732,31 @@ const handleTriggerTeacherCopilot = async (
       return
     }
 
+    // Auto-open Zoom Meeting (Host start_url for teachers, join_url for students)
+    const zoomUrl = (isHost && liveClass.zoom_start_url)
+      ? liveClass.zoom_start_url
+      : (liveClass.zoom_join_url || (liveClass.meeting_url?.startsWith('http') ? liveClass.meeting_url : undefined))
+
+    if (zoomUrl) {
+      try {
+        window.open(zoomUrl, '_blank', 'noopener,noreferrer')
+      } catch (err) {
+        console.warn('Could not launch Zoom window automatically:', err)
+      }
+    }
+
     await startCameraStream()
 
     setActiveCallRoom(liveClass)
 
     if (liveClass.status === 'scheduled' && isHost) {
-
       try {
-
         await updateLiveClassStatus(liveClass.id, 'live')
-
         setClasses(prev => prev.map(c => c.id === liveClass.id ? { ...c, status: 'live' } : c))
-
       } catch (err) {
-
         console.warn('Status update error:', err)
-
       }
-
     }
-
   }
 
   const handleEndMeetingForAll = async () => {
@@ -4042,27 +4047,41 @@ const handleTriggerTeacherCopilot = async (
                 )}
 
                 {wsConnected ? (
-
                   <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-
                     WebRTC Mesh
-
                   </span>
-
                 ) : (
-
                   <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
-
                     <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
-
                     Connecting...
-
                   </span>
-
                 )}
 
+                {activeCallRoom.zoom_meeting_id && (
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <button
+                      onClick={() => {
+                        const zoomUrl = (isHost && activeCallRoom.zoom_start_url)
+                          ? activeCallRoom.zoom_start_url
+                          : (activeCallRoom.zoom_join_url || activeCallRoom.meeting_url)
+                        if (zoomUrl && zoomUrl.startsWith('http')) {
+                          window.open(zoomUrl, '_blank', 'noopener,noreferrer')
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
+                      title="Open Zoom App / Meeting"
+                    >
+                      <Video className="w-3.5 h-3.5 text-blue-200" />
+                      <span>Launch Zoom App</span>
+                    </button>
+                    {activeCallRoom.zoom_password && (
+                      <span className="hidden md:inline-flex text-[10px] text-slate-300 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                        Pass: <strong className="text-white ml-1 font-mono">{activeCallRoom.zoom_password}</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <p className="text-xs text-slate-400 flex items-center gap-2">
@@ -6606,9 +6625,24 @@ const handleTriggerTeacherCopilot = async (
 
                   </div>
 
+                  {cls.zoom_meeting_id && (
+                    <div className="mt-3 p-2 rounded-xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-blue-300">
+                        <Video className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span className="font-semibold">Zoom ID:</span>
+                        <span className="font-mono text-white tracking-wider">{cls.zoom_meeting_id}</span>
+                      </div>
+                      {cls.zoom_password && (
+                        <div className="text-[10px] text-slate-400">
+                          Pass: <span className="font-mono text-white font-bold">{cls.zoom_password}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
 
-                <div>
+                <div className="mt-4">
 
                   {cls.recording_url ? (
 
@@ -6650,33 +6684,51 @@ const handleTriggerTeacherCopilot = async (
 
                   ) : (
 
-                    <button
+                    <div className="flex gap-2">
+                      {cls.zoom_meeting_id && !isEnded && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const zUrl = (isHost && cls.zoom_start_url) ? cls.zoom_start_url : (cls.zoom_join_url || cls.meeting_url)
+                            if (zUrl && zUrl.startsWith('http')) {
+                              window.open(zUrl, '_blank', 'noopener,noreferrer')
+                            }
+                          }}
+                          className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95"
+                          title="Open Zoom App"
+                        >
+                          <Video className="w-4 h-4 text-blue-200" />
+                          <span>Zoom</span>
+                        </button>
+                      )}
+                      <button
 
-                      onClick={() => handleJoinClass(cls)}
+                        onClick={() => handleJoinClass(cls)}
 
-                      disabled={isEnded}
+                        disabled={isEnded}
 
-                      className={`w-full py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                        className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
 
-                        isEnded
+                          isEnded
 
-                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
 
-                          : isLive
+                            : isLive
 
-                          ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95'
+                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95'
 
-                          : 'bg-slate-800 hover:bg-slate-700 text-white'
+                            : 'bg-slate-800 hover:bg-slate-700 text-white'
 
-                      }`}
+                        }`}
 
-                    >
+                      >
 
-                      <Play className="w-4 h-4" />
+                        <Play className="w-4 h-4" />
 
-                      <span>{isLive ? 'Join Live Session' : (isHost ? 'Start Session Now' : 'Enter Classroom')}</span>
+                        <span>{isLive ? 'Join Live Session' : (isHost ? 'Start Class' : 'Enter Classroom')}</span>
 
-                    </button>
+                      </button>
+                    </div>
 
                   )}
 
