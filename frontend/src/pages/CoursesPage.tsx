@@ -1,30 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import type { 
   User, 
-  SchoolCourse
+  AdminInstituteCourse,
+  Enrollment
 } from '../lib/api'
-import { getSchoolCourses, updateSchoolCourse } from '../lib/api'
+import { 
+  getAdminCourses, 
+  getMyEnrollments, 
+  enrollInCourse,
+} from '../lib/api'
 import { 
   BookOpen, 
   Search, 
-  X, 
   GraduationCap, 
   Layers, 
-  Clock, 
   CheckCircle2, 
-  CircleDot, 
-  Sparkles, 
-  Calculator, 
-  FlaskConical, 
-  Globe, 
-  Code2, 
-  Palette, 
-  Trophy, 
-  ShieldCheck, 
-  ChevronRight,
-  Filter,
-  Pencil,
-  Save
+  Terminal,
+  Check,
+  Plus,
+  RefreshCw,
 } from 'lucide-react'
 
 type CoursesPageProps = {
@@ -32,556 +26,289 @@ type CoursesPageProps = {
 }
 
 export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
-  const [courses, setCourses] = useState<SchoolCourse[]>([])
+  const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
   const [search, setSearch] = useState('')
-  const [selectedGrade, setSelectedGrade] = useState<number | 'all'>('all')
-  const [activeCourse, setActiveCourse] = useState<SchoolCourse | null>(null)
-  const [editingCourse, setEditingCourse] = useState<SchoolCourse | null>(null)
-  const [editSubjectName, setEditSubjectName] = useState('')
-  const [editTitle, setEditTitle] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editColor, setEditColor] = useState('#06b6d4')
-  const [editAcademicYear, setEditAcademicYear] = useState('2026-2027')
-  const [editPeriods, setEditPeriods] = useState(5)
-  const [editChaptersJson, setEditChaptersJson] = useState('[]')
-  const [savingCourse, setSavingCourse] = useState(false)
-  const [editError, setEditError] = useState('')
-  
-  // Chapter progress tracker (local persistence per user/course)
-  const [completedChapters, setCompletedChapters] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(`course_progress_${user.id}`)
-      return saved ? JSON.parse(saved) : {}
-    } catch {
-      return {}
-    }
-  })
-
-  const role = user.role || 'student'
-  const isAdmin = role === 'admin'
-  const isTeacher = role === 'teacher'
-  const isStudent = role === 'student'
+  const [selectedLevel, setSelectedLevel] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null)
+  const [enrollingId, setEnrollingId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchCourses()
-  }, [user.email, user.role, selectedGrade])
+    loadCourseData()
+  }, [])
 
-  const fetchCourses = async () => {
+  const loadCourseData = async () => {
     try {
       setLoading(true)
-      setLoadError('')
-      const params: any = {
-        user_email: user.email,
-        user_role: user.role
+      const [cList, eList] = await Promise.all([
+        getAdminCourses().catch(() => []),
+        getMyEnrollments().catch(() => []),
+      ])
+      setCourses(cList || [])
+      setEnrollments(eList || [])
+      if (cList && cList.length > 0 && !activeCourseId) {
+        setActiveCourseId(cList[0].id)
       }
-      if (isAdmin && selectedGrade !== 'all') {
-        params.grade_number = selectedGrade
-      }
-      const data = await getSchoolCourses(params)
-      setCourses(data || [])
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load courses:', err)
-      setCourses([])
-      setLoadError(err.message || 'The curriculum service could not be reached.')
     } finally {
       setLoading(false)
     }
   }
 
-  const toggleChapterDone = (courseId: string, chapterNum: number) => {
-    const key = `${courseId}_ch_${chapterNum}`
-    const updated = { ...completedChapters, [key]: !completedChapters[key] }
-    setCompletedChapters(updated)
+  const handleEnroll = async (courseId: string) => {
     try {
-      localStorage.setItem(`course_progress_${user.id}`, JSON.stringify(updated))
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const openCourseEditor = (course: SchoolCourse) => {
-    setEditingCourse(course)
-    setEditSubjectName(course.subject_name)
-    setEditTitle(course.title)
-    setEditCategory(course.category)
-    setEditColor(course.color)
-    setEditAcademicYear(course.academic_year)
-    setEditPeriods(course.periods_per_week)
-    setEditChaptersJson(JSON.stringify(course.chapters, null, 2))
-    setEditError('')
-  }
-
-  const saveCourseEdits = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!editingCourse) return
-    try {
-      setSavingCourse(true)
-      setEditError('')
-      const chapters = JSON.parse(editChaptersJson)
-      if (!Array.isArray(chapters)) throw new Error('Chapters must be a JSON array.')
-      await updateSchoolCourse(editingCourse.grade_number, editingCourse.subject_code, {
-        title: editTitle.trim(),
-        subject_name: editSubjectName.trim(),
-        category: editCategory.trim(),
-        color: editColor,
-        academic_year: editAcademicYear.trim(),
-        periods_per_week: editPeriods,
-        chapters
-      })
-      setEditingCourse(null)
-      await fetchCourses()
-    } catch (error: any) {
-      setEditError(error.message || 'Unable to update this curriculum course.')
+      setEnrollingId(courseId)
+      await enrollInCourse(courseId)
+      const updated = await getMyEnrollments().catch(() => [])
+      setEnrollments(updated)
+      showToast('Successfully enrolled in training track!')
+    } catch (err: any) {
+      showToast(err.message || 'Enrollment failed')
     } finally {
-      setSavingCourse(false)
+      setEnrollingId(null)
     }
   }
 
-  const getSubjectIcon = (code: string) => {
-    switch (code) {
-      case 'MATH': return Calculator
-      case 'SCI':
-      case 'PHY':
-      case 'CHEM':
-      case 'BIO': return FlaskConical
-      case 'SST':
-      case 'HIST':
-      case 'GEOG':
-      case 'EVS': return Globe
-      case 'CS': return Code2
-      case 'ART': return Palette
-      case 'PET': return Trophy
-      default: return BookOpen
-    }
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3500)
   }
 
-  const filteredCourses = courses.filter(c => {
-    const q = search.toLowerCase()
-    return (
-      c.title.toLowerCase().includes(q) ||
-      c.subject_name.toLowerCase().includes(q) ||
-      c.instructor_name.toLowerCase().includes(q) ||
-      c.chapters.some(ch => ch.title.toLowerCase().includes(q) || ch.topics.some(t => t.toLowerCase().includes(q)))
-    )
+  const isEnrolled = (courseId: string) => {
+    return enrollments.some(e => e.course_id === courseId || (e.course && e.course.id === courseId))
+  }
+
+  const filteredCourses = courses.filter((c) => {
+    const matchesSearch =
+      c.title.toLowerCase().includes(search.toLowerCase()) ||
+      (c.description && c.description.toLowerCase().includes(search.toLowerCase())) ||
+      c.subjects.some(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.code.toLowerCase().includes(search.toLowerCase()))
+    const matchesLevel = selectedLevel === 'all' || c.level.toLowerCase() === selectedLevel.toLowerCase()
+    return matchesSearch && matchesLevel
   })
 
-  const userGradeMatch = user.email.match(/class(\\d+)/i) || user.display_name?.match(/Class\\s*(\\d+)/i)
-  const studentGradeNum = userGradeMatch ? userGradeMatch[1] : '9'
+  const activeCourse = courses.find((c) => c.id === activeCourseId) || courses[0]
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-8 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-200 text-xs font-bold shadow-2xl flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toast}</span>
+        </div>
+      )}
+
+      {/* ── Header Banner ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-2xl relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
-            {isAdmin && <ShieldCheck className="w-3.5 h-3.5" />}
-            {isTeacher && <GraduationCap className="w-3.5 h-3.5" />}
-            {isStudent && <BookOpen className="w-3.5 h-3.5" />}
-            {isAdmin 
-              ? 'Institutional Master Curriculum' 
-              : isTeacher 
-              ? 'Assigned Teaching Syllabi' 
-              : `Class ${studentGradeNum} Prescribed Curriculum`}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
+            <BookOpen className="w-3.5 h-3.5" />
+            Technical Training Curriculum & Modules
           </div>
-
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            {isAdmin && 'CBSE Course Catalog & Chapter Syllabi'}
-            {isTeacher && `${user.display_name} — Teaching Courses`}
-            {isStudent && `Class ${studentGradeNum} — Academic Subjects & Syllabus`}
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            Professional Technology Tracks
           </h1>
-
-          <p className="text-slate-400 text-sm max-w-2xl">
-            {isAdmin && 'Comprehensive curriculum across Classes 1-10 with detailed chapter breakdowns, weekly periods, learning outcomes, and assigned instructors.'}
-            {isTeacher && 'Subjects and class levels you are assigned to teach according to the school timetable. Review chapter topics, duration, and curriculum pacing.'}
-            {isStudent && 'Your complete course schedule and detailed textbook chapters for Academic Year 2026-27. Click any subject to explore its full chapter syllabus.'}
+          <p className="text-slate-400 text-xs md:text-sm max-w-2xl">
+            Explore industry-aligned curriculums in Python with Generative AI, Salesforce, ServiceNow, Full Stack Web, and Cloud DevOps.
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-right shrink-0 relative z-10 space-y-1">
-          <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Active Courses</div>
-          <div className="text-3xl font-black text-amber-400">{courses.length}</div>
-          <div className="text-[11px] text-slate-500">
-            {isStudent ? 'Enrolled Subjects' : isTeacher ? 'Assigned Classes' : 'Grades 1-10 Total'}
-          </div>
+        <div className="flex items-center gap-3 relative z-10">
+          <span className="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" />
+            <span>{courses.length} Certified Tracks</span>
+          </span>
+          <button
+            onClick={loadCourseData}
+            title="Refresh Courses"
+            className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
-      {/* Controls & Search */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[#0B0F19] border border-amber-500/15">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* ── Search & Filter Controls ──────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
+            placeholder="Search tracks, subjects (e.g. Python, LWC, ITSM)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search subjects, chapters, topics, or faculty..."
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
           />
         </div>
 
-        {isAdmin && (
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-            <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 shrink-0">
-              <Filter className="w-3.5 h-3.5 text-amber-400" /> Grade:
-            </span>
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+          {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((lvl) => (
             <button
-              onClick={() => setSelectedGrade('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                selectedGrade === 'all'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              key={lvl}
+              onClick={() => setSelectedLevel(lvl)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
+                selectedLevel === lvl
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
               }`}
             >
-              All Grades
+              {lvl === 'all' ? 'All Levels' : lvl}
             </button>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
-              <button
-                key={g}
-                onClick={() => setSelectedGrade(g)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                  selectedGrade === g
-                    ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                Cl {g}
-              </button>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Courses Grid */}
-      {loading ? (
-        <div className="p-16 text-center text-slate-400 space-y-3">
-          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm">Loading curriculum and chapter syllabi...</p>
-        </div>
-      ) : loadError ? (
-        <div className="p-12 text-center bg-rose-950/20 rounded-2xl border border-rose-800/40 space-y-3">
-          <BookOpen className="w-8 h-8 mx-auto text-rose-400" />
-          <p className="text-sm font-semibold text-rose-300">Unable to load the curriculum catalog</p>
-          <p className="text-xs text-slate-400">{loadError}</p>
-          <button onClick={fetchCourses} className="px-4 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold">Try Again</button>
-        </div>
-      ) : filteredCourses.length === 0 ? (
-        <div className="p-12 text-center text-slate-500 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-2">
-          <BookOpen className="w-8 h-8 mx-auto text-slate-600" />
-          <p className="text-sm font-semibold text-slate-400">No courses match your search filter.</p>
+      {/* ── Courses Master & Detail View ──────────────────────────────────── */}
+      {filteredCourses.length === 0 ? (
+        <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-500 space-y-3">
+          <BookOpen className="w-10 h-10 mx-auto text-slate-600" />
+          <p className="text-sm">No course tracks found matching your search.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((c) => {
-            const Icon = getSubjectIcon(c.subject_code)
-            const completedCount = c.chapters.filter(ch => completedChapters[`${c.id}_ch_${ch.num}`]).length
-            const percent = c.total_chapters > 0 ? Math.round((completedCount / c.total_chapters) * 100) : 0
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left: Course Track Cards List (5/12) */}
+          <div className="lg:col-span-5 space-y-3">
+            {filteredCourses.map((c) => {
+              const enrolled = isEnrolled(c.id)
+              const isActive = activeCourse?.id === c.id
 
-            return (
-              <div
-                key={c.id}
-                onClick={() => setActiveCourse(c)}
-                className="group relative bg-[#0B0F19] border border-amber-500/15 hover:border-cyan-500/50 rounded-2xl p-6 transition-all hover:shadow-2xl hover:shadow-cyan-500/10 cursor-pointer flex flex-col justify-between"
-              >
-                <div className="space-y-4">
-                  {/* Top Bar */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-lg"
-                        style={{ backgroundColor: `${c.color}25`, borderColor: c.color, border: '1px solid' }}
-                      >
-                        <Icon className="w-5 h-5" style={{ color: c.color }} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="font-bold text-[10px] px-2 py-0.5 rounded uppercase tracking-wider"
-                            style={{ backgroundColor: `${c.color}20`, color: c.color }}
-                          >
-                            {c.subject_code}
-                          </span>
-                          <span className="text-xs font-bold text-slate-400">
-                            {c.grade_name}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-extrabold text-white mt-1 group-hover:text-amber-400 transition-colors line-clamp-1">
-                          {c.subject_name}
-                        </h3>
-                      </div>
-                    </div>
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openCourseEditor(c)
-                        }}
-                        className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-orange-300 hover:bg-indigo-500/20 transition-colors"
-                        title="Edit curriculum course"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Highlights */}
-                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-amber-500/15">
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span>{c.periods_per_week} Periods / Wk</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Layers className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                      <span>{c.total_chapters} Chapters ({c.estimated_weeks} Wks)</span>
-                    </div>
-                  </div>
-
-                  {/* Instructor */}
-                  <div className="p-2.5 rounded-xl bg-[#0B0F19] border border-amber-500/15/80 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-[10px]">
-                        {c.instructor_name.charAt(0)}
-                      </div>
-                      <div className="truncate">
-                        <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Instructor</div>
-                        <div className="text-xs font-bold text-slate-200 truncate">{c.instructor_name}</div>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium">
-                      2026-27
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between text-[11px] font-semibold">
-                      <span className="text-slate-400">Syllabus Progress</span>
-                      <span className="text-amber-400">{completedCount} / {c.total_chapters} Chapters ({percent}%)</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300 rounded-full"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 pt-3 border-t border-amber-500/15 flex items-center justify-between text-xs font-bold text-amber-400 group-hover:text-yellow-300 transition-colors">
-                  <span>Explore Chapters & Syllabus</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {isAdmin && editingCourse && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <form onSubmit={saveCourseEdits} className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full p-6 space-y-5 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h2 className="text-lg font-black text-white">Edit Curriculum Course</h2>
-                <p className="text-xs text-slate-400">{editingCourse.grade_name} &bull; {editingCourse.subject_code}</p>
-              </div>
-              <button type="button" onClick={() => setEditingCourse(null)} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {editError && <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">{editError}</div>}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="text-xs text-slate-400">Subject name
-                <input required value={editSubjectName} onChange={e => setEditSubjectName(e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white" />
-              </label>
-              <label className="text-xs text-slate-400">Course title
-                <input required value={editTitle} onChange={e => setEditTitle(e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white" />
-              </label>
-              <label className="text-xs text-slate-400">Category
-                <input required value={editCategory} onChange={e => setEditCategory(e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white" />
-              </label>
-              <label className="text-xs text-slate-400">Academic year
-                <input required value={editAcademicYear} onChange={e => setEditAcademicYear(e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white" />
-              </label>
-              <label className="text-xs text-slate-400">Periods per week
-                <input required type="number" min={1} max={20} value={editPeriods} onChange={e => setEditPeriods(Number(e.target.value))} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white" />
-              </label>
-              <label className="text-xs text-slate-400">Course color
-                <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} className="mt-1 w-full h-11 bg-slate-950 border border-slate-700 rounded-xl p-1" />
-              </label>
-            </div>
-
-            <label className="block text-xs text-slate-400">Chapters JSON
-              <textarea required rows={16} value={editChaptersJson} onChange={e => setEditChaptersJson(e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 font-mono" />
-            </label>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setEditingCourse(null)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancel</button>
-              <button disabled={savingCourse} type="submit" className="px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black flex items-center gap-2">
-                <Save className="w-4 h-4" /> {savingCourse ? 'Saving...' : 'Save Curriculum'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ── Chapter Syllabus Modal ─────────────────────────────────────────── */}
-      {activeCourse && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in overflow-y-auto">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl my-8 max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4 shrink-0">
-              <div className="flex items-center gap-3">
+              return (
                 <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg"
-                  style={{ backgroundColor: `${activeCourse.color}25`, borderColor: activeCourse.color, border: '1px solid' }}
+                  key={c.id}
+                  onClick={() => setActiveCourseId(c.id)}
+                  className={`p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                    isActive
+                      ? 'bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border-amber-500/50 shadow-xl'
+                      : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                  }`}
                 >
-                  <BookOpen className="w-6 h-6" style={{ color: activeCourse.color }} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="font-bold text-xs px-2.5 py-0.5 rounded-full uppercase"
-                      style={{ backgroundColor: `${activeCourse.color}20`, color: activeCourse.color }}
-                    >
-                      {activeCourse.subject_code}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-400">
-                      {activeCourse.grade_name} &bull; Academic Year {activeCourse.academic_year}
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-black text-white mt-1">
-                    {activeCourse.title}
-                  </h2>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActiveCourse(null)}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Course Meta Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
-              <div className="p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15">
-                <div className="text-[10px] text-slate-500 font-semibold uppercase">Assigned Instructor</div>
-                <div className="text-xs font-bold text-slate-200 mt-0.5">{activeCourse.instructor_name}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15">
-                <div className="text-[10px] text-slate-500 font-semibold uppercase">Weekly Periods</div>
-                <div className="text-xs font-bold text-amber-400 mt-0.5">{activeCourse.periods_per_week} Periods / Wk</div>
-              </div>
-              <div className="p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15">
-                <div className="text-[10px] text-slate-500 font-semibold uppercase">Total Chapters</div>
-                <div className="text-xs font-bold text-orange-400 mt-0.5">{activeCourse.total_chapters} Chapters</div>
-              </div>
-              <div className="p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15">
-                <div className="text-[10px] text-slate-500 font-semibold uppercase">Estimated Pacing</div>
-                <div className="text-xs font-bold text-amber-400 mt-0.5">{activeCourse.estimated_weeks} Weeks Total</div>
-              </div>
-            </div>
-
-            {/* Chapters List */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                <span>Prescribed NCERT/CBSE Chapters & Curriculum</span>
-                <span className="text-slate-500 text-[11px]">Click checkbox to toggle topic completion</span>
-              </div>
-
-              <div className="space-y-3">
-                {activeCourse.chapters.map((ch) => {
-                  const doneKey = `${activeCourse.id}_ch_${ch.num}`
-                  const isDone = !!completedChapters[doneKey]
-
-                  return (
-                    <div
-                      key={ch.num}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        isDone 
-                          ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200' 
-                          : 'bg-slate-950/80 border-slate-800 text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <button
-                            onClick={() => toggleChapterDone(activeCourse.id, ch.num)}
-                            className={`w-7 h-7 rounded-lg border mt-0.5 flex items-center justify-center transition-all ${
-                              isDone
-                                ? 'bg-emerald-500 border-emerald-400 text-slate-950'
-                                : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-cyan-500'
-                            }`}
-                          >
-                            {isDone ? <CheckCircle2 className="w-4 h-4 font-bold" /> : <CircleDot className="w-3.5 h-3.5" />}
-                          </button>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-mono font-bold text-amber-400">
-                                Chapter {ch.num}
-                              </span>
-                              <span className="text-xs text-slate-500">&bull; {ch.duration_weeks} Weeks</span>
-                              {isDone && (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                                  Completed
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="text-sm font-extrabold text-white mt-0.5">
-                              {ch.title}
-                            </h4>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Topics */}
-                      <div className="mt-3 pl-10 space-y-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {ch.topics.map((tp, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700/60 font-medium"
-                            >
-                              {tp}
-                            </span>
-                          ))}
-                        </div>
-
-                        {ch.outcomes && (
-                          <div className="text-[11px] text-slate-400 flex items-start gap-1.5 pt-1">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                            <span><strong className="text-slate-300">Target Outcome:</strong> {ch.outcomes}</span>
-                          </div>
-                        )}
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold uppercase tracking-wider">
+                        {c.level}
+                      </span>
+                      {enrolled && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          <Check className="w-3 h-3" />
+                          Enrolled
+                        </span>
+                      )}
                     </div>
-                  )
-                })}
-              </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="border-t border-slate-800 pt-4 flex items-center justify-between shrink-0">
-              <div className="text-xs text-slate-400">
-                Official CBSE Board Standard Syllabus &bull; Session 2026-27
-              </div>
-              <button
-                onClick={() => setActiveCourse(null)}
-                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors"
-              >
-                Close Syllabus
-              </button>
-            </div>
+                    <h3 className="font-bold text-sm text-white">{c.title}</h3>
+                    <p className="text-xs text-slate-400 line-clamp-2">{c.description}</p>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
+                      <span>{c.subjects.length} Subject Modules</span>
+                      <span>{c.enrolled_count} Students Enrolled</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
+
+          {/* Right: Active Course Deep Dive (7/12) */}
+          {activeCourse && (
+            <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
+                      {activeCourse.level}
+                    </span>
+                    <span className="text-xs text-slate-500">Track ID: /{activeCourse.slug}</span>
+                  </div>
+                  <h2 className="text-xl font-extrabold text-white">{activeCourse.title}</h2>
+                </div>
+
+                <div className="shrink-0">
+                  {user.role === 'student' && (
+                    isEnrolled(activeCourse.id) ? (
+                      <span className="px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Enrolled in Track</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleEnroll(activeCourse.id)}
+                        disabled={enrollingId === activeCourse.id}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 text-slate-950" />
+                        <span>{enrollingId === activeCourse.id ? 'Enrolling...' : 'Enroll in Track'}</span>
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-slate-300 leading-relaxed">{activeCourse.description}</p>
+
+              {/* Subject Modules List */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  Subject Classes & Modules Included ({activeCourse.subjects.length})
+                </h4>
+
+                <div className="space-y-3">
+                  {activeCourse.subjects.map((sub, idx) => (
+                    <div
+                      key={sub.id || idx}
+                      className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase"
+                            style={{
+                              backgroundColor: `${sub.color}20`,
+                              borderColor: `${sub.color}40`,
+                              borderWidth: '1px',
+                              color: sub.color,
+                            }}
+                          >
+                            {sub.code}
+                          </span>
+                          <h5 className="font-bold text-xs text-white">{sub.name}</h5>
+                        </div>
+
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Instructor: <strong className="text-amber-300">{sub.teacher_name || 'Assigned Faculty'}</strong>
+                        </span>
+                      </div>
+
+                      {sub.description && (
+                        <p className="text-[11px] text-slate-400 pl-1">{sub.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lab & Project Highlights */}
+              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+                <h5 className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-emerald-400" />
+                  Hands-On Labs & Capstone Deliverables
+                </h5>
+                <p className="text-[11px] text-slate-400">
+                  Every subject includes weekly coding exercises, live Zoom interactive workshops, automated grading assessments, and verified certificate upon course completion.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
+
+export default CoursesPage

@@ -435,6 +435,11 @@ export const deleteAdminCourseSubject = (courseId: string, subjectId: string) =>
     method: 'DELETE',
   })
 
+export const seedTechCourses = () =>
+  request<{ status: string; courses_seeded: number; message: string }>('/api/v1/admin/seed-tech-courses', {
+    method: 'POST',
+  })
+
 export const enrollStudentInCourse = (userId: string, courseId: string) =>
   request<{ user_id: string; course_id: string; status: string }>(
     `/api/v1/admin/enrollments?user_id=${userId}&course_id=${courseId}`,

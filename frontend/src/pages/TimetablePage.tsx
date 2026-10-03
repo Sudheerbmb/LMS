@@ -465,20 +465,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
   const getPeriodMeta = (pNum: number) => {
     switch (pNum) {
-      case 0: return { label: 'Morning Assembly & Prayer', time: '08:00 - 08:30', isBreak: true, bg: 'bg-emerald-950/40 border-emerald-800/40 text-emerald-400' }
-      case 1: return { label: 'Period 1 (Instruction)', time: '08:30 - 09:20', isBreak: false }
-      case 2: return { label: 'Period 2 (Instruction)', time: '09:20 - 10:10', isBreak: false }
-      case 3: return { label: 'Morning Recess Break', time: '10:10 - 10:30', isBreak: true, bg: 'bg-cyan-950/40 border-cyan-800/40 text-amber-400' }
-      case 4: return { label: 'Period 3 (Instruction)', time: '10:30 - 11:20', isBreak: false }
-      case 5: return { label: 'Period 4 (Instruction)', time: '11:20 - 12:10', isBreak: false }
-      case 6: return { label: 'Period 5 (Instruction)', time: '12:10 - 13:00', isBreak: false }
-      case 7: return { label: 'Lunch & Recreation Hour', time: '13:00 - 14:00', isBreak: true, bg: 'bg-amber-950/40 border-amber-800/40 text-amber-400' }
-      case 8: return { label: 'Period 6 (Light Academic - No PET)', time: '14:00 - 14:50', isBreak: false }
-      case 9: return { label: 'Period 7 (Academic / Sports / Lab)', time: '14:50 - 15:40', isBreak: false }
-      case 10: return { label: 'Afternoon Hydration Break', time: '15:40 - 15:55', isBreak: true, bg: 'bg-blue-950/40 border-blue-800/40 text-blue-400' }
-      case 11: return { label: 'Period 8 (Activity / Sports / Coding)', time: '15:55 - 16:45', isBreak: false }
-      case 12: return { label: 'Homeroom & Dispersal', time: '16:45 - 17:00', isBreak: true, bg: 'bg-slate-800/40 border-slate-700/40 text-slate-400' }
-      default: return { label: `Period ${pNum}`, time: '', isBreak: false }
+      case 0: return { label: 'Morning Standup & Overview', time: '08:45 - 09:00', isBreak: true, bg: 'bg-emerald-950/40 border-emerald-800/40 text-emerald-400' }
+      case 1: return { label: 'Session 1 (Core Technical Lecture)', time: '09:00 - 10:30', isBreak: false }
+      case 2: return { label: 'Session 2 (Architecture & Frameworks)', time: '10:45 - 12:15', isBreak: false }
+      case 3: return { label: 'Lunch & Peer Networking Break', time: '12:15 - 01:15', isBreak: true, bg: 'bg-amber-950/40 border-amber-800/40 text-amber-400' }
+      case 4: return { label: 'Session 3 (Hands-On Coding & Lab)', time: '01:15 - 02:45', isBreak: false }
+      case 5: return { label: 'Session 4 (Advanced Topics & Integration)', time: '03:00 - 04:30', isBreak: false }
+      case 6: return { label: 'Session 5 (Capstone Project & Q&A)', time: '04:45 - 06:00', isBreak: false }
+      default: return { label: `Training Session ${pNum}`, time: '', isBreak: false }
     }
   }
 
@@ -488,26 +482,26 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Header Banner - Role Customized */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-8 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 p-8 rounded-2xl border border-amber-500/30 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
             {isAdmin && <Sparkles className="w-3.5 h-3.5" />}
             {isTeacher && <GraduationCap className="w-3.5 h-3.5" />}
             {isStudent && <BookOpen className="w-3.5 h-3.5" />}
-            {isAdmin ? 'Administrator AI Policy & Scheduler' : isTeacher ? 'Faculty Teaching Schedule' : 'Student Class Timetable'}
+            {isAdmin ? 'Institute AI Timetable Engine' : isTeacher ? 'Faculty Teaching Schedule' : 'Batch Class Schedule'}
           </div>
 
           <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            {isAdmin && 'Autonomous Timetable & Policy Engine'}
-            {isTeacher && (myTeacherProfile ? `${myTeacherProfile.display_name} - Teaching Schedule` : 'Faculty Teaching Timetable')}
-            {isStudent && `${currentGrade?.name || 'Class 9'} - Weekly Class Schedule`}
+            {isAdmin && 'Batch Schedule & Timetable Engine'}
+            {isTeacher && (myTeacherProfile ? `${myTeacherProfile.display_name} - Faculty Schedule` : 'Faculty Teaching Schedule')}
+            {isStudent && `${currentGrade?.name || 'Technical Track'} - Weekly Batch Schedule`}
           </h1>
 
           <p className="text-slate-400 text-sm max-w-2xl">
-            {isAdmin && 'Live database-driven rules, interactive drag-and-drop swapping, smart substitute finder desk, and full-day (8:00 AM - 5:00 PM) master matrix.'}
-            {isTeacher && `Assigned instructional lectures across Classes 1-10. Daily maximum workload capped at ${myTeacherProfile?.max_daily_periods || 5} periods.`}
-            {isStudent && 'Your official weekly timetable (8:00 AM - 5:00 PM). Click any subject period to rate your instructor or submit course feedback.'}
+            {isAdmin && 'Automated timetable generator for technical tracks (Python with GenAI, Salesforce, ServiceNow, Full Stack, DevOps) with Zoom scheduling integration.'}
+            {isTeacher && `Assigned technical lectures across institute batches. Daily maximum workload capped at ${myTeacherProfile?.max_daily_periods || 5} sessions.`}
+            {isStudent && 'Your weekly training schedule (09:00 AM - 06:00 PM). Click any session to join Zoom live or submit course feedback.'}
           </p>
         </div>
 
@@ -717,7 +711,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               <div className="flex flex-wrap items-center gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Grade Level
+                    Training Track / Course
                   </label>
                   <select
                     value={selectedGradeId}
@@ -728,11 +722,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         setSelectedSectionId(g.sections[0].id)
                       }
                     }}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
                   >
                     {grades.map((g) => (
                       <option key={g.id} value={g.id}>
-                        {g.name} ({g.academic_year})
+                        {g.name}
                       </option>
                     ))}
                   </select>
@@ -740,7 +734,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Section
+                    Cohort / Batch
                   </label>
                   <div className="flex gap-2">
                     {currentGrade?.sections.map((sec) => (
@@ -749,11 +743,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         onClick={() => setSelectedSectionId(sec.id)}
                         className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                           selectedSectionId === sec.id
-                            ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-bold'
+                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
-                        Section {sec.name} ({sec.room_number})
+                        Batch {sec.name} ({sec.room_number})
                       </button>
                     ))}
                   </div>

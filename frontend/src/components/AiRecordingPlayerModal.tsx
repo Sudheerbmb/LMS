@@ -80,32 +80,23 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   const chatBottomRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const classId = classInfo?.id || 'sample-class'
-  const classTitle = classInfo?.title || 'Class Lecture Recording'
-  
-  // Extract Subject with high accuracy
-  let classSubject = classInfo?.subject || classInfo?.subject_name || ''
-  if (!classSubject) {
-    const tLower = classTitle.toLowerCase()
-    if (tLower.includes('math')) classSubject = 'Mathematics'
-    else if (/science|physics|chem|bio/.test(tLower)) classSubject = 'Science'
-    else if (/english|grammar|reading/.test(tLower)) classSubject = 'English'
-    else if (/history|social|geography/.test(tLower)) classSubject = 'Social Studies'
-    else if (/computer|code|python/.test(tLower)) classSubject = 'Computer Science'
-    else classSubject = 'Academic Lesson'
-  }
+  const [hasCopiedPasscode, setHasCopiedPasscode] = useState(false)
 
-  // Extract Grade number
-  let classGradeNum: number | null = null
-  if (classInfo?.grade_number !== undefined && classInfo?.grade_number !== null) {
-    classGradeNum = Number(classInfo.grade_number)
-  } else if (classInfo?.grade !== undefined && !isNaN(Number(classInfo.grade))) {
-    classGradeNum = Number(classInfo.grade)
-  } else {
-    const m = classTitle.match(/Grade\s*(\d+)/i)
-    if (m) classGradeNum = parseInt(m[1], 10)
+  const classId = classInfo?.id || 'sample-class'
+  const classTitle = classInfo?.title || 'Technical Lecture Recording'
+  
+  // Extract Subject and Track with high accuracy
+  const classSubject = classInfo?.subject || classInfo?.subject_name || classInfo?.course_title || 'Technical Module'
+  const trackDisplay = classInfo?.course_title || classInfo?.section_name || 'Professional Track'
+  const zoomPasscode = classInfo?.zoom_password || classInfo?.password || classInfo?.passcode || ''
+
+  // Build authenticated embed URL with passcode attached
+  let authenticatedEmbedUrl = recordingUrl
+  if (zoomPasscode && authenticatedEmbedUrl) {
+    if (!authenticatedEmbedUrl.includes('pwd=')) {
+      authenticatedEmbedUrl += (authenticatedEmbedUrl.includes('?') ? '&' : '?') + `pwd=${encodeURIComponent(zoomPasscode)}`
+    }
   }
-  const gradeDisplay = classGradeNum ? `Grade ${classGradeNum}` : (classInfo?.grade ? String(classInfo.grade) : 'All Grades')
 
   // Load transcript and summary on mount
   useEffect(() => {
@@ -115,7 +106,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
     const welcomeMsg: ChatMessage = {
       id: 'init-1',
       sender: 'ai',
-      text: `👋 Hello! I am Omni-Agent, your autonomous AI study assistant for "${classTitle}".\n\nI have analyzed this video's audio and chapters. Ask me what the video is about, request a topic jump, or test your comprehension!`,
+      text: `👋 Hello! I am Omni-Agent, your AI technical study assistant for "${classTitle}".\n\nI have analyzed this lecture's recording and dialogue. Ask me questions about the code, request a topic jump, or test your comprehension!`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isGrounded: true
     }
@@ -199,7 +190,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
       const res = await askClassAiDoubt(classId, question, {
         title: classTitle,
         subject: classSubject,
-        grade: classGradeNum || gradeDisplay,
+        grade: trackDisplay,
         history: historyPayload
       })
 
@@ -252,20 +243,34 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
         {/* TOP BAR */}
         <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
               <Video className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  {gradeDisplay}
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {trackDisplay}
                 </span>
-                <span className="text-xs font-medium text-slate-400">
+                <span className="text-xs font-medium text-slate-300">
                   {classSubject}
                 </span>
+                {zoomPasscode && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(zoomPasscode)
+                      setHasCopiedPasscode(true)
+                      setTimeout(() => setHasCopiedPasscode(false), 3000)
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-bold hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm"
+                    title="Click to copy Zoom recording passcode"
+                  >
+                    <span>Passcode: <strong className="text-white">{zoomPasscode}</strong></span>
+                    {hasCopiedPasscode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-amber-400" />}
+                  </button>
+                )}
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Omni-Agent Active
+                  HD Stream Ready
                 </span>
               </div>
               <h2 className="text-sm sm:text-base font-bold text-white truncate mt-0.5">
@@ -276,14 +281,14 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <a
-              href={recordingUrl}
+              href={authenticatedEmbedUrl || recordingUrl}
               target="_blank"
               rel="noreferrer"
               title="Open video in new tab / download"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Full Screen / Download</span>
+              <span>Open in Zoom Tab</span>
             </a>
             <button
               onClick={onClose}
@@ -301,9 +306,9 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
           <div className="lg:col-span-7 flex flex-col bg-black/60 overflow-y-auto">
             <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
-              {playerMode === 'embed' && recordingUrl ? (
+              {playerMode === 'embed' && authenticatedEmbedUrl ? (
                 <iframe
-                  src={recordingUrl}
+                  src={authenticatedEmbedUrl}
                   title="Zoom Cloud Recording Video"
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
@@ -340,7 +345,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
                       : 'text-slate-400 hover:text-white bg-slate-800/80'
                   }`}
                 >
-                  Inline HD Player
+                  Inline HD Player (No Passcode Needed)
                 </button>
                 {recordingUrl && (
                   <button
@@ -358,12 +363,12 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
               </div>
               {recordingUrl && (
                 <a
-                  href={recordingUrl}
+                  href={authenticatedEmbedUrl || recordingUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
                 >
-                  <span>Open Zoom Tab</span>
+                  <span>Open Zoom View</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}

@@ -17,6 +17,7 @@ import {
   enrollStudentInCourse,
   unenrollStudentFromCourse,
   getZoomStatus,
+  seedTechCourses,
 } from '../lib/api'
 import {
   Users,
@@ -33,6 +34,7 @@ import {
   Phone,
   Layers,
   RefreshCw,
+  Sparkles,
   X,
 } from 'lucide-react'
 
@@ -302,6 +304,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     }
   }
 
+  const handleSeedTechTracks = async () => {
+    try {
+      setLoading(true)
+      await seedTechCourses()
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Seeding failed: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // ── Filtered Lists ─────────────────────────────────────────────────────────
   const teachersList = users.filter((u) => u.role === 'teacher')
   const studentsList = users.filter((u) => u.role === 'student')
@@ -363,6 +377,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Course Track</span>
+          </button>
+          <button
+            onClick={handleSeedTechTracks}
+            title="Seed Standard Tech Courses (Python GenAI, Salesforce, ServiceNow, etc.)"
+            className="px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Seed Standard Tech Tracks</span>
           </button>
           <button
             onClick={loadAllData}
@@ -730,13 +752,27 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             {courses.length === 0 ? (
               <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-500 space-y-4">
                 <BookOpen className="w-10 h-10 mx-auto text-slate-600" />
-                <p>No training courses created yet.</p>
-                <button
-                  onClick={() => setShowAddCourseModal(true)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
-                >
-                  Create First Course Track
-                </button>
+                <div>
+                  <h3 className="text-white font-bold text-base">No Technical Courses Initialized</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Seed standard courses (Python with GenAI, Salesforce, ServiceNow, Full Stack, DevOps) with one click.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={handleSeedTechTracks}
+                    className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <span>Seed All 5 Technical Tracks</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddCourseModal(true)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    Create Custom Track
+                  </button>
+                </div>
               </div>
             ) : (
               courses.map((course) => (

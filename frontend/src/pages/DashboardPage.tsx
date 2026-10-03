@@ -405,10 +405,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 onClick={handleSeedDefaults}
                 disabled={actionLoading === 'seed'}
                 className="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-700"
-                title="Initialize default periods for Grades 1 - 10"
+                title="Initialize standard technical tracks and batch schedules"
               >
                 {actionLoading === 'seed' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-                <span className="hidden sm:inline">Seed Defaults</span>
+                <span className="hidden sm:inline">Seed Technical Tracks</span>
               </button>
             </div>
           </div>
@@ -433,7 +433,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 Welcome back, {user.display_name}
               </h1>
               <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-                Review your assigned timetable periods for today, initiate live classroom video streams with Cloudinary recording, and track your students.
+                Review your assigned technical batch schedule for today, initiate live Zoom classroom video streams with cloud recording, and manage your students.
               </p>
             </div>
 

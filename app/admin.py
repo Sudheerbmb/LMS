@@ -238,6 +238,124 @@ async def delete_user(
 
 # ── Courses & Subjects Management (Training Institute Hierarchy) ───────────────
 
+TECH_COURSES_DATA = [
+    {
+        "title": "Python with Generative AI (GenAI)",
+        "slug": "python-genai",
+        "description": "Master Python 3.12, LangChain, OpenAI & Gemini SDKs, RAG vector search, and autonomous multi-agent systems.",
+        "level": "intermediate",
+        "subjects": [
+            {"code": "PY-101", "name": "Python Core & Advanced OOP", "color": "#3b82f6", "desc": "AsyncIO, data structures, decorators, and production Python design patterns."},
+            {"code": "GEN-201", "name": "Prompt Engineering, LLMs & LangChain", "color": "#8b5cf6", "desc": "Prompt chaining, tool calling, memory, and LCEL expression graphs."},
+            {"code": "RAG-301", "name": "RAG Architectures & Vector Databases", "color": "#10b981", "desc": "Chunking, embeddings, ChromaDB, Pinecone, and cross-encoder re-ranking."},
+            {"code": "AI-401", "name": "Autonomous AI Agents & FastAPI Deployment", "color": "#f59e0b", "desc": "LangGraph multi-agent workflows, FastAPI REST APIs, and Docker deployment."}
+        ]
+    },
+    {
+        "title": "Salesforce Administration & Development",
+        "slug": "salesforce-developer",
+        "description": "Comprehensive Salesforce certification curriculum covering Admin essentials, Apex OOP, SOQL, and Lightning Web Components (LWC).",
+        "level": "intermediate",
+        "subjects": [
+            {"code": "SF-ADM", "name": "Salesforce Administrator & Security", "color": "#0284c7", "desc": "Objects, fields, profiles, OWD sharing rules, and Flow Builder automation."},
+            {"code": "SF-APEX", "name": "Apex Programming, Triggers & SOQL", "color": "#0ea5e9", "desc": "Apex triggers, handler patterns, governor limits, and unit test suites."},
+            {"code": "SF-LWC", "name": "Lightning Web Components (LWC) & UI", "color": "#06b6d4", "desc": "JavaScript ES6, wire adapters, LDS, events, and Lightning Design System."},
+            {"code": "SF-INT", "name": "Salesforce REST API & Enterprise Integrations", "color": "#6366f1", "desc": "Connected Apps, OAuth 2.0, outbound webhooks, and REST/SOAP services."}
+        ]
+    },
+    {
+        "title": "ServiceNow Administration & Development (CSA / CAD)",
+        "slug": "servicenow-csa-cad",
+        "description": "Official ServiceNow CSA & CAD aligned training covering ITSM workflows, GlideRecord scripting, Script Includes, and Service Portal.",
+        "level": "intermediate",
+        "subjects": [
+            {"code": "SN-CSA", "name": "ServiceNow Certified System Administrator Core", "color": "#10b981", "desc": "User management, CMDB, tables, UI policies, dictionary overrides, and SLAs."},
+            {"code": "SN-ITSM", "name": "IT Service Management (ITSM Processes)", "color": "#059669", "desc": "Incident routing, problem root-cause, change advisory boards, and knowledge management."},
+            {"code": "SN-SCRIPT", "name": "GlideRecord, Business Rules & Script Includes", "color": "#14b8a6", "desc": "Server-side and client-side JavaScript, GlideAjax, and event queues."},
+            {"code": "SN-PORTAL", "name": "Service Portal & Flow Designer Automation", "color": "#0d9488", "desc": "Custom widgets, AngularJS client controllers, Flow Designer actions, and REST spokes."}
+        ]
+    },
+    {
+        "title": "Full Stack Web Engineering (React & FastAPI)",
+        "slug": "full-stack-web",
+        "description": "Build end-to-end full stack web platforms using modern HTML5, Tailwind CSS, React 19, FastAPI REST backends, and PostgreSQL.",
+        "level": "beginner",
+        "subjects": [
+            {"code": "WEB-101", "name": "HTML5, Semantic UI & Tailwind CSS Layouts", "color": "#f59e0b", "desc": "Semantic HTML, Flexbox, Grid systems, responsive design, and Tailwind utility styling."},
+            {"code": "JS-201", "name": "Modern JavaScript ES6+ & React 19 Ecosystem", "color": "#3b82f6", "desc": "State management, React hooks, component hierarchy, React Router, Vite, and API integration."},
+            {"code": "BE-301", "name": "FastAPI, PostgreSQL ORM & Authentication", "color": "#8b5cf6", "desc": "REST architecture, SQLAlchemy 2.0 ORM, migrations, JWT auth, and role-based access control."}
+        ]
+    },
+    {
+        "title": "Cloud Computing & DevOps Engineering (AWS & Kubernetes)",
+        "slug": "cloud-devops-aws",
+        "description": "Hands-on DevOps engineering covering Linux administration, Docker containerization, Kubernetes cluster management, CI/CD, and AWS.",
+        "level": "advanced",
+        "subjects": [
+            {"code": "DO-101", "name": "Linux Administration, Shell Scripting & Networking", "color": "#eab308", "desc": "Bash scripting, user permissions, systemd services, SSH, firewalls, and network inspection."},
+            {"code": "DO-201", "name": "Docker Containerization & Kubernetes Orchestration", "color": "#0284c7", "desc": "Dockerfiles, compose, multi-stage builds, pods, deployments, services, ingress, and Helm charts."},
+            {"code": "DO-301", "name": "AWS Cloud Architecture & CI/CD with GitHub Actions", "color": "#ea580c", "desc": "EC2, S3, RDS, IAM roles, GitHub Actions pipelines, and Terraform Infrastructure as Code."}
+        ]
+    }
+]
+
+
+async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
+    """Helper to ensure all professional tech courses & subjects exist."""
+    teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
+    teacher_idx = 0
+    created = []
+
+    for c_data in TECH_COURSES_DATA:
+        existing = await session.scalar(select(Course).where(Course.slug == c_data["slug"]))
+        if not existing:
+            c = Course(
+                slug=c_data["slug"],
+                status="published",
+                level=c_data["level"],
+                price=0.0,
+                is_free=True,
+            )
+            session.add(c)
+            await session.flush()
+
+            v = CourseVersion(
+                course_id=c.id,
+                version_number=1,
+                title=c_data["title"],
+                description=c_data["description"]
+            )
+            session.add(v)
+
+            for idx, s_info in enumerate(c_data["subjects"], start=1):
+                t_id = teachers[teacher_idx % len(teachers)].id if teachers else None
+                teacher_idx += 1
+                session.add(CourseSubject(
+                    course_id=c.id,
+                    teacher_id=t_id,
+                    code=s_info["code"],
+                    name=s_info["name"],
+                    description=s_info["desc"],
+                    color=s_info["color"],
+                    order_index=idx
+                ))
+            created.append(c)
+
+    # Enroll all students in the primary tech courses if they have none
+    all_students = (await session.scalars(select(User).where(User.role == "student"))).all()
+    all_courses = (await session.scalars(select(Course))).all()
+    for stu in all_students:
+        for c in all_courses:
+            existing_enroll = await session.scalar(
+                select(Enrollment).where(Enrollment.user_id == stu.id, Enrollment.course_id == c.id)
+            )
+            if not existing_enroll:
+                session.add(Enrollment(user_id=stu.id, course_id=c.id, status="active"))
+
+    await session.commit()
+    return created
+
+
 @router.get("/courses")
 async def list_admin_courses(
     _admin: User = Depends(require_permission("admin:users")),
@@ -253,6 +371,20 @@ async def list_admin_courses(
             .order_by(Course.created_at.desc())
         )
     ).all()
+
+    # If no courses exist, auto-seed standard tech tracks
+    if not courses:
+        await seed_tech_courses_internal(session)
+        courses = (
+            await session.scalars(
+                select(Course)
+                .options(
+                    selectinload(Course.versions),
+                    selectinload(Course.subjects),
+                )
+                .order_by(Course.created_at.desc())
+            )
+        ).all()
 
     # Load teacher names for subject mapping
     teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
@@ -295,6 +427,15 @@ async def list_admin_courses(
         })
 
     return result
+
+
+@router.post("/seed-tech-courses")
+async def seed_tech_courses_endpoint(
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    created = await seed_tech_courses_internal(session)
+    return {"status": "success", "courses_seeded": len(created), "message": "Tech training courses and subject tracks seeded successfully"}
 
 
 @router.post("/courses", status_code=status.HTTP_201_CREATED)
