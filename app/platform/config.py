@@ -29,6 +29,24 @@ class Settings(BaseSettings):
     database_max_overflow: int = 40
     database_echo: bool = False
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def assemble_database_url(cls, v: str) -> str:
+        if not isinstance(v, str) or not v.strip():
+            return v
+        url = v.strip()
+        # Standardize prefix for SQLAlchemy asyncpg
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        # asyncpg expects 'ssl=' rather than 'sslmode='
+        if "postgresql+asyncpg://" in url and "sslmode=" in url:
+            url = url.replace("sslmode=", "ssl=")
+
+        return url
+
     # ── Redis ────────────────────────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"
     cache_ttl_seconds: int = 300
