@@ -26,7 +26,6 @@ import {
 
   Plus,
 
-  Play,
 
   Monitor,
 
@@ -3732,22 +3731,17 @@ const handleTriggerTeacherCopilot = async (
       return
     }
 
-    // Auto-open Zoom Meeting (Host start_url for teachers, join_url for students)
+    // Direct 100% Zoom Meeting Launch (Host start_url for teachers, join_url for students)
     const zoomUrl = (isHost && liveClass.zoom_start_url)
       ? liveClass.zoom_start_url
       : (liveClass.zoom_join_url || (liveClass.meeting_url?.startsWith('http') ? liveClass.meeting_url : undefined))
 
     if (zoomUrl) {
-      try {
-        window.open(zoomUrl, '_blank', 'noopener,noreferrer')
-      } catch (err) {
-        console.warn('Could not launch Zoom window automatically:', err)
-      }
+      window.open(zoomUrl, '_blank', 'noopener,noreferrer')
+    } else {
+      alert('Zoom meeting link is currently being generated. Please wait a moment and try again.')
+      return
     }
-
-    await startCameraStream()
-
-    setActiveCallRoom(liveClass)
 
     if (liveClass.status === 'scheduled' && isHost) {
       try {
@@ -3756,6 +3750,16 @@ const handleTriggerTeacherCopilot = async (
       } catch (err) {
         console.warn('Status update error:', err)
       }
+    }
+  }
+
+  const handleEndClassDirectly = async (classId: string) => {
+    try {
+      await updateLiveClassStatus(classId, 'ended')
+      setClasses(prev => prev.map(c => c.id === classId ? { ...c, status: 'ended' } : c))
+      await loadClassroomData()
+    } catch (err) {
+      console.warn('Failed to end class:', err)
     }
   }
 
@@ -6656,78 +6660,49 @@ const handleTriggerTeacherCopilot = async (
 
                       >
 
-                        <Video className="w-4 h-4 text-purple-200" />
+                        <Video className="w-4 h-4 text-white" />
 
-                        <span>Watch Recording</span>
+                        <span>Watch Zoom Recording</span>
 
                       </button>
-
-                      {!isEnded && (
-
-                        <button
-
-                          onClick={() => handleJoinClass(cls)}
-
-                          className="px-4 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all font-semibold"
-
-                        >
-
-                          <Play className="w-4 h-4" />
-
-                          <span>Join</span>
-
-                        </button>
-
-                      )}
 
                     </div>
 
                   ) : (
 
                     <div className="flex gap-2">
-                      {cls.zoom_meeting_id && !isEnded && (
+                      <button
+                        onClick={() => handleJoinClass(cls)}
+                        disabled={isEnded}
+                        className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                          isEnded
+                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            : isLive
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 hover:scale-[1.02] active:scale-95'
+                            : isHost
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 hover:scale-[1.02] active:scale-95'
+                            : 'bg-slate-800 hover:bg-slate-700 text-white'
+                        }`}
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>
+                          {isLive
+                            ? 'Join Zoom Meeting'
+                            : isHost
+                            ? 'Start Zoom Class'
+                            : 'Join Zoom Meeting'}
+                        </span>
+                      </button>
+
+                      {isLive && isHost && (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const zUrl = (isHost && cls.zoom_start_url) ? cls.zoom_start_url : (cls.zoom_join_url || cls.meeting_url)
-                            if (zUrl && zUrl.startsWith('http')) {
-                              window.open(zUrl, '_blank', 'noopener,noreferrer')
-                            }
-                          }}
-                          className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95"
-                          title="Open Zoom App"
+                          onClick={() => handleEndClassDirectly(cls.id)}
+                          className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 transition-all hover:scale-105 active:scale-95"
+                          title="Conclude live lecture"
                         >
-                          <Video className="w-4 h-4 text-blue-200" />
-                          <span>Zoom</span>
+                          <span>End Class</span>
                         </button>
                       )}
-                      <button
-
-                        onClick={() => handleJoinClass(cls)}
-
-                        disabled={isEnded}
-
-                        className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-
-                          isEnded
-
-                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-
-                            : isLive
-
-                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95'
-
-                            : 'bg-slate-800 hover:bg-slate-700 text-white'
-
-                        }`}
-
-                      >
-
-                        <Play className="w-4 h-4" />
-
-                        <span>{isLive ? 'Join Live Session' : (isHost ? 'Start Class' : 'Enter Classroom')}</span>
-
-                      </button>
                     </div>
 
                   )}
