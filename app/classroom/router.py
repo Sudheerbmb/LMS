@@ -57,6 +57,8 @@ from app.classroom.service import (
     ScheduleConflictError,
     attach_class_recording,
     cancel_school_live_class,
+    delete_school_live_class,
+    flush_all_school_live_classes,
     get_class_attendances,
     get_class_recordings,
     get_class_transcript,
@@ -337,6 +339,42 @@ async def cancel_live_class_endpoint(
         }
     except ClassroomAccessError as err:
         raise HTTPException(status_code=403, detail=str(err)) from err
+
+
+@router.delete("/classes/{class_id}")
+async def delete_live_class_endpoint(
+    class_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Deletes a live class session and its associated Zoom meeting.
+    """
+    try:
+        await delete_school_live_class(session, class_id, current_user)
+        return {"status": "deleted", "id": str(class_id)}
+    except ClassroomAccessError as err:
+        raise HTTPException(status_code=403, detail=str(err)) from err
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/classes/flush-all")
+@router.delete("/classes/flush-all")
+async def flush_all_live_classes_endpoint(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Purges all live class sessions to reset testing state.
+    """
+    try:
+        deleted_count = await flush_all_school_live_classes(session, current_user)
+        return {"status": "success", "deleted_count": deleted_count, "message": f"Successfully flushed {deleted_count} live classes."}
+    except ClassroomAccessError as err:
+        raise HTTPException(status_code=403, detail=str(err)) from err
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/classes/{class_id}/start")

@@ -462,6 +462,10 @@ export const rejectUser = (userId: string) =>
   request<{ id: string; status: string }>(`/api/v1/admin/users/${userId}/reject`, { method: 'POST' })
 
 export const getNotifications = () => request<Notification[]>('/api/v1/notifications')
+export const markNotificationRead = (id: string) => request<Notification>(`/api/v1/notifications/${id}/read`, { method: 'POST' })
+export const markAllNotificationsRead = () => request<{ status: string; count: number }>('/api/v1/notifications/mark-all-read', { method: 'POST' })
+export const deleteNotification = (id: string) => request<{ status: string; id: string }>(`/api/v1/notifications/${id}`, { method: 'DELETE' })
+export const flushAllNotifications = () => request<{ status: string; deleted_count: number; message: string }>('/api/v1/notifications/flush-all', { method: 'POST' })
 
 // ── Timetable Types & API ──────────────────────────────────────────────────
 
@@ -983,6 +987,16 @@ export const rescheduleLiveClass = (
 
 export const cancelLiveClass = (classId: string) =>
   request<SchoolLiveClass>(`/api/v1/classroom/classes/${classId}/cancel`, {
+    method: 'POST'
+  })
+
+export const deleteLiveClass = (classId: string) =>
+  request<{ status: string; id: string }>(`/api/v1/classroom/classes/${classId}`, {
+    method: 'DELETE'
+  })
+
+export const flushAllLiveClasses = () =>
+  request<{ status: string; deleted_count: number; message: string }>('/api/v1/classroom/classes/flush-all', {
     method: 'POST'
   })
 

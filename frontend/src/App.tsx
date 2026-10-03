@@ -325,7 +325,14 @@ export function App() {
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Header user={user} notifications={notifications} />
+        <Header
+          user={user}
+          notifications={notifications}
+          onRefreshNotifications={async () => {
+            const notifs = await getNotifications().catch(() => [])
+            setNotifications(notifs || [])
+          }}
+        />
 
         <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
           {currentTab === 'overview' && (

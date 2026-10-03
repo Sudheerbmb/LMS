@@ -4,6 +4,7 @@ import type {
   AdminInstituteCourse,
   User,
   ZoomIntegrationStatus,
+  Notification as LMSNotification,
 } from '../lib/api'
 import {
   getAdminUsers,
@@ -18,6 +19,9 @@ import {
   unenrollStudentFromCourse,
   getZoomStatus,
   seedTechCourses,
+  getNotifications,
+  deleteNotification,
+  flushAllNotifications,
 } from '../lib/api'
 import {
   Users,
@@ -36,6 +40,7 @@ import {
   RefreshCw,
   Sparkles,
   X,
+  Bell,
 } from 'lucide-react'
 
 type AdminPageProps = {
@@ -43,9 +48,11 @@ type AdminPageProps = {
 }
 
 export const AdminPage: React.FC<AdminPageProps> = () => {
-  const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'courses' | 'zoom'>('students')
+  const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'courses' | 'zoom' | 'notifications'>('students')
   const [users, setUsers] = useState<AdminInstituteUser[]>([])
   const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
+  const [notifications, setNotifications] = useState<LMSNotification[]>([])
+  const [flushingNotifs, setFlushingNotifs] = useState(false)
   const [loading, setLoading] = useState(true)
   const [zoomStatus, setZoomStatus] = useState<ZoomIntegrationStatus | null>(null)
   const [loadingZoom, setLoadingZoom] = useState(false)
@@ -101,16 +108,44 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   const loadAllData = async () => {
     try {
       setLoading(true)
-      const [uList, cList] = await Promise.all([
+      const [uList, cList, nList] = await Promise.all([
         getAdminUsers().catch(() => []),
         getAdminCourses().catch(() => []),
+        getNotifications().catch(() => []),
       ])
       setUsers(uList || [])
       setCourses(cList || [])
+      setNotifications(nList || [])
     } catch (err) {
       console.error('Failed to load admin data:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      setNotifications(prev => prev.filter(n => n.id !== id))
+      await deleteNotification(id)
+    } catch (err) {
+      console.error('Failed to delete notification:', err)
+      const fresh = await getNotifications().catch(() => [])
+      setNotifications(fresh || [])
+    }
+  }
+
+  const handleFlushAllNotifications = async () => {
+    if (!window.confirm('Are you sure you want to flush all system notifications?')) return
+    try {
+      setFlushingNotifs(true)
+      setNotifications([])
+      await flushAllNotifications()
+    } catch (err) {
+      console.error('Failed to flush notifications:', err)
+      const fresh = await getNotifications().catch(() => [])
+      setNotifications(fresh || [])
+    } finally {
+      setFlushingNotifs(false)
     }
   }
 
@@ -447,6 +482,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         >
           <Video className="w-4 h-4 text-blue-400" />
           <span>Zoom Live Infrastructure</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('notifications')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'notifications'
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Bell className="w-4 h-4 text-amber-400" />
+          <span>System Notifications ({notifications.length})</span>
         </button>
       </div>
 
@@ -935,6 +982,99 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 <p className="text-[11px] text-slate-500">Direct MP4 Playback + AI Notes</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab 5: System Notifications Manager ─────────────────────────── */}
+      {activeTab === 'notifications' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-amber-400" />
+                  System Notifications & Broadcast Alerts
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Manage active candidate announcements, timetable alerts, and prune obsolete notifications.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                {notifications.length > 0 && (
+                  <button
+                    onClick={handleFlushAllNotifications}
+                    disabled={flushingNotifs}
+                    className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                    title="Flush out all notifications"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    <span>{flushingNotifs ? 'Flushing...' : 'Flush Out All Notifications'}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={loadAllData}
+                  className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all"
+                  title="Refresh Notifications"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="text-center py-16 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                <Bell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-slate-300">No Active Notifications</h4>
+                <p className="text-xs text-slate-500 mt-1">All broadcast and system alerts have been cleared.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start justify-between gap-4 hover:border-slate-700 transition-all"
+                  >
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
+                        style={{
+                          background: n.read_at ? 'rgba(255,255,255,0.2)' : '#F59E0B',
+                          boxShadow: n.read_at ? 'none' : '0 0 10px #F59E0B',
+                        }}
+                      />
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white">{n.title}</span>
+                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            {n.notification_type || 'Alert'}
+                          </span>
+                          {n.read_at && (
+                            <span className="text-[10px] text-slate-500">Read</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed break-words">{n.body}</p>
+                        {n.created_at && (
+                          <span className="text-[10px] text-slate-500 block font-mono">
+                            {new Date(n.created_at).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteNotification(n.id)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all shrink-0"
+                      title="Delete notification"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

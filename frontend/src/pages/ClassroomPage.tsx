@@ -83,28 +83,22 @@ import {
   Layers,
 
   Grid,
-
-  Loader2
-
+  Loader2,
+  Trash2
 } from 'lucide-react'
 
 import {
-
   getSchoolLiveClasses,
-
   getTeacherTimetableSlots,
-
   createSchoolLiveClass,
-
   updateLiveClassStatus,
   endLiveClassSession,
-
+  deleteLiveClass,
+  flushAllLiveClasses,
   uploadClassRecording,
   getTeacherCopilotAssistance,
   getStudentTutorAssistance,
-
   getWsBaseUrl
-
 } from '../lib/api'
 
 import type { SchoolLiveClass, TeacherTimetableSlot } from '../lib/api'
@@ -428,7 +422,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [customTitle, setCustomTitle] = useState('')
   const [instantLaunch, setInstantLaunch] = useState(true)
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
-
+  const [flushingClasses, setFlushingClasses] = useState(false)
   
 
   // Active Video Call Room State
@@ -1014,11 +1008,32 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
       console.error('Failed to load classroom data:', err)
 
     } finally {
-
       setLoading(false)
-
     }
+  }
 
+  const handleDeleteClass = async (classId: string) => {
+    try {
+      setClasses(prev => prev.filter(c => c.id !== classId))
+      await deleteLiveClass(classId)
+    } catch (err: any) {
+      console.error('Failed to delete live class:', err)
+      loadClassroomData()
+    }
+  }
+
+  const handleFlushAllClasses = async () => {
+    if (!window.confirm('Are you sure you want to flush all live classes? This will reset all class sessions so you can test freshly.')) return
+    try {
+      setFlushingClasses(true)
+      setClasses([])
+      await flushAllLiveClasses()
+    } catch (err: any) {
+      console.error('Failed to flush live classes:', err)
+      loadClassroomData()
+    } finally {
+      setFlushingClasses(false)
+    }
   }
 
   // Timetable-Synchronized Auto-End Countdown Computation
@@ -6420,51 +6435,53 @@ const handleTriggerTeacherCopilot = async (
         </div>
 
         <div className="flex items-center gap-3">
-
           {isHost && (
+            <>
+              <button
+                onClick={handleFlushAllClasses}
+                disabled={flushingClasses}
+                className="px-4 py-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                title="Flush all live and ended class sessions to test fresh"
+              >
+                <Trash2 className="w-4 h-4 text-rose-400" />
+                <span>{flushingClasses ? 'Flushing...' : 'Flush Live Classes'}</span>
+              </button>
 
-            <button
-
-              onClick={() => setShowScheduleModal(true)}
-
-              className="px-5 py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95"
-
-            >
-
-              <Plus className="w-4 h-4" />
-
-              Schedule / Launch Class
-
-            </button>
-
+              <button
+                onClick={() => setShowScheduleModal(true)}
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Schedule / Launch Class
+              </button>
+            </>
           )}
-
         </div>
 
       </div>
 
-            {/* Student Enrolled Class Banner or Teacher Grade Selector */}
+      {/* Student Enrolled Class Banner or Teacher Grade Selector */}
       {isStudent ? (
-        <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-xs">
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs">
               {studentGrade}
             </div>
             <div>
-              <p className="text-xs font-extrabold text-white">Enrolled Stream: Class {studentGrade}</p>
-              <p className="text-[11px] text-yellow-300">Displaying authorized live lectures and official recordings for Class {studentGrade} only.</p>
+              <p className="text-xs font-extrabold text-white">Enrolled Technical Track: Track {studentGrade}</p>
+              <p className="text-[11px] text-amber-300/80">Displaying authorized live lectures and official recordings for Track {studentGrade}.</p>
             </div>
           </div>
           <button
             onClick={() => setFilterRecordingOnly(prev => !prev)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
               filterRecordingOnly
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-slate-900 text-amber-300 border border-purple-500/30'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'bg-slate-900 text-amber-300 border border-amber-500/30'
             }`}
           >
             <Video className="w-3.5 h-3.5 text-amber-300" />
-            <span>Class {studentGrade} Recordings ({classes.filter(c => !!c.recording_url).length})</span>
+            <span>Track {studentGrade} Recordings ({classes.filter(c => !!c.recording_url).length})</span>
           </button>
         </div>
       ) : (
@@ -6513,41 +6530,23 @@ const handleTriggerTeacherCopilot = async (
       )}
 
       {/* Live & Scheduled Classes Grid */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
         {loading ? (
-
           <div className="col-span-full py-16 text-center text-slate-400">
-
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-amber-400 mb-3" />
-
             <p className="text-sm font-semibold">Loading live classes...</p>
-
           </div>
-
         ) : classes.length === 0 ? (
-
           <div className="col-span-full py-16 text-center rounded-3xl bg-slate-900/50 border border-amber-500/15">
-
             <Calendar className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-
             <h3 className="text-base font-bold text-slate-300">No Live Classes Scheduled</h3>
-
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-
               {isHost
-
-                ? 'Click "Schedule / Launch Class" above to create an instant session from your assigned timetable periods.'
-
-                : 'Check back when your teachers launch their scheduled timetable sessions.'}
-
+                ? 'Click "Schedule / Launch Class" above to create an instant session or schedule from your timetable.'
+                : 'Check back when your instructors launch their scheduled live sessions.'}
             </p>
-
           </div>
-
         ) : (
-
           classes
             .filter(cls => {
               if (filterRecordingOnly) return !!cls.recording_url
@@ -6582,20 +6581,35 @@ const handleTriggerTeacherCopilot = async (
                       Track {cls.grade_number} • {cleanBatch}
                     </span>
 
-                    {isLive && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
-                        <Radio className="w-3 h-3 text-red-500" />
-                        LIVE NOW
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isLive && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                          <Radio className="w-3 h-3 text-red-500" />
+                          LIVE NOW
+                        </span>
+                      )}
 
-                    {isEnded && (
-                      <span className="text-[11px] font-medium text-slate-500">Ended</span>
-                    )}
+                      {isEnded && (
+                        <span className="text-[11px] font-medium text-slate-500">Ended</span>
+                      )}
 
-                    {!isLive && !isEnded && (
-                      <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
-                    )}
+                      {!isLive && !isEnded && (
+                        <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
+                      )}
+
+                      {isHost && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteClass(cls.id)
+                          }}
+                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                          title="Delete class session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cleanTitle}</h3>

@@ -257,6 +257,56 @@ async def cancel_school_live_class(
     return live_class
 
 
+async def delete_school_live_class(
+    session: AsyncSession,
+    class_id: UUID,
+    user: User,
+) -> bool:
+    """
+    Deletes a live class session and cancels the associated Zoom meeting.
+    """
+    live_class = await session.get(LiveClass, class_id)
+    if not live_class:
+        raise ClassroomAccessError("Live class not found")
+
+    if user.role != "admin" and live_class.teacher_id != user.id:
+        raise ClassroomAccessError("Unauthorized to delete this class")
+
+    if live_class.zoom_meeting_id and zoom_service.is_configured():
+        try:
+            await zoom_service.cancel_meeting_for_class(live_class.zoom_meeting_id)
+        except Exception as e:
+            logger.warning(f"Failed to cancel zoom meeting {live_class.zoom_meeting_id}: {e}")
+
+    await session.delete(live_class)
+    await session.commit()
+    return True
+
+
+async def flush_all_school_live_classes(
+    session: AsyncSession,
+    user: User,
+) -> int:
+    """
+    Deletes all live class sessions for clean retesting (Admin and Faculty).
+    """
+    if user.role not in ("admin", "teacher"):
+        raise ClassroomAccessError("Only administrators and faculty can flush live classes")
+
+    classes = list((await session.scalars(select(LiveClass))).all())
+    count = len(classes)
+    for c in classes:
+        if c.zoom_meeting_id and zoom_service.is_configured():
+            try:
+                await zoom_service.cancel_meeting_for_class(c.zoom_meeting_id)
+            except Exception:
+                pass
+        await session.delete(c)
+
+    await session.commit()
+    return count
+
+
 async def get_school_live_classes(
     session: AsyncSession,
     user: User,
