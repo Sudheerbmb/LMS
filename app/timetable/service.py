@@ -66,20 +66,20 @@ SUBJECT_DEFAULTS = [
 
 TEACHER_SEEDS = [
     # Python & AI Department
-    {"name": "Dr. Sarah Connor", "email": "sarah.connor@institute.edu", "emp_id": "T001", "subjects": ["PY-101", "AI-401"], "rating": 4.9},
-    {"name": "Prof. Alan Turing", "email": "alan.turing@institute.edu", "emp_id": "T002", "subjects": ["GEN-201", "RAG-301", "PY-101"], "rating": 5.0},
+    {"name": "Dr. Sarah Connor", "email": "sarah.connor@institute.edu", "emp_id": "T001", "qualification": "Ph.D in AI & Senior Python Architect", "subjects": ["PY-101", "AI-401"], "rating": 4.9},
+    {"name": "Prof. Alan Turing", "email": "alan.turing@institute.edu", "emp_id": "T002", "qualification": "Principal LLM & RAG Systems Engineer", "subjects": ["GEN-201", "RAG-301", "PY-101"], "rating": 5.0},
 
     # Salesforce Department
-    {"name": "Marc Benioff", "email": "marc.b@institute.edu", "emp_id": "T003", "subjects": ["SF-ADM", "SF-DEV", "SF-LWC"], "rating": 4.8},
+    {"name": "Marc Benioff", "email": "marc.b@institute.edu", "emp_id": "T003", "qualification": "Certified Technical Architect (CTA) & Salesforce Lead", "subjects": ["SF-ADM", "SF-DEV", "SF-LWC"], "rating": 4.8},
 
     # ServiceNow Department
-    {"name": "Fred Luddy", "email": "fred.l@institute.edu", "emp_id": "T004", "subjects": ["SN-FND", "SN-DEV"], "rating": 4.9},
+    {"name": "Fred Luddy", "email": "fred.l@institute.edu", "emp_id": "T004", "qualification": "Certified ServiceNow CAD & Platform Master", "subjects": ["SN-FND", "SN-DEV"], "rating": 4.9},
 
     # Full Stack Web Department
-    {"name": "Dan Abramov", "email": "dan.a@institute.edu", "emp_id": "T005", "subjects": ["FS-REA", "FS-NOD"], "rating": 4.9},
+    {"name": "Dan Abramov", "email": "dan.a@institute.edu", "emp_id": "T005", "qualification": "Staff Full-Stack & React Core Engineer", "subjects": ["FS-REA", "FS-NOD"], "rating": 4.9},
 
     # DevOps Department
-    {"name": "Linus Torvalds", "email": "linus.t@institute.edu", "emp_id": "T006", "subjects": ["DO-CON", "DO-CICD"], "rating": 5.0},
+    {"name": "Linus Torvalds", "email": "linus.t@institute.edu", "emp_id": "T006", "qualification": "Principal Cloud Architect & Kubernetes CKA", "subjects": ["DO-CON", "DO-CICD"], "rating": 5.0},
 ]
 
 DEFAULT_POLICY_RULES = [
@@ -272,7 +272,7 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
             profile = TeacherProfile(
                 user_id=user.id,
                 employee_id=t_data["emp_id"],
-                qualification="B.Ed / M.Sc / NIS Coach",
+                qualification=t_data.get("qualification", "Senior Technical Specialist"),
                 max_daily_periods=5,
                 rating_avg=t_data["rating"],
                 complaint_count=3 if t_data["rating"] < 3.0 else 0,
@@ -282,13 +282,16 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
         else:
             profile.user_id = user.id
             profile.employee_id = t_data["emp_id"]
+            profile.qualification = t_data.get("qualification", "Senior Technical Specialist")
             profile.rating_avg = t_data["rating"]
             profile.complaint_count = 3 if t_data["rating"] < 3.0 else 0
             await session.flush()
 
+        valid_subject_ids = []
         for sub_code in t_data["subjects"]:
             sub = subject_map.get(sub_code)
             if sub:
+                valid_subject_ids.append(sub.id)
                 existing_skill = await session.scalar(
                     select(TeacherSubjectSkill).where(
                         TeacherSubjectSkill.teacher_id == profile.id,
@@ -297,40 +300,17 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
                 )
                 if not existing_skill:
                     session.add(TeacherSubjectSkill(teacher_id=profile.id, subject_id=sub.id))
+
+        if valid_subject_ids:
+            await session.execute(
+                delete(TeacherSubjectSkill).where(
+                    TeacherSubjectSkill.teacher_id == profile.id,
+                    TeacherSubjectSkill.subject_id.not_in(valid_subject_ids)
+                )
+            )
         await session.flush()
 
         teachers_created.append(profile)
-
-    # 5. Seed sample student complaint/restriction for Ramesh Sharma in Class 9-A Math
-    ramesh = next((t for t in teachers_created if t.employee_id == "T006"), None)
-    class_9_a = next((s for s in section_list if s.name == "A" and grade_map.get(9) and s.grade_id == grade_map[9].id), None)
-    math_sub = subject_map.get("MATH")
-
-    if ramesh and class_9_a and math_sub:
-        existing_res = await session.scalar(
-            select(TeacherClassRestriction).where(
-                TeacherClassRestriction.teacher_id == ramesh.id,
-                TeacherClassRestriction.section_id == class_9_a.id,
-                TeacherClassRestriction.subject_id == math_sub.id,
-            )
-        )
-        if not existing_res:
-            session.add(TeacherClassRestriction(
-                teacher_id=ramesh.id,
-                section_id=class_9_a.id,
-                subject_id=math_sub.id,
-                reason="Negative Student Rating (2.1/5) & 3 Complaints in Class 9-A Math. Disqualified by Agent.",
-                is_active=True,
-            ))
-            session.add(TeacherFeedback(
-                teacher_id=ramesh.id,
-                section_id=class_9_a.id,
-                subject_id=math_sub.id,
-                rating=2,
-                category="pacing",
-                comments="Rushes through advanced trigonometry without explaining concepts clearly.",
-                is_active_complaint=True,
-            ))
 
     await session.commit()
     return {
@@ -708,13 +688,26 @@ async def get_all_teachers_with_feedback(session: AsyncSession) -> List[Dict[str
     user_map = {u.id: u for u in users}
 
     result = []
+    qual_map = {
+        "T001": "Ph.D in AI & Senior Python Architect",
+        "T002": "Principal LLM & RAG Systems Engineer",
+        "T003": "Certified Technical Architect (CTA) & Salesforce Lead",
+        "T004": "Certified ServiceNow CAD & Platform Master",
+        "T005": "Staff Full-Stack & React Core Engineer",
+        "T006": "Principal Cloud Architect & Kubernetes CKA",
+    }
+    obsolete_keywords = ['mathematics', 'physics', 'english', 'art', 'social', 'hindi', 'biology', 'chemistry', 'craft', 'storytelling', 'cbse']
+
     for t in teachers:
         u = user_map.get(t.user_id)
-        skills = [sk.subject.name for sk in t.skills if sk.subject]
+        skills = [
+            sk.subject.name for sk in t.skills 
+            if sk.subject and not any(k in sk.subject.name.lower() for k in obsolete_keywords)
+        ]
         restrictions = [
             {
                 "id": str(r.id),
-                "section": f"{r.section.grade.name} - {r.section.name}" if r.section and r.section.grade else "Class",
+                "section": f"Track {r.section.grade.grade_number} • Batch {r.section.name}" if r.section and r.section.grade else "Batch",
                 "subject": r.subject.name if r.subject else "Subject",
                 "reason": r.reason,
                 "is_active": r.is_active,
@@ -728,31 +721,34 @@ async def get_all_teachers_with_feedback(session: AsyncSession) -> List[Dict[str
                 "category": review.category,
                 "comments": review.comments,
                 "section": (
-                    f"{review.section.grade.name} - {review.section.name}"
+                    f"Track {review.section.grade.grade_number} • Batch {review.section.name}"
                     if review.section and review.section.grade
-                    else "Class"
+                    else "Batch"
                 ),
                 "subject": review.subject.name if review.subject else "Subject",
                 "created_at": review.created_at.isoformat() if review.created_at else None,
             }
             for review in sorted(t.feedback, key=lambda item: item.created_at, reverse=True)
+            if not any(k in (review.comments or '').lower() for k in ['trigonometry', 'maths', 'physics'])
         ]
         teacher_rating = (
-            sum(review.rating for review in t.feedback) / len(t.feedback)
-            if t.feedback
+            sum(review.rating for review in reviews) / len(reviews)
+            if reviews
             else t.rating_avg
         )
+
+        qualification = qual_map.get(t.employee_id, t.qualification if "NIS Coach" not in t.qualification and "B.Ed" not in t.qualification else "Senior Technical Specialist")
 
         result.append({
             "id": t.id,
             "user_id": t.user_id,
-            "display_name": u.display_name if u else f"Teacher {t.employee_id}",
+            "display_name": u.display_name if u else f"Faculty {t.employee_id}",
             "email": u.email if u else "",
             "employee_id": t.employee_id,
-            "qualification": t.qualification,
+            "qualification": qualification,
             "max_daily_periods": t.max_daily_periods,
             "rating_avg": round(teacher_rating, 1),
-            "complaint_count": t.complaint_count,
+            "complaint_count": len(restrictions),
             "skills": skills,
             "reviews": reviews,
             "active_restrictions": restrictions,

@@ -421,9 +421,10 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('timetable')
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
-  const [instantGrade, setInstantGrade] = useState<number>(5)
-  const [instantSection, setInstantSection] = useState<string>('A')
-  const [instantSubject, setInstantSubject] = useState<string>('Mathematics')
+  const [instantGrade, setInstantGrade] = useState<number>(1)
+  const [instantSection, setInstantSection] = useState<string>('Batch A')
+  const [instantSubjectCode, setInstantSubjectCode] = useState<string>('PY-101')
+  const [instantSubject, setInstantSubject] = useState<string>('Python Core & Advanced OOP')
   const [customTitle, setCustomTitle] = useState('')
   const [instantLaunch, setInstantLaunch] = useState(true)
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
@@ -3851,29 +3852,45 @@ const handleTriggerTeacherCopilot = async (
       const startIso = now.toISOString()
       const endIso = new Date(now.getTime() + 45 * 60 * 1000).toISOString()
 
-      let grade_number = 5
-      let section_name = 'A'
-      let subject_code = 'MATH'
-      let subject_name = 'Mathematics'
+      const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+      const currentMinutes = now.getHours() * 60 + now.getMinutes()
+      const toMinutes = (timeStr?: string) => {
+        if (!timeStr) return 0
+        const [h, m] = timeStr.split(':').map(Number)
+        return (h || 0) * 60 + (m || 0)
+      }
+
+      // Filter slots for today where end_time >= currentMinutes (active right now or upcoming later today)
+      const upcomingTeacherSlots = teacherSlots.filter(s => {
+        const isToday = (s.day_of_week || '').toLowerCase() === currentDayName
+        const endMin = toMinutes(s.end_time)
+        return isToday && endMin >= currentMinutes
+      })
+
+      let grade_number = 1
+      let section_name = 'Batch A'
+      let subject_code = 'PY-101'
+      let subject_name = 'Python Core & Advanced OOP'
       let period_number: number | undefined = undefined
       let room_number = 'Virtual Zoom Room'
 
-      if (scheduleMode === 'timetable' && teacherSlots.length > 0) {
-        const selectedSlot = teacherSlots[selectedSlotIndex]
+      if (scheduleMode === 'timetable' && upcomingTeacherSlots.length > 0) {
+        const selectedSlot = upcomingTeacherSlots[selectedSlotIndex] || upcomingTeacherSlots[0]
         grade_number = selectedSlot.grade_number
         section_name = selectedSlot.section_name
         subject_code = selectedSlot.subject_code
         subject_name = selectedSlot.subject_name
         period_number = selectedSlot.period_number
-        room_number = selectedSlot.room_or_venue
+        room_number = selectedSlot.room_or_venue || 'Virtual Zoom Room'
       } else {
         grade_number = instantGrade
         section_name = instantSection
         subject_name = instantSubject
-        subject_code = instantSubject.slice(0, 4).toUpperCase()
+        subject_code = instantSubjectCode || 'TECH'
+        room_number = 'Virtual Zoom Room'
       }
 
-      const title = customTitle.trim() || `${subject_name} (Grade ${grade_number}-${section_name})`
+      const title = customTitle.trim() || `${subject_name} (Track ${grade_number} • ${section_name})`
 
       const created = await createSchoolLiveClass({
         title,
@@ -6531,69 +6548,58 @@ const handleTriggerTeacherCopilot = async (
 
         ) : (
 
-          classes.filter(cls => filterRecordingOnly ? !!cls.recording_url : true).map(cls => {
-
+          classes
+            .filter(cls => {
+              if (filterRecordingOnly) return !!cls.recording_url
+              if (filterGrade !== 'all') return cls.grade_number === filterGrade
+              return true
+            })
+            .map(cls => {
             const isLive = cls.status === 'live'
-
             const isEnded = cls.status === 'ended'
+            const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name}`
+            const cleanTitle = (cls.title || '')
+              .replace(/Grade (\d+)-([A-Z])/gi, 'Track $1 • Batch $2')
+              .replace(/Grade (\d+)/gi, 'Track $1')
+              .replace(/Mathematics/gi, 'Python & GenAI Core')
+              .replace(/Science/gi, 'Salesforce CRM & Apex')
+            const cleanSubject = (cls.subject_name || '')
+              .replace(/Mathematics/gi, 'Python & GenAI Core')
+              .replace(/Science/gi, 'Salesforce CRM')
 
             return (
-
               <div
-
                 key={cls.id}
-
                 className={`rounded-3xl border p-5 flex flex-col justify-between transition-all hover:shadow-2xl ${
-
                   isLive
-
                     ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/30 border-cyan-500/40 shadow-cyan-500/10'
-
                     : 'bg-slate-900 border-slate-800'
-
                 }`}
-
               >
-
                 <div>
-
                   <div className="flex items-center justify-between mb-3">
-
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-
-                      Grade {cls.grade_number}-{cls.section_name}
-
+                      Track {cls.grade_number} • {cleanBatch}
                     </span>
 
                     {isLive && (
-
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
-
                         <Radio className="w-3 h-3 text-red-500" />
-
                         LIVE NOW
-
                       </span>
-
                     )}
 
                     {isEnded && (
-
                       <span className="text-[11px] font-medium text-slate-500">Ended</span>
-
                     )}
 
                     {!isLive && !isEnded && (
-
                       <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
-
                     )}
-
                   </div>
 
-                  <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cls.title}</h3>
-
-                  <p className="text-xs text-slate-400 mb-4">{cls.subject_name} &bull; Period {cls.period_number || 1}</p>
+                  <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cleanTitle}</h3>
+                  <p className="text-xs text-slate-400 mb-4">{cleanSubject} &bull; Period {cls.period_number || 1}</p>
 
                   <div className="space-y-1.5 text-xs text-slate-300 mb-6 bg-slate-950/40 p-3 rounded-2xl border border-slate-800">
 
@@ -6754,74 +6760,126 @@ const handleTriggerTeacherCopilot = async (
             </div>
 
             <form onSubmit={handleScheduleSubmit} className="space-y-4">
-              {scheduleMode === 'timetable' ? (
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Select Timetable Slot
-                  </label>
-                  {teacherSlots.length === 0 ? (
-                    <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                      No active timetable slots assigned. Switch to <strong>On-The-Spot Instant</strong> to launch a class immediately.
-                    </p>
-                  ) : (
-                    <select
-                      value={selectedSlotIndex}
-                      onChange={e => setSelectedSlotIndex(Number(e.target.value))}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
-                    >
-                      {teacherSlots.map((s, idx) => (
-                        <option key={idx} value={idx}>
-                          Grade {s.grade_number}-{s.section_name} &bull; {s.subject_name} (Period {s.period_number}, {s.day_of_week})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3 p-3.5 rounded-2xl bg-slate-900/80 border border-blue-500/20">
+              {scheduleMode === 'timetable' ? (() => {
+                const now = new Date()
+                const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+                const currentMinutes = now.getHours() * 60 + now.getMinutes()
+                const toMinutes = (timeStr?: string) => {
+                  if (!timeStr) return 0
+                  const [h, m] = timeStr.split(':').map(Number)
+                  return (h || 0) * 60 + (m || 0)
+                }
+
+                // Filter slots for today where end_time >= currentMinutes
+                const upcomingSlots = teacherSlots.filter(s => {
+                  const isToday = (s.day_of_week || '').toLowerCase() === currentDayName
+                  const endMin = toMinutes(s.end_time)
+                  return isToday && endMin >= currentMinutes
+                })
+
+                return (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Select Today's Upcoming Timetable Class (after {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                    </label>
+                    {upcomingSlots.length === 0 ? (
+                      <div className="text-xs text-amber-300 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20 space-y-1.5">
+                        <p className="font-bold">No scheduled classes remaining today after {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
+                        <p className="text-[11px] text-slate-400">
+                          All today's timetable periods have completed. Switch to <strong>On-The-Spot Instant</strong> to launch an immediate class session, or view the full schedule in the Timetable tab.
+                        </p>
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedSlotIndex}
+                        onChange={e => setSelectedSlotIndex(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                      >
+                        {upcomingSlots.map((s, idx) => (
+                          <option key={idx} value={idx}>
+                            Track {s.grade_number} • Batch {s.section_name} — {s.subject_name} ({s.start_time} - {s.end_time}, Period {s.period_number})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )
+              })() : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/20">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                        Select Grade
+                        Select Training Track
                       </label>
                       <select
                         value={instantGrade}
                         onChange={e => setInstantGrade(Number(e.target.value))}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                       >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => (
-                          <option key={g} value={g}>Class / Grade {g}</option>
-                        ))}
+                        <option value={1}>Track 1: Python with Generative AI (GenAI)</option>
+                        <option value={2}>Track 2: Salesforce Administration & Developer</option>
+                        <option value={3}>Track 3: ServiceNow System Admin & Developer</option>
+                        <option value={4}>Track 4: Full Stack Web Engineering</option>
+                        <option value={5}>Track 5: Cloud Computing & DevOps</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                        Section
+                        Cohort / Batch
                       </label>
                       <select
                         value={instantSection}
                         onChange={e => setInstantSection(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                       >
-                        {['A', 'B', 'C'].map(sec => (
-                          <option key={sec} value={sec}>Section {sec}</option>
-                        ))}
+                        <option value="Batch A">Batch A (Morning Session)</option>
+                        <option value="Batch B">Batch B (Evening Session)</option>
+                        <option value="Weekend Batch">Weekend Intensive</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                      Subject
+                      Technical Subject Module
                     </label>
                     <select
-                      value={instantSubject}
-                      onChange={e => setInstantSubject(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                      value={instantSubjectCode}
+                      onChange={e => {
+                        const code = e.target.value
+                        setInstantSubjectCode(code)
+                        const found = [
+                          { code: 'PY-101', name: 'Python Core & Advanced OOP' },
+                          { code: 'GEN-201', name: 'Prompt Engineering, LLMs & LangChain' },
+                          { code: 'RAG-301', name: 'RAG Architecture & Vector DBs' },
+                          { code: 'AI-401', name: 'Autonomous Agents & FastAPI Deployment' },
+                          { code: 'SF-ADM', name: 'Salesforce Administrator Essentials' },
+                          { code: 'SF-DEV', name: 'Apex Programming & SOQL Queries' },
+                          { code: 'SF-LWC', name: 'Lightning Web Components (LWC)' },
+                          { code: 'SN-FND', name: 'ServiceNow Platform & ITSM Core' },
+                          { code: 'SN-DEV', name: 'Flow Designer & Client/Server Scripting' },
+                          { code: 'FS-REA', name: 'React 19, TypeScript & Modern UI' },
+                          { code: 'FS-NOD', name: 'Node.js, PostgreSQL & API Microservices' },
+                          { code: 'DO-CON', name: 'Docker Containerization & Kubernetes' },
+                          { code: 'DO-CICD', name: 'CI/CD Pipelines & Cloud Architecture' },
+                        ].find(s => s.code === code)
+                        if (found) setInstantSubject(found.name)
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      {['Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science', 'Physics', 'Chemistry', 'Biology'].map(sub => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
+                      <option value="PY-101">PY-101: Python Core & Advanced OOP</option>
+                      <option value="GEN-201">GEN-201: Prompt Engineering, LLMs & LangChain</option>
+                      <option value="RAG-301">RAG-301: RAG Architecture & Vector DBs</option>
+                      <option value="AI-401">AI-401: Autonomous Agents & FastAPI Deployment</option>
+                      <option value="SF-ADM">SF-ADM: Salesforce Administrator Essentials</option>
+                      <option value="SF-DEV">SF-DEV: Apex Programming & SOQL Queries</option>
+                      <option value="SF-LWC">SF-LWC: Lightning Web Components (LWC)</option>
+                      <option value="SN-FND">SN-FND: ServiceNow Platform & ITSM Core</option>
+                      <option value="SN-DEV">SN-DEV: Flow Designer & Client/Server Scripting</option>
+                      <option value="FS-REA">FS-REA: React 19, TypeScript & Modern UI</option>
+                      <option value="FS-NOD">FS-NOD: Node.js, PostgreSQL & API Microservices</option>
+                      <option value="DO-CON">DO-CON: Docker Containerization & Kubernetes</option>
+                      <option value="DO-CICD">DO-CICD: CI/CD Pipelines & Cloud Architecture</option>
                     </select>
                   </div>
                 </div>

@@ -1222,28 +1222,20 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white">Faculty Performance & Blacklist Status</h2>
+              <h2 className="text-lg font-bold text-white">Faculty Directory & Performance Reviews</h2>
               <p className="text-xs text-slate-400">
-                Autonomous LangGraph agent excludes teachers with negative ratings (&le; 2.5) or student complaints from specific classes.
+                Candidate review telemetry, verified technical specializations, and AI scheduling ratings.
               </p>
             </div>
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  if (teachers.length > 0) setFeedbackTeacherId(teachers[0].id)
-                  setShowFeedbackModal(true)
-                }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold hover:bg-rose-500/20 transition-all"
-              >
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
-                File Student Review / Complaint
-              </button>
-            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teachers.map((t) => {
               const hasComplaints = t.complaint_count > 0 || (t.active_restrictions && t.active_restrictions.length > 0)
+              const techSkills = t.skills.filter(sk => 
+                !['mathematics', 'physics', 'english', 'art', 'craft', 'storytelling', 'science', 'social', 'hindi', 'biology', 'chemistry'].some(k => sk.toLowerCase().includes(k))
+              )
+
               return (
                 <div
                   key={t.id}
@@ -1265,7 +1257,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {t.skills.map((sk) => (
+                    {techSkills.map((sk) => (
                       <span key={sk} className="text-[11px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
                         {sk}
                       </span>
@@ -1335,16 +1327,15 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           <div className="p-6 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-4">
             <div className="flex items-center gap-2 text-xs font-mono text-emerald-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Status: Zero Hard Clashes &bull; All 10 Grades Satisfied</span>
+              <span>Status: Zero Hard Clashes &bull; All 10 Technical Batches Satisfied</span>
             </div>
 
             <div className="space-y-3">
               {(lastGenResult?.autonomous_decisions || [
-                "Autonomous Decision: Excluded Mr. Ramesh Sharma from Class 9 - Sec A for Mathematics due to active student complaints / low rating. Substituted Mr. Srinivasa Ramanujan.",
-                "Autonomous Decision: Excluded Mr. Ramesh Sharma from Class 9 - Sec A for Mathematics due to active student complaints / low rating. Substituted Mrs. Shakuntala Devi.",
-                "Autonomous Resolver: Rebalanced Teacher conflict at Thursday Period 2. Substituted Mr. Vikram Sarabhai.",
-                "Sports Ground Audit: Verified playground capacity capped at <= 2 sections simultaneously.",
-                "Ergonomic Audit: All 20 sections verified to have NO physical sports period immediately after lunch (Period 8)."
+                "Autonomous Optimization: High-compute GPU & Cloud lab allocations synchronized across all 10 Batches.",
+                "Autonomous Resolver: Auto-assigned verified Lead Instructors based on technical specialization & student satisfaction ratings.",
+                "Concurrency Audit: Verified concurrent hands-on lab sandbox usage is capped at <= 2 batches simultaneously.",
+                "Ergonomic Audit: All 10 Technical Batches verified to have scheduled sprint standups and architectural review sessions."
               ]).map((dec, idx) => (
                 <div
                   key={idx}
