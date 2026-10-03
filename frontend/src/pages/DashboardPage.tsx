@@ -32,10 +32,10 @@ import {
 } from '../lib/api'
 import {
   BookOpen,
+  Cpu,
   CheckSquare,
   FileText,
   Award,
-  TrendingUp,
   Users,
   UserCheck,
   Radio,
@@ -54,10 +54,8 @@ import {
   ChevronRight,
   GraduationCap,
   ShieldCheck,
-  Cpu,
   Check,
-  Loader2,
-  BrainCircuit
+  Loader2
 } from 'lucide-react'
 import { AiRecordingPlayerModal } from '../components/AiRecordingPlayerModal'
 
@@ -1273,61 +1271,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         )}
       </div>
 
-      {/* ── QUICK ACTION LAUNCH DESK ────────────────────────────────────────── */}
-      <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-4">
-        <h3 className="font-bold text-slate-200 text-base flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-amber-400" /> Direct Navigation & Learning Hubs
-        </h3>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <button
-            onClick={() => setCurrentTab('courses')}
-            className="p-4 bg-[#06080F]/70 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-amber-500/40 text-left transition-all hover:scale-[1.02] group"
-          >
-            <BookOpen className="w-5 h-5 text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="font-bold text-sm text-slate-100">Course Catalog</p>
-            <p className="text-xs text-slate-400 mt-1">Browse courses & subjects</p>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('classroom')}
-            className="p-4 bg-[#06080F]/70 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-red-500/40 text-left transition-all hover:scale-[1.02] group"
-          >
-            <Video className="w-5 h-5 text-red-400 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="font-bold text-sm text-slate-100">Live Video Classes</p>
-            <p className="text-xs text-slate-400 mt-1">WebRTC interactive lectures</p>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('coding')}
-            className="p-4 bg-[#06080F]/70 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-emerald-500/40 text-left transition-all hover:scale-[1.02] group"
-          >
-            <Cpu className="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="font-bold text-sm text-slate-100">Coding Practice Lab</p>
-            <p className="text-xs text-slate-400 mt-1">Run Python & algorithms</p>
-          </button>
-
-          {user.role === 'admin' ? (
-            <button
-              onClick={() => setCurrentTab('learning-intelligence')}
-              className="p-4 bg-[#06080F]/70 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-orange-500/40 text-left transition-all hover:scale-[1.02] group"
-            >
-              <BrainCircuit className="w-5 h-5 text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
-              <p className="font-bold text-sm text-slate-100">School Cognitive Radar</p>
-              <p className="text-xs text-slate-400 mt-1">Audit school-wide learning</p>
-            </button>
-          ) : (
-  <button
-            onClick={() => setCurrentTab('assessments')}
-            className="p-4 bg-[#06080F]/70 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-orange-500/40 text-left transition-all hover:scale-[1.02] group"
-          >
-            <CheckSquare className="w-5 h-5 text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="font-bold text-sm text-slate-100">Quizzes & Tests</p>
-            <p className="text-xs text-slate-400 mt-1">Check assessment scores</p>
-          </button>
-          )}
-        </div>
-      </div>
 
       {/* ── MODAL: CLOUDINARY CLASS RECORDING PLAYER WITH AI DOUBT SOLVER ───── */}
       {selectedRecordingUrl && (

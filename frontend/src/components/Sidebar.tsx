@@ -64,7 +64,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'courses',               label: 'Courses & Subjects',    icon: BookOpen },
     { id: 'classroom',             label: 'Live Zoom Classes',     icon: Video },
     { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
-    { id: 'coding',                label: 'Coding Playground',     icon: Code2 },
+    ...(userRole !== 'admin'
+      ? [{ id: 'coding',           label: 'Coding Playground',     icon: Code2 }]
+      : []),
     ...(userRole !== 'admin'
       ? [{ id: 'assignments',      label: 'Assignments',           icon: FileText }]
       : []),

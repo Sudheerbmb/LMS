@@ -6463,34 +6463,40 @@ const handleTriggerTeacherCopilot = async (
             onClick={() => { setFilterGrade('all'); setFilterRecordingOnly(false); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
               filterGrade === 'all' && !filterRecordingOnly
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            All Grades
+            All Tracks
           </button>
           <button
             onClick={() => setFilterRecordingOnly(prev => !prev)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
               filterRecordingOnly
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-400'
-                : 'bg-slate-900 text-amber-300 hover:text-white border border-purple-500/30'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                : 'bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30'
             }`}
           >
-            <Video className="w-3.5 h-3.5 text-amber-300" />
+            <Video className="w-3.5 h-3.5 text-amber-400" />
             <span>Watch Recordings ({classes.filter(c => !!c.recording_url).length})</span>
           </button>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => (
+          {[
+            { id: 1, label: 'Python & GenAI' },
+            { id: 2, label: 'Salesforce CRM' },
+            { id: 3, label: 'ServiceNow ITSM' },
+            { id: 4, label: 'Full Stack Web' },
+            { id: 5, label: 'Cloud DevOps' },
+          ].map(track => (
             <button
-              key={g}
-              onClick={() => { setFilterGrade(g); setFilterRecordingOnly(false); }}
+              key={track.id}
+              onClick={() => { setFilterGrade(track.id); setFilterRecordingOnly(false); }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                filterGrade === g && !filterRecordingOnly
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                filterGrade === track.id && !filterRecordingOnly
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
-              Grade {g}
+              {track.label}
             </button>
           ))}
         </div>

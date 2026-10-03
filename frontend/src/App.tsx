@@ -22,7 +22,6 @@ import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
 import { CertificatesPage } from './pages/CertificatesPage'
-import { OmniCopilot } from './components/OmniCopilot'
 
 export function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('lms_access_token'))
@@ -342,13 +341,6 @@ export function App() {
           {currentTab === 'admin' && <AdminPage user={user} />}
         </main>
       </div>
-
-      {/* Global Universal Omni-Copilot on Every Page */}
-      <OmniCopilot
-        user={user}
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
-      />
     </div>
   )
 }
