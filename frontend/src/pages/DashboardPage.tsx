@@ -24,7 +24,6 @@ import {
   getAnnouncements,
   createAnnouncement,
   generateTimetable,
-  seedTimetableDefaults,
   getTimetableGrid,
   getCourses,
   getSchoolCourses,
@@ -46,7 +45,6 @@ import {
   Play,
   AlertCircle,
   CheckCircle2,
-  RefreshCw,
   Bell,
   Send,
   Clock,
@@ -177,18 +175,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     }
   }
 
-  const handleSeedDefaults = async () => {
-    setActionLoading('seed')
-    try {
-      const res = await seedTimetableDefaults()
-      showToast(res.message || 'Standard curriculum timetable slots initialized!', 'success')
-      loadDashboardData()
-    } catch (err: any) {
-      showToast(err.message || 'Failed to seed timetable defaults.', 'error')
-    } finally {
-      setActionLoading(null)
-    }
-  }
 
   const handleApproveUser = async (userId: string, role: 'student' | 'teacher') => {
     setActionLoading(`approve-${userId}`)
@@ -397,16 +383,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               >
                 <Bell className="w-4 h-4 text-amber-400" />
                 <span>Broadcast Notice</span>
-              </button>
-
-              <button
-                onClick={handleSeedDefaults}
-                disabled={actionLoading === 'seed'}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-700"
-                title="Initialize standard technical tracks and batch schedules"
-              >
-                {actionLoading === 'seed' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-                <span className="hidden sm:inline">Seed Technical Tracks</span>
               </button>
             </div>
           </div>

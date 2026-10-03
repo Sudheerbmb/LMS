@@ -59,9 +59,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ? 'Faculty Schedule'
       : 'Batch Timetable'
 
+  const coursesLabel =
+    userRole === 'teacher'
+      ? 'Courses Handled'
+      : 'Courses & Subjects'
+
   const navItems = [
     { id: 'overview',              label: 'Dashboard',             icon: LayoutDashboard },
-    { id: 'courses',               label: 'Courses & Subjects',    icon: BookOpen },
+    { id: 'courses',               label: coursesLabel,            icon: BookOpen },
     { id: 'classroom',             label: 'Live Zoom Classes',     icon: Video },
     { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
     ...(userRole !== 'admin'
@@ -73,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...(userRole !== 'admin'
       ? [{ id: 'assessments',      label: 'Assessments',           icon: CheckSquare }]
       : []),
-    ...(userRole !== 'admin'
+    ...(userRole === 'student'
       ? [{ id: 'certificates',     label: 'Certificates',          icon: Award }]
       : []),
     ...(userRole === 'admin'

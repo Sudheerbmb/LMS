@@ -25,87 +25,61 @@ from app.timetable.models import (
 )
 
 
-# Curriculum definition across Grades 1 to 10 (Total: 40 teaching periods / week)
+# Technical Training Institute Tracks (1: Python GenAI, 2: Salesforce, 3: ServiceNow, 4: Full Stack, 5: Cloud DevOps)
 GRADE_CURRICULUM_MATRIX = {
-    # Primary (Classes 1 - 2): Foundational Play & Literacy
-    1: [("ENG", 7), ("HIN", 6), ("MATH", 7), ("EVS", 6), ("ART", 5), ("VAL", 5), ("PET", 4)],
-    2: [("ENG", 7), ("HIN", 6), ("MATH", 7), ("EVS", 6), ("ART", 5), ("VAL", 5), ("PET", 4)],
-
-    # Preparatory / Junior (Classes 3 - 5): Expanding Science, Social, and ICT
-    3: [("ENG", 6), ("HIN", 5), ("MATH", 7), ("EVS", 6), ("CTAI", 4), ("ART", 4), ("PET", 4)],
-    4: [("ENG", 6), ("HIN", 5), ("MATH", 7), ("EVS", 6), ("CTAI", 4), ("ART", 4), ("PET", 4)],
-    5: [("ENG", 6), ("HIN", 5), ("MATH", 7), ("EVS", 6), ("CTAI", 4), ("ART", 4), ("PET", 4)],
-
-    # Middle School (Classes 6 - 8): 3 Languages, Pre-Algebra, Integrated Science
-    6: [("ENG", 5), ("HIN", 4), ("SKT", 3), ("MATH", 6), ("SCI", 5), ("SST", 5), ("CTAI", 4), ("SKILL", 3), ("ART", 2), ("PET", 3)],
-    7: [("ENG", 5), ("HIN", 4), ("SKT", 3), ("MATH", 6), ("SCI", 5), ("SST", 5), ("CTAI", 4), ("SKILL", 3), ("ART", 2), ("PET", 3)],
-    8: [("ENG", 5), ("HIN", 4), ("SKT", 3), ("MATH", 6), ("SCI", 5), ("SST", 5), ("CTAI", 4), ("SKILL", 3), ("ART", 2), ("PET", 3)],
-
-    # Secondary / High School (Classes 9 - 10): CBSE/ICSE Board Standard with Specialized Sciences & Labs
-    9: [("ENG", 5), ("HIN", 4), ("MATH", 6), ("SCI", 6), ("SST", 5), ("SKILL", 4), ("CTAI", 3), ("ART", 3), ("PET", 4)],
-    10: [("ENG", 5), ("HIN", 4), ("MATH", 7), ("SCI", 6), ("SST", 6), ("CTAI", 3), ("ART", 4), ("PET", 5)],
+    1: [("PY-101", 10), ("GEN-201", 10), ("RAG-301", 10), ("AI-401", 10)],
+    2: [("SF-ADM", 14), ("SF-DEV", 14), ("SF-LWC", 12)],
+    3: [("SN-FND", 20), ("SN-DEV", 20)],
+    4: [("FS-REA", 20), ("FS-NOD", 20)],
+    5: [("DO-CON", 20), ("DO-CICD", 20)],
+    6: [("PY-101", 10), ("GEN-201", 10), ("RAG-301", 10), ("AI-401", 10)],
+    7: [("SF-ADM", 14), ("SF-DEV", 14), ("SF-LWC", 12)],
+    8: [("SN-FND", 20), ("SN-DEV", 20)],
+    9: [("FS-REA", 20), ("FS-NOD", 20)],
+    10: [("DO-CON", 20), ("DO-CICD", 20)],
 }
 
 SUBJECT_DEFAULTS = [
-    {"code": "ENG", "name": "English Language & Literature", "category": "language", "color": "#38bdf8"},
-    {"code": "HIN", "name": "Hindi / Second Language", "category": "language", "color": "#f472b6"},
-    {"code": "SKT", "name": "Sanskrit / Third Language", "category": "language", "color": "#c084fc"},
-    {"code": "MATH", "name": "Mathematics", "category": "core_academic", "color": "#facc15"},
-    {"code": "EVS", "name": "Environmental Studies", "category": "core_academic", "color": "#4ade80"},
-    {"code": "VAL", "name": "Value Education & Storytelling", "category": "humanities", "color": "#a3e635"},
-    {"code": "SCI", "name": "General Science", "category": "core_academic", "color": "#2dd4bf"},
-    {"code": "PHY", "name": "Physics & Practical Lab", "category": "lab", "requires_lab": True, "color": "#60a5fa"},
-    {"code": "CHEM", "name": "Chemistry & Practical Lab", "category": "lab", "requires_lab": True, "color": "#fb923c"},
-    {"code": "BIO", "name": "Biology & Botany Lab", "category": "lab", "requires_lab": True, "color": "#34d399"},
-    {"code": "SST", "name": "Social Studies", "category": "core_academic", "color": "#a78bfa"},
-    {"code": "HIST", "name": "History & Political Science", "category": "core_academic", "color": "#e879f9"},
-    {"code": "GEOG", "name": "Geography & Economics", "category": "core_academic", "color": "#fb7185"},
-    {"code": "CS", "name": "Computer Science & AI Lab", "category": "lab", "requires_lab": True, "color": "#818cf8"},
-    {"code": "CTAI", "name": "Computational Thinking & Artificial Intelligence", "category": "skill", "requires_lab": True, "color": "#6366f1"},
-    {"code": "SKILL", "name": "Skill Education / Kaushal Bodh", "category": "vocational", "color": "#14b8a6"},
-    {"code": "ART", "name": "Visual Art & Performing Craft", "category": "arts", "color": "#f87171"},
-    {"code": "PET", "name": "Physical Education & Sports", "category": "sports", "requires_ground": True, "color": "#f59e0b"},
+    # Python & GenAI Track
+    {"code": "PY-101", "name": "Python Core & Advanced OOP", "category": "tech", "requires_lab": True, "color": "#3b82f6"},
+    {"code": "GEN-201", "name": "Prompt Engineering, LLMs & LangChain", "category": "ai", "requires_lab": True, "color": "#8b5cf6"},
+    {"code": "RAG-301", "name": "RAG Architecture & Vector DBs", "category": "ai", "requires_lab": True, "color": "#10b981"},
+    {"code": "AI-401", "name": "Autonomous Agents & FastAPI Deployment", "category": "ai", "requires_lab": True, "color": "#f59e0b"},
+
+    # Salesforce Track
+    {"code": "SF-ADM", "name": "Salesforce Administrator Essentials", "category": "crm", "requires_lab": True, "color": "#0284c7"},
+    {"code": "SF-DEV", "name": "Apex Programming & SOQL Queries", "category": "crm", "requires_lab": True, "color": "#0ea5e9"},
+    {"code": "SF-LWC", "name": "Lightning Web Components (LWC)", "category": "crm", "requires_lab": True, "color": "#38bdf8"},
+
+    # ServiceNow Track
+    {"code": "SN-FND", "name": "ServiceNow Platform Administration & ITSM", "category": "itsm", "requires_lab": True, "color": "#14b8a6"},
+    {"code": "SN-DEV", "name": "Flow Designer & Client/Server Scripting", "category": "itsm", "requires_lab": True, "color": "#06b6d4"},
+
+    # Full Stack Track
+    {"code": "FS-REA", "name": "React, TypeScript & Modern UI", "category": "fullstack", "requires_lab": True, "color": "#6366f1"},
+    {"code": "FS-NOD", "name": "Node.js, PostgreSQL & API Microservices", "category": "fullstack", "requires_lab": True, "color": "#4f46e5"},
+
+    # Cloud & DevOps Track
+    {"code": "DO-CON", "name": "Docker Containerization & Kubernetes", "category": "devops", "requires_lab": True, "color": "#ec4899"},
+    {"code": "DO-CICD", "name": "CI/CD Pipelines & Cloud Architecture", "category": "devops", "requires_lab": True, "color": "#f43f5e"},
 ]
 
 TEACHER_SEEDS = [
-    # Mathematics Department
-    {"name": "Dr. Sarah Connor", "email": "sarah.connor@school.edu", "emp_id": "T001", "subjects": ["MATH", "PHY"], "rating": 4.8},
-    {"name": "Prof. Alan Turing", "email": "alan.turing@school.edu", "emp_id": "T002", "subjects": ["CS", "CTAI", "MATH"], "rating": 4.9},
-    {"name": "Mrs. Shakuntala Devi", "email": "shakuntala.d@school.edu", "emp_id": "T011", "subjects": ["MATH"], "rating": 4.9},
-    {"name": "Mr. Srinivasa Ramanujan", "email": "ramanujan.s@school.edu", "emp_id": "T012", "subjects": ["MATH"], "rating": 5.0},
-    {"name": "Mr. Ramesh Sharma", "email": "ramesh.sharma@school.edu", "emp_id": "T006", "subjects": ["MATH"], "rating": 2.1},
+    # Python & AI Department
+    {"name": "Dr. Sarah Connor", "email": "sarah.connor@institute.edu", "emp_id": "T001", "subjects": ["PY-101", "AI-401"], "rating": 4.9},
+    {"name": "Prof. Alan Turing", "email": "alan.turing@institute.edu", "emp_id": "T002", "subjects": ["GEN-201", "RAG-301", "PY-101"], "rating": 5.0},
 
-    # Languages Department
-    {"name": "Mrs. Anita Desai", "email": "anita.desai@school.edu", "emp_id": "T003", "subjects": ["ENG", "ART", "VAL"], "rating": 4.6},
-    {"name": "Mr. William Wordsworth", "email": "william.w@school.edu", "emp_id": "T013", "subjects": ["ENG"], "rating": 4.7},
-    {"name": "Mr. Rajesh Kumar", "email": "rajesh.kumar@school.edu", "emp_id": "T004", "subjects": ["HIN", "SKT"], "rating": 4.5},
-    {"name": "Mrs. Munshi Premchand", "email": "munshi.p@school.edu", "emp_id": "T014", "subjects": ["HIN", "VAL"], "rating": 4.8},
-    {"name": "Dr. Kalidas Shastri", "email": "kalidas.s@school.edu", "emp_id": "T015", "subjects": ["SKT", "HIN"], "rating": 4.7},
+    # Salesforce Department
+    {"name": "Marc Benioff", "email": "marc.b@institute.edu", "emp_id": "T003", "subjects": ["SF-ADM", "SF-DEV", "SF-LWC"], "rating": 4.8},
 
-    # Science & Labs Department
-    {"name": "Dr. Rosalind Franklin", "email": "rosalind.f@school.edu", "emp_id": "T005", "subjects": ["CHEM", "BIO", "SCI"], "rating": 4.9},
-    {"name": "Mr. Vikram Sarabhai", "email": "vikram.s@school.edu", "emp_id": "T010", "subjects": ["PHY", "SCI"], "rating": 4.8},
-    {"name": "Dr. Homi Bhabha", "email": "homi.b@school.edu", "emp_id": "T016", "subjects": ["PHY", "CHEM"], "rating": 4.9},
-    {"name": "Dr. APJ Abdul Kalam", "email": "apj.kalam@school.edu", "emp_id": "T017", "subjects": ["SCI", "PHY"], "rating": 5.0},
-    {"name": "Mrs. Jane Goodall", "email": "jane.g@school.edu", "emp_id": "T018", "subjects": ["BIO", "SCI", "EVS"], "rating": 4.8},
+    # ServiceNow Department
+    {"name": "Fred Luddy", "email": "fred.l@institute.edu", "emp_id": "T004", "subjects": ["SN-FND", "SN-DEV"], "rating": 4.9},
 
-    # Social Sciences & Humanities
-    {"name": "Mrs. Sudha Murty", "email": "sudha.m@school.edu", "emp_id": "T009", "subjects": ["EVS", "SST", "VAL"], "rating": 4.9},
-    {"name": "Dr. Romila Thapar", "email": "romila.t@school.edu", "emp_id": "T019", "subjects": ["HIST", "SST"], "rating": 4.7},
-    {"name": "Mr. Amartya Sen", "email": "amartya.s@school.edu", "emp_id": "T020", "subjects": ["GEOG", "SST"], "rating": 4.8},
-    {"name": "Mrs. Medha Patkar", "email": "medha.p@school.edu", "emp_id": "T021", "subjects": ["EVS", "GEOG"], "rating": 4.6},
+    # Full Stack Web Department
+    {"name": "Dan Abramov", "email": "dan.a@institute.edu", "emp_id": "T005", "subjects": ["FS-REA", "FS-NOD"], "rating": 4.9},
 
-    # Computer Science & AI
-    {"name": "Mrs. Ada Lovelace", "email": "ada.lovelace@school.edu", "emp_id": "T022", "subjects": ["CS", "CTAI", "SKILL"], "rating": 5.0},
-    {"name": "Mr. Linus Torvalds", "email": "linus.t@school.edu", "emp_id": "T023", "subjects": ["CS", "CTAI", "SKILL"], "rating": 4.8},
-
-    # Arts & Crafts
-    {"name": "Mrs. Jamini Roy", "email": "jamini.r@school.edu", "emp_id": "T024", "subjects": ["ART"], "rating": 4.7},
-
-    # Physical Education & Sports Coaches (PET)
-    {"name": "Coach Michael Phelps", "email": "coach.phelps@school.edu", "emp_id": "T007", "subjects": ["PET"], "rating": 4.9},
-    {"name": "Coach Mary Kom", "email": "coach.mary@school.edu", "emp_id": "T008", "subjects": ["PET"], "rating": 4.8},
-    {"name": "Coach Major Dhyan Chand", "email": "coach.dhyan@school.edu", "emp_id": "T025", "subjects": ["PET"], "rating": 5.0},
+    # DevOps Department
+    {"name": "Linus Torvalds", "email": "linus.t@institute.edu", "emp_id": "T006", "subjects": ["DO-CON", "DO-CICD"], "rating": 5.0},
 ]
 
 DEFAULT_POLICY_RULES = [

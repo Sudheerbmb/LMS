@@ -566,19 +566,19 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>School Grades & Sections</span>
+              <span>Technical Tracks & Batches</span>
               <Building className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-2xl font-black text-white">{grades.length || 10} Grades &bull; 20 Secs</div>
-            <div className="text-xs text-slate-500">Class 1 to 10 (A & B)</div>
+            <div className="text-2xl font-black text-white">{grades.length || 5} Tracks &bull; 10 Batches</div>
+            <div className="text-xs text-slate-500">Python, Salesforce, ServiceNow, Web, DevOps</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>Dynamic Ground Limit</span>
+              <span>Concurrent Lab Limit</span>
               <Activity className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-2xl font-black text-amber-400">{activeGroundCapacity} Classes Max</div>
+            <div className="text-2xl font-black text-amber-400">{activeGroundCapacity} Sessions Max</div>
             <div className="text-xs text-slate-500">Configurable in Policy Rules tab</div>
           </div>
 
@@ -593,7 +593,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>Active Complaints / Blacklists</span>
+              <span>Active Constraints</span>
               <ShieldAlert className="w-4 h-4 text-rose-400" />
             </div>
             <div className="text-2xl font-black text-rose-400">{totalRestrictions} Exclusions</div>
@@ -611,7 +611,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           }`}
         >
           <Calendar className="w-4 h-4" />
-          {isAdmin ? 'Master Timetable Grid' : isTeacher ? 'My Teaching Timetable' : 'Class Weekly Grid'}
+          {isAdmin ? 'Master Timetable Grid' : isTeacher ? 'My Teaching Timetable' : 'Batch Weekly Grid'}
           {activeTab === 'grid' && (
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
           )}
@@ -625,7 +625,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             }`}
           >
             <Settings2 className="w-4 h-4" />
-            School Policy Rules Engine
+            Institute Policy Rules Engine
             <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-slate-300 font-mono">
               {rules.length}
             </span>
@@ -840,7 +840,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             <div className="text-[11px] opacity-80">{meta.label}</div>
                           </td>
                           <td colSpan={5} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
-                            {meta.label} &bull; Whole School (8:00 AM &ndash; 5:00 PM Schedule)
+                            {meta.label} &bull; All Batches (09:00 AM &ndash; 06:00 PM Schedule)
                           </td>
                         </tr>
                       )
@@ -903,25 +903,25 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                         color: slot.subject_color || '#38bdf8'
                                       }}
                                     >
-                                      {slot.subject_code || 'SUB'}
+                                      {slot.subject_code || 'TECH'}
                                     </span>
-                                    {isSports && (
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
-                                        PET
+                                    {isLab && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-amber-400 font-bold uppercase tracking-wider">
+                                        LAB
                                       </span>
                                     )}
                                   </div>
                                   <div className="text-xs font-semibold text-slate-100 line-clamp-1">
-                                    {slot.subject_name || 'Academic Class'}
+                                    {slot.subject_name || 'Technical Lecture'}
                                   </div>
                                 </div>
 
                                 <div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] space-y-0.5 text-slate-400">
-                                  {/* If Teacher view: Show Class & Section name; if Class view: Show Teacher Name */}
+                                  {/* If Teacher view: Show Track & Batch; if Class view: Show Teacher Name */}
                                   <div className="truncate font-medium text-slate-300 flex items-center justify-between">
                                     <span className="truncate">
                                       {isTeacher
-                                        ? `${slot.grade_name || 'Class'} - Sec ${slot.section_name || 'A'}`
+                                        ? `${slot.grade_name || 'Track'} • Batch ${slot.section_name || 'A'}`
                                         : (slot.teacher_name || 'Assigned Faculty')}
                                     </span>
                                     {isAdmin && (
