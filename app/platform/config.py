@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Literal
+import urllib.parse
 
 from pydantic import AnyHttpUrl, EmailStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -41,9 +42,24 @@ class Settings(BaseSettings):
         elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-        # asyncpg expects 'ssl=' rather than 'sslmode='
-        if "postgresql+asyncpg://" in url and "sslmode=" in url:
-            url = url.replace("sslmode=", "ssl=")
+        # asyncpg does not accept libpq parameters like channel_binding, target_session_attrs, etc.
+        if "postgresql+asyncpg://" in url:
+            parsed = urllib.parse.urlsplit(url)
+            if parsed.query:
+                query_pairs = urllib.parse.parse_qsl(parsed.query)
+                allowed_asyncpg_params = {
+                    "ssl", "timeout", "command_timeout", "statement_cache_size",
+                    "max_cached_statement_lifetime", "max_cacheable_statement_size",
+                    "server_settings"
+                }
+                cleaned_pairs = []
+                for k, val in query_pairs:
+                    if k == "sslmode":
+                        cleaned_pairs.append(("ssl", "require" if val != "disable" else "disable"))
+                    elif k in allowed_asyncpg_params:
+                        cleaned_pairs.append((k, val))
+                new_query = urllib.parse.urlencode(cleaned_pairs)
+                url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
 
         return url
 

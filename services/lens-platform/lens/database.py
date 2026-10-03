@@ -1,3 +1,4 @@
+import urllib.parse
 import uuid
 from datetime import datetime
 from typing import AsyncGenerator
@@ -42,10 +43,32 @@ class LensTimestampMixin:
 
 
 def get_engine_url(url: str) -> str:
+    if not isinstance(url, str) or not url.strip():
+        return url
+    url = url.strip()
     if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+asyncpg://", 1)
-    if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    if "postgresql+asyncpg://" in url:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.query:
+            query_pairs = urllib.parse.parse_qsl(parsed.query)
+            allowed_asyncpg_params = {
+                "ssl", "timeout", "command_timeout", "statement_cache_size",
+                "max_cached_statement_lifetime", "max_cacheable_statement_size",
+                "server_settings"
+            }
+            cleaned_pairs = []
+            for k, val in query_pairs:
+                if k == "sslmode":
+                    cleaned_pairs.append(("ssl", "require" if val != "disable" else "disable"))
+                elif k in allowed_asyncpg_params:
+                    cleaned_pairs.append((k, val))
+            new_query = urllib.parse.urlencode(cleaned_pairs)
+            url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
+
     return url
 
 
