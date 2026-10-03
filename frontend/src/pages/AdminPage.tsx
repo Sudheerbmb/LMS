@@ -17,9 +17,7 @@ import {
   ChevronDown,
   Video,
   ShieldCheck,
-  Zap,
-  Globe,
-  Check
+  Zap
 } from 'lucide-react'
 
 type AdminPageProps = {

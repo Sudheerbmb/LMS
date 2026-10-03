@@ -219,7 +219,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       setGeneratingZoom(true)
       setStatusMessage(null)
       const res = await generateZoomClassesFromTimetable(7)
-      setStatusMessage(`✨ Successfully scheduled ${res.created_classes_count} Zoom live class sessions from timetable! (Checked ${res.total_slots_evaluated} slots across 7 days)`)
+      setStatusMessage(`✨ Successfully scheduled ${res.classes_created} Zoom live class sessions from timetable! (Synced ${res.zoom_meetings_synced} meetings across ${res.days_ahead} days)`)
     } catch (err: any) {
       console.error('Failed to generate Zoom classes:', err)
       setStatusMessage('Zoom timetable automation failed: ' + (err.message || 'Server error'))

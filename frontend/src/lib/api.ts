@@ -808,24 +808,33 @@ export interface ClassRecordingItem {
 }
 
 export interface ClassTranscriptItem {
-  id: string
-  class_id: string
+  id?: string
+  class_id?: string
+  title?: string
   zoom_meeting_id?: string
   raw_text?: string
+  transcript_text?: string
+  has_transcript?: boolean
   segments_json?: Array<{ start: number; end: number; text: string }>
-  language: string
-  status: string
+  language?: string
+  status?: string
   summary_json?: any
 }
 
 export interface ZoomIntegrationStatus {
-  connected: boolean
-  account_id: string
-  webhook_status: string
-  total_classes: number
-  zoom_classes: number
-  total_recordings: number
-  total_attendances: number
+  connected?: boolean
+  authenticated?: boolean
+  configured?: boolean
+  account_id?: string
+  webhook_status?: string
+  webhook_configured?: boolean
+  client_id_configured?: boolean
+  total_classes?: number
+  total_live_classes?: number
+  zoom_classes?: number
+  total_recordings?: number
+  total_transcripts?: number
+  total_attendances?: number
   last_webhook_at?: string
   last_event_type?: string
 }
@@ -1003,16 +1012,6 @@ export const askClassAiDoubt = (
 
 export const getClassAiSummary = (classId: string) =>
   request<ClassAiSummaryData>(`/api/v1/classroom/classes/${classId}/ai-summary`)
-
-export interface ClassTranscriptData {
-  class_id: string
-  title: string
-  transcript_text: string
-  has_transcript: boolean
-}
-
-export const getClassTranscript = (classId: string) =>
-  request<ClassTranscriptData>(`/api/v1/classroom/classes/${classId}/transcript`)
 
 export interface TeacherCopilotData {
   action: string
