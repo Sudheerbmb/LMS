@@ -8,9 +8,11 @@ import json
 import os
 from contextlib import asynccontextmanager
 
+from typing import Optional
+
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.assessment import models as assessment_models  # noqa: F401
@@ -127,7 +129,11 @@ async def ready():
 
 
 @app.post("/api/zoom/webhook")
-async def zoom_webhook(request: Request):
+async def zoom_webhook(
+    request: Request,
+    x_zm_request_timestamp: Optional[str] = Header(None),
+    x_zm_signature: Optional[str] = Header(None),
+):
     from app.classroom.service import process_zoom_webhook_event
     from app.integrations.zoom.webhooks import zoom_webhook_verifier
     from app.platform.database import SessionFactory
