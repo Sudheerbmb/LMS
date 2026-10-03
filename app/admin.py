@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.courses.models import Course, CourseSubject, CourseVersion
 from app.enrollment.models import Enrollment
+from app.identity.auth import get_current_user
 from app.identity.models import User
 from app.identity.permissions import require_permission
 from app.identity.security import hash_password
@@ -358,7 +359,7 @@ async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
 
 @router.get("/courses")
 async def list_admin_courses(
-    _admin: User = Depends(require_permission("admin:users")),
+    _user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> list[dict]:
     courses = (

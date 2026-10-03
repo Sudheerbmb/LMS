@@ -63,6 +63,13 @@ async def lifespan(_app: FastAPI):
     # create_all is additive and ensures newly introduced modules exist on
     # lightweight Render deployments that do not yet run Alembic migrations.
     await init_database()
+    try:
+        from app.admin import seed_tech_courses_internal
+        from app.platform.database import async_session_factory
+        async with async_session_factory() as session:
+            await seed_tech_courses_internal(session)
+    except Exception as e:
+        pass
     yield
 
 app = FastAPI(
