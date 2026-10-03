@@ -46,7 +46,7 @@ from app.platform.database import init_database
 from app.platform.errors import database_error_handler, unhandled_exception_handler
 from sqlalchemy.exc import SQLAlchemyError
 from app.platform.logging import configure_logging
-from app.tenancy.router import router as tenancy_router
+from app.tenancy.router import router as tenancy_router, tenants_router
 from app.timetable import models as timetable_models  # noqa: F401
 from app.timetable.router import router as timetable_router
 from app.vimeo import upload_zoom_recording
@@ -81,6 +81,7 @@ app.add_exception_handler(SQLAlchemyError, database_error_handler)
 app.include_router(identity_router)
 app.include_router(notifications_router)
 app.include_router(tenancy_router)
+app.include_router(tenants_router)
 app.include_router(courses_router)
 app.include_router(content_router)
 app.include_router(enrollment_router)

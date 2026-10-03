@@ -170,3 +170,29 @@ async def accept_invite(
         return {"detail": "Invitation accepted"}
     except LMSError as exc:
         raise _handle(exc) from exc
+
+
+tenants_router = APIRouter(prefix="/api/v1/tenants", tags=["tenants"])
+
+
+@tenants_router.post("", response_model=OrgRead, status_code=status.HTTP_201_CREATED)
+async def create_tenant_alias(
+    data: OrgCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> OrgRead:
+    try:
+        org = await create_organization(session, data, current_user)
+        return OrgRead.model_validate(org)
+    except LMSError as exc:
+        raise _handle(exc) from exc
+
+
+@tenants_router.get("", response_model=list[OrgRead])
+async def list_tenants_alias(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[OrgRead]:
+    orgs = await list_organizations(session, current_user)
+    return [OrgRead.model_validate(o) for o in orgs]
+
