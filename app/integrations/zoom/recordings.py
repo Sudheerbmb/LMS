@@ -59,8 +59,12 @@ class ZoomRecordingsService:
         Locates the VTT audio transcript file from the recording payload and downloads its text.
         """
         transcript_file: Optional[ZoomRecordingFile] = None
+        
+        # 1. Prioritize true VTT / TRANSCRIPT files (exclude raw TIMELINE JSON)
         for f in recordings.recording_files:
-            if f.file_type in ("TRANSCRIPT", "TIMELINE") or f.recording_type == "audio_transcript":
+            file_t = (f.file_type or "").upper()
+            rec_t = (f.recording_type or "").lower()
+            if file_t in ("TRANSCRIPT", "CC") or rec_t in ("audio_transcript", "closed_caption"):
                 transcript_file = f
                 break
 
@@ -72,7 +76,60 @@ class ZoomRecordingsService:
             transcript_file.download_url,
             download_access_token=recordings.download_access_token,
         )
-        return content_bytes.decode("utf-8", errors="replace")
+        raw_text = content_bytes.decode("utf-8", errors="replace").strip()
+
+        # If raw text is JSON timeline, discard it
+        if raw_text.startswith("{") and "timeline" in raw_text:
+            return None
+
+        # Clean VTT markup if present
+        return self.clean_vtt_text(raw_text)
+
+    @staticmethod
+    def clean_vtt_text(vtt_content: str) -> str:
+        """Parses WebVTT format into clean, readable lecture dialogue with timestamps."""
+        lines = vtt_content.splitlines()
+        cleaned_blocks: list[str] = []
+        current_time = ""
+        
+        for line in lines:
+            line_str = line.strip()
+            if not line_str or line_str.startswith("WEBVTT") or line_str.startswith("NOTE"):
+                continue
+            if "-->" in line_str:
+                # Timestamp line: e.g. 00:00:01.500 --> 00:00:04.200
+                parts = line_str.split("-->")
+                start_ts = parts[0].strip().split(".")[0]
+                if start_ts.startswith("00:"):
+                    start_ts = start_ts[3:]  # Convert 00:01:23 to 01:23
+                current_time = f"[{start_ts}]"
+            elif line_str.isdigit():
+                continue  # Cue number
+            else:
+                if current_time:
+                    cleaned_blocks.append(f"{current_time} {line_str}")
+                    current_time = ""
+                else:
+                    cleaned_blocks.append(line_str)
+
+        return "\n".join(cleaned_blocks) if cleaned_blocks else vtt_content
+
+    async def get_mp4_video_stream_url(
+        self,
+        meeting_id_or_uuid: int | str,
+    ) -> Optional[str]:
+        """Returns the authenticated MP4 download URL for video streaming."""
+        try:
+            recordings = await self.get_meeting_recordings(meeting_id_or_uuid)
+            for f in recordings.recording_files:
+                if (f.file_type or "").upper() == "MP4" and f.download_url:
+                    bearer_token = await self.client.auth.get_access_token()
+                    separator = "&" if "?" in f.download_url else "?"
+                    token_param = recordings.download_access_token or bearer_token
+                    return f"{f.download_url}{separator}access_token={token_param}"
+        except Exception as err:
+            logger.warning("Error resolving MP4 video stream for %s: %s", meeting_id_or_uuid, err)
+        return None
 
 
 # Global Recordings Service instance

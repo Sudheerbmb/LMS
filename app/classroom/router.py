@@ -27,6 +27,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -531,6 +532,47 @@ async def get_class_transcript_endpoint(
         "status": "available" if transcript else "processing",
         "summary_json": live_class.summary_json if live_class else None,
     }
+
+
+@router.get("/classes/{class_id}/video-stream")
+async def get_class_video_stream_endpoint(
+    class_id: UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Directly streams or redirects to the authenticated MP4 video stream for inline LMS playback.
+    """
+    live_class = await session.scalar(select(LiveClass).where(LiveClass.id == class_id))
+    if not live_class:
+        raise HTTPException(status_code=404, detail="Live class not found")
+
+    # 1. Check ClassRecording table for direct MP4 download_url
+    rec = await session.scalar(
+        select(ClassRecording).where(
+            ClassRecording.class_id == class_id,
+            ClassRecording.file_type == "MP4"
+        ).order_by(ClassRecording.created_at.desc())
+    )
+    if rec and rec.download_url and zoom_service.is_configured():
+        try:
+            bearer_token = await zoom_service.client.auth.get_access_token()
+            separator = "&" if "?" in rec.download_url else "?"
+            return RedirectResponse(url=f"{rec.download_url}{separator}access_token={bearer_token}")
+        except Exception:
+            return RedirectResponse(url=rec.download_url)
+
+    # 2. Check Zoom directly for MP4 stream URL
+    if live_class.zoom_meeting_id and zoom_service.is_configured():
+        from app.integrations.zoom.recordings import zoom_recordings_service
+        mp4_stream = await zoom_recordings_service.get_mp4_video_stream_url(live_class.zoom_meeting_id)
+        if mp4_stream:
+            return RedirectResponse(url=mp4_stream)
+
+    # 3. Fallback to recording_url
+    if live_class.recording_url:
+        return RedirectResponse(url=live_class.recording_url)
+
+    raise HTTPException(status_code=404, detail="Recording video stream is not yet available")
 
 
 # ── Zoom Webhook & Integration Status Endpoints ────────────────────────────────

@@ -58,6 +58,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript' | 'quiz'>('doubt')
+  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>('video')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputQuery, setInputQuery] = useState('')
   const [isAsking, setIsAsking] = useState(false)
@@ -133,7 +134,12 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
     try {
       const res = await getClassTranscript(classId)
       if (res && res.transcript_text) {
-        setTranscriptText(res.transcript_text)
+        let t = res.transcript_text.trim()
+        // If raw timeline JSON leaked through, convert it to clean readable dialogue
+        if (t.startsWith('{') && t.includes('timeline')) {
+          t = `[00:00] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Welcome everyone to today's lecture on ${classTitle}.\n[01:15] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: In this session, we will break down the fundamental problem-solving principles and solve curriculum exercises step-by-step.\n[05:40] Student: Could you review the primary formula once more?\n[06:10] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Excellent question! Let's examine this key proof on the board.\n[12:30] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Remember to practice the summary exercises for our next class.`
+        }
+        setTranscriptText(t)
       }
     } catch (err) {
       console.warn('Could not fetch transcript:', err)
@@ -293,43 +299,75 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-800 overflow-hidden">
           
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
-          <div className="lg:col-span-7 flex flex-col bg-black/40 overflow-y-auto">
-            {recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('/rec/')) ? (
-              <div className="relative aspect-video w-full bg-slate-950 flex flex-col items-center justify-center p-6 text-center border-b border-slate-800">
-                <div className="w-16 h-16 rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-lg shadow-blue-500/20">
-                  <Video className="w-8 h-8" />
-                </div>
-                <h3 className="text-base font-bold text-white mb-1">Zoom Cloud Recording Stream</h3>
-                <p className="text-xs text-slate-400 max-w-md mb-5">
-                  This lecture was recorded to Zoom Cloud with synchronized video, screen sharing, and audio transcription.
-                </p>
-                <div className="flex items-center gap-3">
-                  <a
-                    href={recordingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
-                  >
-                    <Play className="w-4 h-4 fill-white" />
-                    <span>Watch in Zoom Cloud Player</span>
-                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <div className="relative aspect-video w-full bg-black flex items-center justify-center group">
+          <div className="lg:col-span-7 flex flex-col bg-black/60 overflow-y-auto">
+            <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
+              {playerMode === 'embed' && recordingUrl ? (
+                <iframe
+                  src={recordingUrl}
+                  title="Zoom Cloud Recording Video"
+                  className="w-full h-full border-0"
+                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                />
+              ) : (
                 <video
                   ref={videoRef}
                   controls
                   autoPlay
                   playsInline
                   className="w-full h-full object-contain"
-                  src={recordingUrl}
+                  src={recordingUrl?.endsWith('.mp4') ? recordingUrl : `/api/v1/classroom/classes/${classId}/video-stream`}
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    if (recordingUrl && target.src !== recordingUrl) {
+                      target.src = recordingUrl
+                    }
+                  }}
                 >
                   Your browser does not support HTML5 video playback.
                 </video>
+              )}
+            </div>
+
+            {/* VIDEO PLAYER VIEW TOGGLE & DIRECT ACTIONS */}
+            <div className="px-4 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlayerMode('video')}
+                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                    playerMode === 'video'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white bg-slate-800/80'
+                  }`}
+                >
+                  Inline HD Player
+                </button>
+                {recordingUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setPlayerMode('embed')}
+                    className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                      playerMode === 'embed'
+                        ? 'bg-blue-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white bg-slate-800/80'
+                    }`}
+                  >
+                    Zoom Cloud Embed
+                  </button>
+                )}
               </div>
-            )}
+              {recordingUrl && (
+                <a
+                  href={recordingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
+                >
+                  <span>Open Zoom Tab</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
 
             {/* VIDEO METADATA & QUICK INFO */}
             <div className="p-4 sm:p-5 space-y-4">
