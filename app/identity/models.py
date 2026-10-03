@@ -6,9 +6,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, Uui
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.platform.models import Base, TimestampMixin, UUIDMixin
-
-if TYPE_CHECKING:
-    from app.tenancy.models import Organization
+from app.tenancy.models import Organization
 
 
 class User(UUIDMixin, TimestampMixin, Base):

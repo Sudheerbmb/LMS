@@ -4,6 +4,7 @@ Production Release Sync
 """
 import hashlib
 import hmac
+import json
 import os
 from contextlib import asynccontextmanager
 
@@ -126,59 +127,31 @@ async def ready():
 
 @app.post("/api/zoom/webhook")
 async def zoom_webhook(request: Request):
-    body = await request.json()
+    from app.classroom.service import process_zoom_webhook_event
+    from app.integrations.zoom.webhooks import zoom_webhook_verifier
+    from app.platform.database import SessionFactory
+
+    raw_body = await request.body()
+    try:
+        body = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Malformed JSON")
+
     event = body.get("event")
 
-    # Zoom endpoint URL validation
+    # 1. Zoom endpoint URL validation
     if event == "endpoint.url_validation":
-        if not ZOOM_SECRET_TOKEN:
-            raise HTTPException(
-                status_code=500,
-                detail="ZOOM_SECRET_TOKEN is not configured"
-            )
+        return zoom_webhook_verifier.handle_url_validation(body)
 
-        payload = body.get("payload", {})
-        plain_token = payload.get("plainToken")
+    # 2. Verify signature
+    header_timestamp = x_zm_request_timestamp or request.headers.get("x-zm-request-timestamp")
+    header_sig = x_zm_signature or request.headers.get("x-zm-signature")
+    if not zoom_webhook_verifier.verify_signature(raw_body, header_timestamp, header_sig):
+        raise HTTPException(status_code=401, detail="Invalid Zoom webhook signature")
 
-        if not plain_token:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing plainToken"
-            )
+    # 3. Process event in DB session
+    event_id = body.get("event_ts") or body.get("payload", {}).get("object", {}).get("uuid")
+    async with SessionFactory() as session:
+        result = await process_zoom_webhook_event(session, event, str(event_id) if event_id else None, body)
 
-        encrypted_token = hmac.new(
-            ZOOM_SECRET_TOKEN.encode("utf-8"),
-            plain_token.encode("utf-8"),
-            hashlib.sha256
-        ).hexdigest()
-
-        return {
-            "plainToken": plain_token,
-            "encryptedToken": encrypted_token
-        }
-
-    print(f"Received Zoom event: {event}")
-
-    if event == "recording.completed":
-        print("======================================")
-        print("ZOOM RECORDING COMPLETED")
-        print("======================================")
-        print(body)
-
-        zoom_object = body.get("payload", {}).get("object", {})
-        recording_files = zoom_object.get("recording_files", [])
-        download_token = zoom_object.get("download_token")
-        for recording in recording_files:
-            if recording.get("file_type") == "MP4" and recording.get("recording_type") == "shared_screen_with_speaker_view":
-                try:
-                    vimeo_uri = await upload_zoom_recording(
-                        {**recording, "download_token": recording.get("download_token") or download_token}
-                    )
-                    print(f"Uploaded recording to Vimeo: {vimeo_uri}")
-                except (RuntimeError, ValueError, httpx.HTTPError) as error:
-                    print(f"Vimeo upload failed: {error}")
-                break
-
-    return {
-        "status": "received"
-    }
+    return {"status": "received", "result": result}

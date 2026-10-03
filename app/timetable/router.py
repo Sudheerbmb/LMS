@@ -395,3 +395,19 @@ async def update_school_course_endpoint(
     await session.commit()
 
     return {"status": "success", "message": "Curriculum course updated"}
+
+
+@router.post("/generate-zoom-classes")
+async def generate_zoom_classes_from_timetable_endpoint(
+    days_ahead: int = Query(7, ge=1, le=30),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Administrator / Faculty endpoint to generate Zoom meetings for upcoming timetable slots.
+    """
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(status_code=403, detail="Only faculty and administrators can trigger timetable Zoom generation")
+
+    from app.timetable.service import generate_zoom_classes_from_timetable_service
+    return await generate_zoom_classes_from_timetable_service(session, days_ahead=days_ahead)

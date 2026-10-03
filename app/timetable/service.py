@@ -1046,3 +1046,103 @@ async def get_school_courses_and_syllabus(
             })
 
     return courses_result
+
+
+async def generate_zoom_classes_from_timetable_service(
+    session: AsyncSession,
+    days_ahead: int = 7,
+) -> Dict[str, Any]:
+    """
+    Scans the weekly master timetable slots and automatically generates corresponding LMS LiveClasses
+    with integrated Zoom meetings for upcoming dates, ensuring idempotency.
+    """
+    from datetime import datetime, timedelta, timezone
+    from app.classroom.models import LiveClass
+    from app.classroom.schemas import LiveClassCreate
+    from app.classroom.service import schedule_school_live_class
+
+    now = datetime.now(timezone.utc)
+    slots = (
+        await session.scalars(
+            select(TimetableSlot)
+            .options(
+                selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
+                selectinload(TimetableSlot.subject),
+                selectinload(TimetableSlot.teacher).selectinload(TeacherProfile.skills),
+            )
+            .where(TimetableSlot.teacher_id.isnot(None), TimetableSlot.subject_id.isnot(None))
+        )
+    ).all()
+
+    teachers = (await session.scalars(select(User).where(User.role.in_(["teacher", "admin"])))).all()
+    teacher_user_map = {t.id: t for t in teachers}
+
+    t_profiles = (await session.scalars(select(TeacherProfile))).all()
+    profile_to_user = {p.id: p.user_id for p in t_profiles}
+
+    classes_created = 0
+    zoom_meetings_synced = 0
+
+    for day_offset in range(days_ahead):
+        target_date = (now + timedelta(days=day_offset)).date()
+        target_weekday = target_date.strftime("%A")
+
+        matching_slots = [s for s in slots if s.day_of_week.lower() == target_weekday.lower()]
+        for s in matching_slots:
+            if not s.section or not s.section.grade or not s.subject:
+                continue
+
+            try:
+                start_h, start_m = map(int, s.start_time.split(":"))
+                end_h, end_m = map(int, s.end_time.split(":"))
+            except Exception:
+                start_h, start_m = 9, 0
+                end_h, end_m = 10, 0
+
+            starts_at = datetime(target_date.year, target_date.month, target_date.day, start_h, start_m, tzinfo=timezone.utc)
+            ends_at = datetime(target_date.year, target_date.month, target_date.day, end_h, end_m, tzinfo=timezone.utc)
+
+            # Idempotency check: Don't recreate if class session already exists for this section, subject, and time
+            existing = await session.scalar(
+                select(LiveClass).where(
+                    LiveClass.grade_number == s.section.grade.grade_number,
+                    LiveClass.section_name == s.section.name,
+                    LiveClass.subject_code == s.subject.code,
+                    LiveClass.period_number == s.period_number,
+                    LiveClass.starts_at == starts_at,
+                )
+            )
+            if existing:
+                continue
+
+            teacher_user_id = profile_to_user.get(s.teacher_id)
+            teacher_user = teacher_user_map.get(teacher_user_id) if teacher_user_id else None
+            if not teacher_user and teachers:
+                teacher_user = teachers[0]
+
+            title = f"{s.section.grade.name}-{s.section.name} {s.subject.name} (Period {s.period_number})"
+
+            create_data = LiveClassCreate(
+                title=title,
+                starts_at=starts_at,
+                ends_at=ends_at,
+                grade_number=s.section.grade.grade_number,
+                section_name=s.section.name,
+                subject_code=s.subject.code,
+                subject_name=s.subject.name,
+                period_number=s.period_number,
+                room_number=s.room_or_venue,
+                auto_create_zoom=True,
+            )
+
+            new_class = await schedule_school_live_class(session, create_data, teacher_user)
+            classes_created += 1
+            if new_class.zoom_meeting_id:
+                zoom_meetings_synced += 1
+
+    return {
+        "status": "success",
+        "days_ahead": days_ahead,
+        "classes_created": classes_created,
+        "zoom_meetings_synced": zoom_meetings_synced,
+    }

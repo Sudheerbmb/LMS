@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import type { AdminUser, User } from '../lib/api'
-import { getAdminUsers, approveUser, rejectUser } from '../lib/api'
+import type { AdminUser, User, ZoomIntegrationStatus } from '../lib/api'
+import { getAdminUsers, approveUser, rejectUser, getZoomStatus } from '../lib/api'
 import {
   Users,
   UserCheck,
@@ -14,7 +14,12 @@ import {
   RefreshCw,
   Radio,
   FileCheck,
-  ChevronDown
+  ChevronDown,
+  Video,
+  ShieldCheck,
+  Zap,
+  Globe,
+  Check
 } from 'lucide-react'
 
 type AdminPageProps = {
@@ -22,9 +27,11 @@ type AdminPageProps = {
 }
 
 export const AdminPage: React.FC<AdminPageProps> = () => {
-  const [activeTab, setActiveTab] = useState<'users' | 'telemetry' | 'audit'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'telemetry' | 'zoom' | 'audit'>('users')
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [zoomStatus, setZoomStatus] = useState<ZoomIntegrationStatus | null>(null)
+  const [loadingZoomStatus, setLoadingZoomStatus] = useState(false)
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('')
@@ -73,7 +80,20 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
   useEffect(() => {
     loadUsers()
+    loadZoomStatus()
   }, [])
+
+  const loadZoomStatus = async () => {
+    try {
+      setLoadingZoomStatus(true)
+      const data = await getZoomStatus()
+      setZoomStatus(data)
+    } catch (e) {
+      console.warn('Failed to load Zoom status:', e)
+    } finally {
+      setLoadingZoomStatus(false)
+    }
+  }
 
   const loadUsers = async () => {
     try {
@@ -260,6 +280,17 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         >
           <Activity className="w-4 h-4" />
           <span>Infrastructure Telemetry</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('zoom'); loadZoomStatus(); }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'zoom'
+              ? 'bg-cyan-500/20 text-amber-400 border border-cyan-500/30'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Video className="w-4 h-4 text-blue-400" />
+          <span>Zoom Video Infrastructure</span>
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -522,6 +553,123 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: ZOOM VIDEO INFRASTRUCTURE ─────────────────────────────────────── */}
+      {activeTab === 'zoom' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Status Header */}
+          <div className="p-6 rounded-3xl bg-slate-900/80 border border-blue-500/20 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                <Video className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white">Zoom Server-to-Server Video Pipeline</h3>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${
+                    zoomStatus?.authenticated ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {zoomStatus?.authenticated ? 'Connected & Verified' : 'Authentication Pending'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  LMS operates as authoritative control plane &bull; Zoom manages cloud video conferencing, live participants, webhooks & transcripts
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={loadZoomStatus}
+              disabled={loadingZoomStatus}
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-2 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingZoomStatus ? 'animate-spin text-amber-400' : ''}`} />
+              <span>Refresh Status</span>
+            </button>
+          </div>
+
+          {/* KPI Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
+              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+                <span>OAuth Engine</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-xl font-black text-white">{zoomStatus?.configured ? 'Configured' : 'Missing Env'}</div>
+              <div className="text-[11px] text-slate-500 truncate">Account ID: {zoomStatus?.account_id || 'Not set'}</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
+              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+                <span>Webhook Receiver</span>
+                <Radio className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="text-xl font-black text-amber-400">{zoomStatus?.webhook_configured ? 'Active' : 'Unconfigured'}</div>
+              <div className="text-[11px] text-slate-500">HMAC-SHA256 Challenge/Response</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
+              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+                <span>Total Live Classes</span>
+                <Video className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="text-3xl font-black text-blue-400 font-mono">{zoomStatus?.total_live_classes ?? 0}</div>
+              <div className="text-[11px] text-slate-500">Managed in LMS Database</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
+              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+                <span>Cloud Recordings</span>
+                <FileCheck className="w-4 h-4 text-purple-400" />
+              </div>
+              <div className="text-3xl font-black text-purple-400 font-mono">{zoomStatus?.total_recordings ?? 0}</div>
+              <div className="text-[11px] text-slate-500">Transcripts: {zoomStatus?.total_transcripts ?? 0} Ingested</div>
+            </div>
+          </div>
+
+          {/* Webhook & OAuth Architecture Specs */}
+          <div className="p-6 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              Production Zoom Architecture Configuration
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <p className="font-bold text-slate-200">Server-to-Server OAuth Credentials</p>
+                <div className="space-y-1 font-mono text-[11px] text-slate-400">
+                  <div className="flex justify-between py-1 border-b border-slate-800/60">
+                    <span>ZOOM_ACCOUNT_ID:</span>
+                    <span className="text-amber-400">{zoomStatus?.account_id ? '●●●●●● (Set)' : 'Missing'}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-800/60">
+                    <span>ZOOM_CLIENT_ID:</span>
+                    <span className="text-amber-400">{zoomStatus?.client_id_configured ? '●●●●●● (Set)' : 'Missing'}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>ZOOM_SECRET_TOKEN:</span>
+                    <span className="text-amber-400">{zoomStatus?.webhook_configured ? '●●●●●● (Set)' : 'Missing'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <p className="font-bold text-slate-200">Webhook Endpoints & Subscribed Events</p>
+                <p className="font-mono text-[11px] text-amber-300 bg-slate-900 p-2 rounded-xl border border-slate-800">
+                  POST /api/zoom/webhook
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                  {['meeting.started', 'meeting.ended', 'meeting.participant_joined', 'meeting.participant_left', 'recording.completed'].map((ev) => (
+                    <span key={ev} className="px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono">
+                      {ev}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

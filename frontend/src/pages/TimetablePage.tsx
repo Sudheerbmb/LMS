@@ -20,7 +20,8 @@ import {
   Settings2,
   Edit3,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Video
 } from 'lucide-react'
 import {
   getGrades,
@@ -39,6 +40,7 @@ import {
   swapSlots,
   updateSlot,
   recordTeacherLeave,
+  generateZoomClassesFromTimetable,
   type SchoolGrade,
   type TimetableSlot,
   type TeacherProfile,
@@ -206,6 +208,23 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       setStatusMessage('Generation failed: ' + (err.message || 'Server error'))
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const [generatingZoom, setGeneratingZoom] = useState(false)
+
+  const handleGenerateZoomClasses = async () => {
+    if (!isAdmin && !isTeacher) return
+    try {
+      setGeneratingZoom(true)
+      setStatusMessage(null)
+      const res = await generateZoomClassesFromTimetable(7)
+      setStatusMessage(`✨ Successfully scheduled ${res.created_classes_count} Zoom live class sessions from timetable! (Checked ${res.total_slots_evaluated} slots across 7 days)`)
+    } catch (err: any) {
+      console.error('Failed to generate Zoom classes:', err)
+      setStatusMessage('Zoom timetable automation failed: ' + (err.message || 'Server error'))
+    } finally {
+      setGeneratingZoom(false)
     }
   }
 
@@ -513,6 +532,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             >
               <Database className={`w-4 h-4 ${seeding ? 'animate-spin text-amber-400' : ''}`} />
               {seeding ? 'Seeding...' : 'Reset Defaults'}
+            </button>
+
+            <button
+              onClick={handleGenerateZoomClasses}
+              disabled={generatingZoom}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+              title="Sync upcoming timetable slots with Zoom and automatically schedule meetings"
+            >
+              <Video className={`w-4 h-4 ${generatingZoom ? 'animate-spin' : ''}`} />
+              {generatingZoom ? 'Provisioning Zoom...' : 'Sync Timetable to Zoom'}
             </button>
 
             <button

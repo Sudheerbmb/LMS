@@ -752,86 +752,170 @@ export interface TeacherTimetableSlot {
 }
 
 export interface SchoolLiveClass {
-
   id: string
-
   title: string
-
   teacher_id: string
-
   teacher_name?: string
-
   starts_at: string
-
   ends_at: string
-
   meeting_url?: string
-
   recording_url?: string | null
-
-  status: 'scheduled' | 'live' | 'ended'
-
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled'
   grade_number?: number
-
   section_name?: string
-
   subject_code?: string
-
   subject_name?: string
-
   period_number?: number
-
   room_number?: string
+  zoom_meeting_id?: string
+  zoom_meeting_uuid?: string
+  zoom_join_url?: string
+  zoom_start_url?: string
+  zoom_password?: string
+  zoom_status?: string
+  zoom_last_synced_at?: string
+}
 
+export interface ClassAttendanceRecord {
+  id: string
+  class_id: string
+  user_id?: string
+  student_email: string
+  student_name: string
+  status: 'present' | 'late' | 'partial' | 'absent' | 'excused'
+  total_duration_minutes: number
+  first_joined_at?: string
+  last_left_at?: string
+  join_count: number
+  source: string
+}
+
+export interface ClassRecordingItem {
+  id: string
+  class_id: string
+  zoom_meeting_id: string
+  zoom_recording_id: string
+  recording_type: string
+  file_type: string
+  file_size_bytes?: number
+  play_url?: string
+  download_url?: string
+  vimeo_url?: string
+  duration_seconds?: number
+  status: string
+  recording_start?: string
+  recording_end?: string
+}
+
+export interface ClassTranscriptItem {
+  id: string
+  class_id: string
+  zoom_meeting_id?: string
+  raw_text?: string
+  segments_json?: Array<{ start: number; end: number; text: string }>
+  language: string
+  status: string
+  summary_json?: any
+}
+
+export interface ZoomIntegrationStatus {
+  connected: boolean
+  account_id: string
+  webhook_status: string
+  total_classes: number
+  zoom_classes: number
+  total_recordings: number
+  total_attendances: number
+  last_webhook_at?: string
+  last_event_type?: string
 }
 
 export const getTeacherTimetableSlots = () =>
-
   request<TeacherTimetableSlot[]>('/api/v1/classroom/teacher-slots')
 
 export const getSchoolLiveClasses = (params?: { grade_number?: number; status_filter?: string }) => {
-
   const query = new URLSearchParams()
-
   if (params?.grade_number) query.set('grade_number', params.grade_number.toString())
-
   if (params?.status_filter) query.set('status_filter', params.status_filter)
-
   return request<SchoolLiveClass[]>(`/api/v1/classroom/classes?${query.toString()}`)
-
 }
 
+export const getLiveClassById = (classId: string) =>
+  request<SchoolLiveClass>(`/api/v1/classroom/classes/${classId}`)
+
 export const createSchoolLiveClass = (payload: {
-
   title: string
-
   starts_at: string
-
   ends_at: string
-
   grade_number?: number
-
   section_name?: string
-
   subject_code?: string
-
   subject_name?: string
-
   period_number?: number
-
   room_number?: string
-
   status?: string
-
+  auto_create_zoom?: boolean
 }) =>
-
   request<SchoolLiveClass>('/api/v1/classroom/classes', {
-
     method: 'POST',
-
     body: JSON.stringify(payload)
-
   })
+
+export const rescheduleLiveClass = (
+  classId: string,
+  payload: { starts_at: string; ends_at: string; reason?: string }
+) =>
+  request<SchoolLiveClass>(`/api/v1/classroom/classes/${classId}/reschedule`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+
+export const cancelLiveClass = (classId: string) =>
+  request<SchoolLiveClass>(`/api/v1/classroom/classes/${classId}/cancel`, {
+    method: 'POST'
+  })
+
+export const startLiveClass = (classId: string) =>
+  request<{ status: string; start_url: string; join_url?: string; meeting_id?: string; password?: string }>(
+    `/api/v1/classroom/classes/${classId}/start`,
+    { method: 'POST' }
+  )
+
+export const joinLiveClass = (classId: string) =>
+  request<{ status: string; join_url: string; meeting_id?: string; password?: string; title: string }>(
+    `/api/v1/classroom/classes/${classId}/join`,
+    { method: 'POST' }
+  )
+
+export const syncClassWithZoom = (classId: string) =>
+  request<{
+    class_id: string
+    zoom_meeting_id?: string
+    status: string
+    participants_synced: number
+    attendance_records_created: number
+    recordings_found: number
+    transcript_available: boolean
+    details?: string
+  }>(`/api/v1/classroom/classes/${classId}/zoom/sync`, { method: 'POST' })
+
+export const getClassAttendance = (classId: string) =>
+  request<ClassAttendanceRecord[]>(`/api/v1/classroom/classes/${classId}/attendance`)
+
+export const getClassRecordings = (classId: string) =>
+  request<ClassRecordingItem[]>(`/api/v1/classroom/classes/${classId}/recordings`)
+
+export const getClassTranscript = (classId: string) =>
+  request<ClassTranscriptItem | null>(`/api/v1/classroom/classes/${classId}/transcript`)
+
+export const getZoomStatus = () =>
+  request<ZoomIntegrationStatus>('/api/v1/classroom/zoom/status')
+
+export const generateZoomClassesFromTimetable = (daysAhead: number = 7) =>
+  request<{ status: string; days_ahead: number; classes_created: number; zoom_meetings_synced: number }>(
+    `/api/v1/timetable/generate-zoom-classes?days_ahead=${daysAhead}`,
+    { method: 'POST' }
+  )
 
 export const endLiveClassSession = (
   classId: string,
@@ -846,11 +930,8 @@ export const endLiveClassSession = (
   )
 
 export const updateLiveClassStatus = (classId: string, newStatus: string) =>
-
   request<{ id: string; status: string }>(`/api/v1/classroom/classes/${classId}/status?new_status=${newStatus}`, {
-
     method: 'PUT'
-
   })
 
 export const uploadClassRecording = (classId: string, videoBlob: Blob) => {
