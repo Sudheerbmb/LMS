@@ -384,11 +384,11 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   }
 
   const handlePurgeLegacyData = async () => {
-    if (!window.confirm('Purge all legacy school accounts, Class 1-10 grades, and obsolete dummy reviews from the database? This action cannot be undone.')) return
+    if (!window.confirm('Reset and purge legacy demo accounts and obsolete data from the database? This action cannot be undone.')) return
     try {
       setLoading(true)
       const res = await purgeLegacyData()
-      alert(res.message || 'Legacy school data successfully purged!')
+      alert(res.message || 'Legacy data successfully purged!')
       await loadAllData()
     } catch (err: any) {
       alert(`Purge failed: ${err.message}`)
@@ -457,23 +457,23 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             className="px-4 py-2.5 rounded-xl bg-slate-800 border border-indigo-500/30 text-indigo-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-700 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Course Track</span>
+            <span>+ New Course</span>
           </button>
           <button
             onClick={handleSeedTechTracks}
-            title="Seed Standard Tech Courses (Python GenAI, Salesforce, ServiceNow, etc.)"
+            title="Seed Standard Courses (Python GenAI, Salesforce, ServiceNow, etc.)"
             className="px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Seed Standard Tech Tracks</span>
+            <span>Seed Standard Courses</span>
           </button>
           <button
             onClick={handlePurgeLegacyData}
-            title="Purge all legacy school accounts and old data"
+            title="Reset and purge legacy demo accounts and old data"
             className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Purge School Data</span>
+            <span>Purge Legacy Data</span>
           </button>
           <button
             onClick={loadAllData}
@@ -587,7 +587,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                   <tr>
                     <th className="p-4">Student Profile</th>
                     <th className="p-4">Contact Info</th>
-                    <th className="p-4">Enrolled Course Tracks</th>
+                    <th className="p-4">Enrolled Courses</th>
                     <th className="p-4">Account Status</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>

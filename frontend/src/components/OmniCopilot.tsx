@@ -58,7 +58,7 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
     } else if (isTeacher) {
       return `Hello ${firstName}! I am your Faculty Classroom Copilot powered by Groq LPU. Active page: "${currentTab}". You can say: "Start live class for 6th A at 4:45", "Launch CrewAI Curriculum Studio", or "Grade student homework".`
     } else {
-      return `Hello ${firstName}! I am your Enterprise Executive Copilot powered by Groq LPU. Active page: "${currentTab}". You can say: "Audit school-wide high risk students", "Trigger AI master timetable", or "Check platform telemetry".`
+      return `Hello ${firstName}! I am your Enterprise Executive Copilot powered by Groq LPU. Active page: "${currentTab}". You can say: "Audit institute-wide high risk students", "Trigger AI master timetable", or "Check platform telemetry".`
     }
   }
 
@@ -441,10 +441,10 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
                 <>
                   <button
                     type="button"
-                    onClick={() => handleExecute('Show high risk students across school')}
+                    onClick={() => handleExecute('Show high risk students across institute')}
                     className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[10px] font-semibold transition-all"
                   >
-                    High Risk School Audit
+                    High Risk Institute Audit
                   </button>
                   <button
                     type="button"

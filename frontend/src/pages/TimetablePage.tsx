@@ -45,7 +45,9 @@ import {
   generateZoomClassesFromTimetable,
   getAdminCourses,
   createSchoolLiveClass,
+  getSchoolLiveClasses,
   type SchoolGrade,
+  type SchoolLiveClass,
   type TimetableSlot,
   type TeacherProfile,
   type TimetableGenerationResult,
@@ -87,6 +89,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const [slots, setSlots] = useState<TimetableSlot[]>([])
   const [teachers, setTeachers] = useState<TeacherProfile[]>([])
   const [rules, setRules] = useState<TimetableRule[]>([])
+  const [liveClasses, setLiveClasses] = useState<SchoolLiveClass[]>([])
   const [myTeacherProfile, setMyTeacherProfile] = useState<TeacherProfile | null>(null)
   
   const [loading, setLoading] = useState(false)
@@ -168,17 +171,31 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
     }
   }, [selectedSectionId, isTeacher])
 
+  useEffect(() => {
+    const pollTimer = setInterval(async () => {
+      try {
+        const live = await getSchoolLiveClasses().catch(() => [])
+        if (live) setLiveClasses(live)
+      } catch (e) {
+        // silent background sync
+      }
+    }, 10000)
+    return () => clearInterval(pollTimer)
+  }, [])
+
   const loadData = async () => {
     try {
       setLoading(true)
-      const [gradesData, teachersData, coursesData] = await Promise.all([
+      const [gradesData, teachersData, coursesData, liveClassesData] = await Promise.all([
         getGrades().catch(() => []),
         getTeachersWithFeedback().catch(() => []),
-        getAdminCourses().catch(() => [])
+        getAdminCourses().catch(() => []),
+        getSchoolLiveClasses().catch(() => [])
       ])
       setGrades(gradesData || [])
       setTeachers(teachersData || [])
       setAdminCourses(coursesData || [])
+      setLiveClasses(liveClassesData || [])
 
       if (isAdmin) {
         const rulesData = await getTimetableRules().catch(() => [])
@@ -232,6 +249,19 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
     } finally {
       setLoading(false)
     }
+  }
+
+  const getActiveLiveClassForSlot = (slot: TimetableSlot) => {
+    const sCode = (slot.subject_code || '').toLowerCase().trim()
+    const sName = (slot.subject_name || '').toLowerCase().trim()
+    return liveClasses.find(c => {
+      if (c.status !== 'live') return false
+      const cCode = (c.subject_code || '').toLowerCase().trim()
+      const cName = (c.subject_name || '').toLowerCase().trim()
+      const matchSub = (sCode && cCode === sCode) || (sName && cName.includes(sName)) || (sName && sName.includes(cName))
+      const matchSec = !slot.section_name || !c.section_name || slot.section_name === c.section_name
+      return matchSub && matchSec
+    })
   }
 
   const loadGrid = async (secId: string) => {
@@ -366,6 +396,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
   const handleLaunchLiveSession = async (slot: TimetableSlot) => {
     try {
+      const activeLive = getActiveLiveClassForSlot(slot)
+      if (isStudent) {
+        if (activeLive) {
+          const zoomUrl = activeLive.zoom_join_url || activeLive.meeting_url
+          if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
+            window.open(zoomUrl, '_blank')
+          } else {
+            setStatusMessage(`Joined live session for ${activeLive.subject_name || slot.subject_name}!`)
+          }
+        } else {
+          alert(`Faculty Lead has not started the live broadcast for "${slot.subject_name}" yet. The link will become accessible once broadcasting begins.`)
+        }
+        return
+      }
+
       setLaunchingLiveClass(true)
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
@@ -390,6 +435,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
         window.open(zoomUrl, '_blank')
       }
+
+      const updated = await getSchoolLiveClasses().catch(() => [])
+      setLiveClasses(updated || [])
     } catch (err: any) {
       alert('Failed to launch live class: ' + (err.message || 'Unknown error'))
     } finally {
@@ -487,7 +535,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       const created = await createTimetableRule({
         name: newRuleName,
         rule_type: newRuleType,
-        description: newRuleDesc || 'Custom school timetable scheduling policy',
+        description: newRuleDesc || 'Custom institute timetable scheduling policy',
         parameters: params,
         is_enabled: true,
         priority: 2
@@ -1134,11 +1182,15 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       }
 
                       const norm = getNormalizedSlot(slot)
+                      const activeLive = getActiveLiveClassForSlot(slot)
+                      const isSlotLive = Boolean(activeLive)
 
                       return (
                         <div
                           key={slot.id}
-                          className="p-5 rounded-2xl bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                          className={`p-5 rounded-2xl bg-[#0B0F19] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${
+                            isSlotLive ? 'border-rose-500/50 shadow-lg shadow-rose-500/10' : 'border-amber-500/15 hover:border-amber-500/40'
+                          }`}
                         >
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -1154,6 +1206,12 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <span className="text-[11px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800">
                                 {slot.slot_type === 'lab' ? 'Hands-On Lab' : 'Live Masterclass'}
                               </span>
+                              {isSlotLive && (
+                                <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                                  LIVE BROADCAST
+                                </span>
+                              )}
                             </div>
 
                             <div>
@@ -1174,10 +1232,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <button
                                 onClick={() => handleLaunchLiveSession(slot)}
                                 disabled={launchingLiveClass}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+                                className={`px-4 py-2.5 rounded-xl text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+                                  isSlotLive
+                                    ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
+                                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 shadow-amber-500/20'
+                                }`}
                               >
                                 <Video className="w-4 h-4" />
-                                <span>{launchingLiveClass ? 'Launching...' : 'Launch Zoom'}</span>
+                                <span>{launchingLiveClass ? 'Connecting...' : isSlotLive ? 'Resume Live Class' : 'Launch Zoom'}</span>
                               </button>
                             )}
 
@@ -1185,10 +1247,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <button
                                 onClick={() => handleLaunchLiveSession(slot)}
                                 disabled={launchingLiveClass}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                                className={`px-4 py-2.5 rounded-xl text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+                                  isSlotLive
+                                    ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
+                                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-emerald-500/20'
+                                }`}
                               >
                                 <Play className="w-4 h-4 fill-current" />
-                                <span>{launchingLiveClass ? 'Connecting...' : 'Join Live Class'}</span>
+                                <span>{isSlotLive ? '🔴 Join Live Session' : 'Join Live Class'}</span>
                               </button>
                             )}
 
@@ -1316,6 +1382,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                             const norm = getNormalizedSlot(slot)
                             const isSelectedForSwap = selectedSlotForSwap?.id === slot.id
+                            const activeLive = getActiveLiveClassForSlot(slot)
+                            const isSlotLive = Boolean(activeLive)
 
                             return (
                               <td
@@ -1328,6 +1396,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                   className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
                                     isSelectedForSwap
                                       ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
+                                      : isSlotLive
+                                      ? 'bg-rose-950/30 border-rose-500/50 shadow-md shadow-rose-500/10'
                                       : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
                                   }`}
                                 >
@@ -1342,9 +1412,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                       >
                                         {norm.code}
                                       </span>
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
-                                        LAB
-                                      </span>
+                                      {isSlotLive ? (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                                          LIVE
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
+                                          {slot.slot_type === 'lab' ? 'LAB' : 'LECTURE'}
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="text-xs font-semibold text-slate-100 line-clamp-1">
                                       {norm.name}
@@ -1397,7 +1474,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 Live Policy Rules & Scheduling Constraints
               </h2>
               <p className="text-xs text-slate-400">
-                Modify, enable, or add school rules dynamically without touching any code. LangGraph reads these rules live from Neon DB.
+                Modify, enable, or add institute rules dynamically without touching any code. LangGraph reads these rules live from Neon DB.
               </p>
             </div>
             <button
@@ -1933,8 +2010,32 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             {(() => {
               const norm = selectedSlotForView ? getNormalizedSlot(selectedSlotForView) : null
               if (!norm) return null
+              const activeLive = selectedSlotForView ? getActiveLiveClassForSlot(selectedSlotForView) : null
+              const isLive = Boolean(activeLive)
+
               return (
                 <div className="space-y-4">
+                  {/* Live Status Header */}
+                  {isLive ? (
+                    <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs animate-pulse">
+                      <div className="flex items-center gap-2 text-rose-300 font-extrabold uppercase tracking-wider">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                        🔴 LIVE BROADCAST ACTIVE
+                      </div>
+                      <span className="text-[11px] text-rose-400 font-semibold bg-rose-500/20 px-2 py-0.5 rounded">
+                        Zoom Connected
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-slate-400 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-slate-600" />
+                        Scheduled Timetable Period
+                      </div>
+                      <span className="text-[11px] text-slate-500">Offline / Awaiting Broadcast</span>
+                    </div>
+                  )}
+
                   <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${norm.color || '#f59e0b'}20`, color: norm.color || '#f59e0b' }}>
@@ -1949,15 +2050,47 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   </div>
 
                   <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchLiveSession(selectedSlotForView)}
-                      disabled={launchingLiveClass}
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
-                    >
-                      <Play className="w-4 h-4 fill-slate-950" />
-                      <span>{isTeacher ? 'Launch Live Video Broadcast' : 'Join Live Video Session'}</span>
-                    </button>
+                    {(isTeacher || isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchLiveSession(selectedSlotForView)}
+                        disabled={launchingLiveClass}
+                        className={`w-full py-3 rounded-xl text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                          isLive
+                            ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
+                            : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 shadow-amber-500/20'
+                        }`}
+                      >
+                        {isLive ? <Video className="w-4 h-4" /> : <Play className="w-4 h-4 fill-slate-950" />}
+                        <span>
+                          {launchingLiveClass
+                            ? 'Connecting Stream...'
+                            : isLive
+                            ? 'Resume / Join Live Video Broadcast'
+                            : 'Launch Live Video Broadcast (Zoom Session)'}
+                        </span>
+                      </button>
+                    )}
+
+                    {isStudent && (
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchLiveSession(selectedSlotForView)}
+                        disabled={launchingLiveClass}
+                        className={`w-full py-3 rounded-xl text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                          isLive
+                            ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse cursor-pointer'
+                            : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-600 cursor-pointer'
+                        }`}
+                      >
+                        {isLive ? <Play className="w-4 h-4 fill-slate-950" /> : <Video className="w-4 h-4 text-slate-500" />}
+                        <span>
+                          {isLive
+                            ? '🔴 Join Live Video Classroom'
+                            : 'Live Broadcast Offline (Starts When Faculty Launches)'}
+                        </span>
+                      </button>
+                    )}
 
                     {isStudent && (
                       <button
@@ -1969,7 +2102,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             setShowFeedbackModal(true)
                           }
                         }}
-                        className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Star className="w-3.5 h-3.5 text-amber-400" />
                         Rate Faculty Instructor

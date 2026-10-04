@@ -213,7 +213,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         body: announcementBody.trim(),
         audience_role: announcementAudience
       })
-      showToast('School announcement broadcasted successfully!', 'success')
+      showToast('Institute announcement broadcasted successfully!', 'success')
       setAnnouncements(prev => [res, ...prev])
       setShowAnnouncementModal(false)
       setAnnouncementTitle('')
