@@ -738,9 +738,9 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
     candidate_models = [
         settings.groq_model or 'llama-3.3-70b-versatile',
         'llama-3.1-8b-instant',
-        'mixtral-8x7b-32768',
+        'llama3-70b-8192',
+        'llama3-8b-8192',
         'gemma2-9b-it',
-        'qwen/qwen3.8-27b',
     ]
 
     for model_name in candidate_models:
@@ -752,7 +752,7 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
                     'max_tokens': max_tokens,
                     'temperature': temperature
                 }
-                if json_mode:
+                if json_mode and 'gemma' not in m:
                     req_data['response_format'] = {'type': 'json_object'}
 
                 req = urllib.request.Request(
@@ -764,7 +764,7 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
                         'User-Agent': 'AcharyaLMS/2.0'
                     }
                 )
-                with urllib.request.urlopen(req, timeout=20) as resp:
+                with urllib.request.urlopen(req, timeout=15) as resp:
                     res = json.loads(resp.read().decode('utf-8'))
                     return res['choices'][0]['message']['content'].strip()
 
@@ -783,14 +783,13 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
 
 
 async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> tuple[Optional[str], Optional[list], Optional[LiveClass]]:
-    live_class = None
     try:
         import uuid as _uuid_mod
         c_uuid = _uuid_mod.UUID(class_id_str)
-        live_class = await session.scalar(select(LiveClass).where(LiveClass.id == c_uuid))
     except Exception:
-        pass
+        return None, None, None
 
+    live_class = await session.scalar(select(LiveClass).where(LiveClass.id == c_uuid))
     if not live_class:
         return None, None, None
 
@@ -798,7 +797,7 @@ async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> t
         return live_class.transcript_text.strip(), live_class.transcript_segments or [], live_class
 
     # 1. Check ClassTranscript table
-    t_rec = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == live_class.id))
+    t_rec = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == c_uuid))
     if t_rec and t_rec.raw_text and t_rec.raw_text.strip():
         live_class.transcript_text = t_rec.raw_text.strip()
         live_class.transcript_segments = t_rec.segments_json or []
@@ -806,27 +805,27 @@ async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> t
             await session.commit()
         except Exception:
             await session.rollback()
-        return live_class.transcript_text, live_class.transcript_segments, live_class
+        return t_rec.raw_text.strip(), t_rec.segments_json or [], live_class
 
     # 2. Check Zoom for cloud recording audio transcript
-    if live_class.zoom_meeting_id and zoom_service.is_configured():
+    meeting_id = live_class.zoom_meeting_id
+    if meeting_id and zoom_service.is_configured():
         try:
-            _, z_transcript = await zoom_service.get_recordings_and_transcript(live_class.zoom_meeting_id)
+            _, z_transcript = await zoom_service.get_recordings_and_transcript(meeting_id)
             if z_transcript and z_transcript.strip():
-                live_class.transcript_text = z_transcript.strip()
                 try:
                     session.add(ClassTranscript(
-                        class_id=live_class.id,
-                        zoom_meeting_id=live_class.zoom_meeting_id,
+                        class_id=c_uuid,
+                        zoom_meeting_id=meeting_id,
                         raw_text=z_transcript.strip(),
                         status="available"
                     ))
                     await session.commit()
                 except Exception:
                     await session.rollback()
-                return live_class.transcript_text, live_class.transcript_segments or [], live_class
+                return z_transcript.strip(), [], live_class
         except Exception as z_err:
-            logger.warning("Could not fetch Zoom transcript for class %s: %s", live_class.id, z_err)
+            logger.warning("Could not fetch Zoom transcript for class %s: %s", c_uuid, z_err)
 
     # 3. Generate structured lecture transcript so student always has full lecture notes & AI Q&A
     title = live_class.title or "Technical Masterclass"
@@ -857,22 +856,23 @@ Format with clean timestamps (e.g. [00:00] Teacher: ..., [05:00] Teacher: ...)."
 [24:10] Teacher: Excellent question! Always use connection pooling with explicit timeout boundaries and batch queries to avoid governor limits.
 [30:00] Teacher: In summary, remember to follow clean code principles, test your edge cases, and sync your changes with your team repository."""
 
-    live_class.transcript_text = generated.strip()
+    clean_text = generated.strip()
     try:
         session.add(ClassTranscript(
-            class_id=live_class.id,
-            zoom_meeting_id=live_class.zoom_meeting_id,
-            raw_text=generated.strip(),
+            class_id=c_uuid,
+            zoom_meeting_id=meeting_id,
+            raw_text=clean_text,
             status="available"
         ))
         await session.commit()
     except Exception:
         await session.rollback()
-        existing = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == live_class.id))
+        # Query again using c_uuid directly without touching expired live_class attributes
+        existing = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == c_uuid))
         if existing and existing.raw_text:
-            live_class.transcript_text = existing.raw_text.strip()
+            clean_text = existing.raw_text.strip()
 
-    return live_class.transcript_text, live_class.transcript_segments or [], live_class
+    return clean_text, [], live_class
 
 
 @router.post("/classes/{class_id}/ai-doubt")
