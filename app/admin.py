@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -40,6 +40,7 @@ class AdminUserCreate(BaseModel):
     phone_number: Optional[str] = None
     status: Literal["active", "pending", "suspended"] = "active"
     course_ids: List[UUID] = []
+    subject_ids: List[UUID] = []
 
 
 class AdminUserUpdate(BaseModel):
@@ -50,6 +51,7 @@ class AdminUserUpdate(BaseModel):
     role: Optional[Literal["admin", "teacher", "student"]] = None
     status: Optional[Literal["active", "pending", "suspended", "rejected"]] = None
     course_ids: Optional[List[UUID]] = None
+    subject_ids: Optional[List[UUID]] = None
 
 
 class AdminSubjectCreate(BaseModel):
@@ -164,6 +166,13 @@ async def create_user(
         for c_id in data.course_ids:
             session.add(Enrollment(user_id=user.id, course_id=c_id, status="active"))
 
+    # If subject_ids were provided (e.g. for assigned faculty / teacher):
+    if data.subject_ids:
+        for s_id in data.subject_ids:
+            subj = await session.get(CourseSubject, s_id)
+            if subj:
+                subj.teacher_id = user.id
+
     await session.commit()
     await session.refresh(user)
 
@@ -207,6 +216,16 @@ async def update_user(
             await session.delete(e)
         for c_id in data.course_ids:
             session.add(Enrollment(user_id=user.id, course_id=c_id, status="active"))
+
+    # Sync assigned subjects if subject_ids was provided (for faculty)
+    if data.subject_ids is not None:
+        existing_subjects = (await session.scalars(select(CourseSubject).where(CourseSubject.teacher_id == user_id))).all()
+        for s in existing_subjects:
+            s.teacher_id = None
+        for s_id in data.subject_ids:
+            subj = await session.get(CourseSubject, s_id)
+            if subj:
+                subj.teacher_id = user.id
 
     await session.commit()
     await session.refresh(user)

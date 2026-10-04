@@ -21,8 +21,8 @@ DAILY_PERIODS = [
     {"period": 12, "start": "16:45", "end": "17:00", "type": "dispersal", "label": "Homeroom & Dispersal"},
 ]
 
-WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-TEACHING_PERIOD_NUMBERS = [1, 2, 4, 5, 6, 8, 9, 11]  # 8 teaching periods / day = 40 / week
+WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+TEACHING_PERIOD_NUMBERS = [1, 2, 4, 5, 6, 8, 9, 11]
 
 
 class TimetableGraphState(TypedDict):

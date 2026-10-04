@@ -21,7 +21,9 @@ import {
   Edit3,
   GraduationCap,
   BookOpen,
-  Video
+  Video,
+  Play,
+  Palmtree
 } from 'lucide-react'
 import {
   getGrades,
@@ -41,16 +43,20 @@ import {
   updateSlot,
   recordTeacherLeave,
   generateZoomClassesFromTimetable,
+  getAdminCourses,
+  createSchoolLiveClass,
   type SchoolGrade,
   type TimetableSlot,
   type TeacherProfile,
   type TimetableGenerationResult,
   type TimetableRule,
   type SubstituteTeacher,
+  type AdminInstituteCourse,
   type User
 } from '../lib/api'
 
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+export const ALL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+export const DEFAULT_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export const TRACK_TITLE_MAP: Record<number, string> = {
   1: 'Python with Generative AI (GenAI)',
@@ -207,6 +213,29 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const [newRuleDesc, setNewRuleDesc] = useState('')
   const [newRuleParamVal, setNewRuleParamVal] = useState('3')
 
+  // 7-day, 6-day, 5-day View State (Default 7-days with Saturday & Sunday support)
+  const [visibleDaysCount, setVisibleDaysCount] = useState<number>(7)
+  
+  // Real DB Courses & Subject Modules
+  const [adminCourses, setAdminCourses] = useState<AdminInstituteCourse[]>([])
+
+  // Institute Holidays & Off-Days (Admin adjustable)
+  const [holidays, setHolidays] = useState<Record<string, string>>({
+    Sunday: 'Weekend Off-Day / Self-Paced Coding Sandbox'
+  })
+  const [showHolidayModal, setShowHolidayModal] = useState(false)
+  const [holidayTargetDay, setHolidayTargetDay] = useState('Sunday')
+  const [holidayReasonInput, setHolidayReasonInput] = useState('Weekend Institute Holiday')
+
+  // Slot Quick Edit (Admin) & Viewer / Live Launch Modal (Faculty/Student)
+  const [showSlotViewerModal, setShowSlotViewerModal] = useState(false)
+  const [selectedSlotForView, setSelectedSlotForView] = useState<TimetableSlot | null>(null)
+  const [editingSubjectCode, setEditingSubjectCode] = useState('')
+  const [editingSubjectName, setEditingSubjectName] = useState('')
+  const [editingTeacherId, setEditingTeacherId] = useState('')
+  const [editingSlotType, setEditingSlotType] = useState('lecture')
+  const [launchingLiveClass, setLaunchingLiveClass] = useState(false)
+
   // Feedback submission form modal
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const [feedbackTeacherId, setFeedbackTeacherId] = useState('')
@@ -234,14 +263,17 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const loadData = async () => {
     try {
       setLoading(true)
-      const gradesData = await getGrades()
+      const [gradesData, teachersData, coursesData] = await Promise.all([
+        getGrades().catch(() => []),
+        getTeachersWithFeedback().catch(() => []),
+        getAdminCourses().catch(() => [])
+      ])
       setGrades(gradesData || [])
-      
-      const teachersData = await getTeachersWithFeedback()
       setTeachers(teachersData || [])
+      setAdminCourses(coursesData || [])
 
       if (isAdmin) {
-        const rulesData = await getTimetableRules()
+        const rulesData = await getTimetableRules().catch(() => [])
         setRules(rulesData || [])
       }
 
@@ -389,19 +421,28 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
     if (slot.slot_type in ['assembly', 'recess', 'lunch', 'dispersal']) return
 
-    // If Student: Opens feedback modal to rate this teacher!
+    // If Student: Opens feedback modal or viewer
     if (isStudent) {
-      if (slot.teacher_id) {
-        setFeedbackTeacherId(slot.teacher_id)
-        setShowFeedbackModal(true)
-      }
+      setSelectedSlotForView(slot)
+      setShowSlotViewerModal(true)
       return
     }
 
-    // If Admin: Opens Substitution & Venue Management Desk
+    // If Faculty Teacher: Opens Live Launch & Period Desk
+    if (isTeacher) {
+      setSelectedSlotForView(slot)
+      setShowSlotViewerModal(true)
+      return
+    }
+
+    // If Admin: Opens Comprehensive Slot Management & Substitution Desk
     if (isAdmin) {
       setActiveSlotModal(slot)
-      setEditingRoom(slot.room_or_venue)
+      setEditingRoom(slot.room_or_venue || 'Tech Lab 101')
+      setEditingSubjectCode(slot.subject_code || 'PY-101')
+      setEditingSubjectName(slot.subject_name || 'Technical Lecture')
+      setEditingTeacherId(slot.teacher_id || '')
+      setEditingSlotType(slot.slot_type || 'lecture')
       try {
         setLoadingSubstitutes(true)
         const subs = await getSlotSubstitutes(slot.id)
@@ -412,6 +453,48 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         setLoadingSubstitutes(false)
       }
     }
+  }
+
+  const handleLaunchLiveSession = async (slot: TimetableSlot) => {
+    try {
+      setLaunchingLiveClass(true)
+      const now = new Date()
+      const end = new Date(now.getTime() + 45 * 60 * 1000)
+      const norm = getNormalizedSlot(slot, currentGrade?.grade_number || 1)
+      await createSchoolLiveClass({
+        title: `${norm.name} (${norm.code}) Live Session`,
+        starts_at: now.toISOString(),
+        ends_at: end.toISOString(),
+        grade_number: currentGrade?.grade_number || 1,
+        section_name: currentSection?.name || 'A',
+        subject_code: norm.code,
+        subject_name: norm.name,
+        period_number: slot.period_number,
+        room_number: slot.room_or_venue || 'Virtual Zoom Room',
+        status: 'live'
+      })
+      setStatusMessage(`Live Session for ${norm.name} launched successfully! Head to Live Classroom.`)
+      setActiveSlotModal(null)
+      setShowSlotViewerModal(false)
+    } catch (err: any) {
+      alert('Failed to launch live class: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLaunchingLiveClass(false)
+    }
+  }
+
+  const handleToggleDayHoliday = (dayName: string, customReason?: string) => {
+    setHolidays(prev => {
+      const next = { ...prev }
+      if (next[dayName]) {
+        delete next[dayName]
+        setStatusMessage(`Removed holiday status for ${dayName}. Regular schedule active.`)
+      } else {
+        next[dayName] = customReason || 'Institute Holiday / Off-Day'
+        setStatusMessage(`Marked ${dayName} as Holiday: ${customReason || 'Institute Holiday'}`)
+      }
+      return next
+    })
   }
 
   const handleAssignSubstitute = async (teacherId: string) => {
@@ -433,10 +516,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
     if (!isAdmin || !activeSlotModal) return
     try {
       setLoading(true)
-      await updateSlot(activeSlotModal.id, { room_or_venue: editingRoom })
-      setStatusMessage('Slot venue details updated!')
+      await updateSlot(activeSlotModal.id, {
+        room_or_venue: editingRoom,
+        teacher_id: editingTeacherId || undefined,
+        slot_type: editingSlotType
+      })
+      setStatusMessage('Timetable slot details saved successfully to database!')
       setActiveSlotModal(null)
       if (selectedSectionId) await loadGrid(selectedSectionId)
+      else if (isTeacher && myTeacherProfile) {
+        const teacherSlots = await getTimetableGrid({ teacher_id: myTeacherProfile.id })
+        setSlots(teacherSlots || [])
+      }
     } catch (err: any) {
       alert('Update failed: ' + err.message)
     } finally {
@@ -911,6 +1002,53 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             </div>
           )}
 
+          {/* View Mode & Holiday Management Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0B0F19] p-3.5 rounded-2xl border border-amber-500/15">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Week View:</span>
+              <button
+                onClick={() => setVisibleDaysCount(7)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  visibleDaysCount === 7
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                7 Days (Mon - Sun)
+              </button>
+              <button
+                onClick={() => setVisibleDaysCount(6)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  visibleDaysCount === 6
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                6 Days (Mon - Sat)
+              </button>
+              <button
+                onClick={() => setVisibleDaysCount(5)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  visibleDaysCount === 5
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                5 Days (Mon - Fri)
+              </button>
+            </div>
+
+            {isAdmin && (
+              <button
+                onClick={() => setShowHolidayModal(true)}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition-all"
+              >
+                <Palmtree className="w-3.5 h-3.5 text-amber-400" />
+                Manage Holidays & Off-Days ({Object.keys(holidays).length})
+              </button>
+            )}
+          </div>
+
           {/* Timetable Weekly Matrix */}
           {loading ? (
             <div className="h-96 flex items-center justify-center text-slate-400 gap-3">
@@ -935,12 +1073,27 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="p-4 w-48 border-r border-slate-800">Time & Period</th>
-                    {WEEKDAYS.map((day) => (
-                      <th key={day} className="p-4 border-r border-slate-800 last:border-r-0">
-                        {day}
-                      </th>
-                    ))}
+                    <th className="p-4 w-44 border-r border-slate-800">Time & Period</th>
+                    {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
+                      const isHoliday = !!holidays[day]
+                      return (
+                        <th key={day} className="p-4 border-r border-slate-800 last:border-r-0 min-w-[170px]">
+                          <div className="flex items-center justify-between">
+                            <span className={isHoliday ? 'text-amber-400' : 'text-slate-200'}>{day}</span>
+                            {isHoliday && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                <Palmtree className="w-3 h-3" /> Holiday
+                              </span>
+                            )}
+                          </div>
+                          {isHoliday && (
+                            <div className="text-[10px] text-amber-400/80 font-normal lowercase first-letter:uppercase truncate mt-0.5">
+                              {holidays[day]}
+                            </div>
+                          )}
+                        </th>
+                      )
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -954,7 +1107,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             <div>{meta.time}</div>
                             <div className="text-[11px] opacity-80">{meta.label}</div>
                           </td>
-                          <td colSpan={5} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
+                          <td colSpan={visibleDaysCount} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
                             {meta.label} &bull; All Batches (09:00 AM &ndash; 06:00 PM Schedule)
                           </td>
                         </tr>
@@ -967,10 +1120,24 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                           <div className="font-bold text-slate-200">{meta.label}</div>
                           <div className="text-slate-500">{meta.time}</div>
                         </td>
-                        {WEEKDAYS.map((day) => {
+                        {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
+                          const isDayHoliday = !!holidays[day]
                           const slot = slots.find(
                             (s) => s.day_of_week === day && s.period_number === pNum
                           )
+
+                          if (isDayHoliday || (slot?.slot_type as string) === 'holiday') {
+                            return (
+                              <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 align-top">
+                                <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-950/10 text-slate-300 h-full flex flex-col justify-center items-center text-center space-y-1 min-h-[90px]">
+                                  <Palmtree className="w-4 h-4 text-amber-400" />
+                                  <div className="text-[11px] font-bold text-amber-300">Holiday / Off-Day</div>
+                                  <div className="text-[10px] text-slate-400 line-clamp-1">{holidays[day] || 'Scheduled Off'}</div>
+                                </div>
+                              </td>
+                            )
+                          }
+
                           if (!slot) {
                             return (
                               <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 text-slate-600 text-xs text-center">
@@ -986,19 +1153,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             <td
                               key={day}
                               onClick={() => handleSlotClick(slot)}
-                              className={`p-3 border-r border-slate-800/60 last:border-r-0 align-top ${
-                                isAdmin || isStudent ? 'cursor-pointer group' : ''
-                              }`}
-                              title={
-                                isAdmin
-                                  ? 'Click to edit or assign substitute'
-                                  : isStudent
-                                  ? 'Click to rate instructor'
-                                  : ''
-                              }
+                              className="p-3 border-r border-slate-800/60 last:border-r-0 align-top cursor-pointer group"
+                              title="Click for details, live class launching, or slot adjustment"
                             >
                               <div
-                                className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative ${
+                                className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
                                   isSelectedForSwap
                                     ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
                                     : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
@@ -1025,7 +1184,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                 </div>
 
                                 <div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] space-y-0.5 text-slate-400">
-                                  {/* If Teacher view: Show Track & Batch; if Class view: Show Teacher Name */}
                                   <div className="truncate font-medium text-slate-300 flex items-center justify-between">
                                     <span className="truncate">
                                       {isTeacher
@@ -1034,6 +1192,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                     </span>
                                     {isAdmin && (
                                       <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                    )}
+                                    {isTeacher && (
+                                      <Video className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
                                     )}
                                     {isStudent && (
                                       <Star className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
@@ -1353,7 +1514,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       {/* Period Management & Instant Substitute Finder Drawer (ADMIN ONLY) */}
       {isAdmin && activeSlotModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
@@ -1372,81 +1533,175 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#0B0F19] border border-amber-500/15 flex items-center justify-between">
+            <div className="space-y-4">
+              {/* Subject & Track Module */}
               <div>
-                <div className="text-xs font-semibold text-slate-400">Current Subject</div>
-                <div className="text-sm font-bold text-white">{activeSlotModal.subject_name || 'Academic Class'}</div>
-                <div className="text-xs text-amber-400 font-medium mt-0.5">Faculty: {activeSlotModal.teacher_name || 'Unassigned'}</div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Subject Module</label>
+                <select
+                  value={editingSubjectCode}
+                  onChange={(e) => {
+                    const code = e.target.value
+                    setEditingSubjectCode(code)
+                    const foundSub = adminCourses.flatMap(c => c.subjects).find(s => s.code === code)
+                    if (foundSub) {
+                      setEditingSubjectName(foundSub.name)
+                    }
+                  }}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white font-semibold"
+                >
+                  <option value="">-- Select Technical Subject Module --</option>
+                  {adminCourses.map(c => (
+                    <optgroup key={c.id} label={c.title}>
+                      {c.subjects.map(s => (
+                        <option key={s.id} value={s.code}>
+                          {s.code} - {s.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {adminCourses.length === 0 && (
+                    <>
+                      <option value="PY-101">PY-101 - Python Core & Advanced OOP</option>
+                      <option value="GEN-201">GEN-201 - Prompt Engineering & LangChain</option>
+                      <option value="RAG-301">RAG-301 - RAG Architecture & Vector DBs</option>
+                      <option value="AI-401">AI-401 - Autonomous Agents & FastAPI</option>
+                      <option value="SF-ADM">SF-ADM - Salesforce Admin Essentials</option>
+                      <option value="SF-DEV">SF-DEV - Apex Programming & SOQL</option>
+                      <option value="SN-FND">SN-FND - ServiceNow Administration</option>
+                      <option value="FS-REA">FS-REA - React 19 & TypeScript</option>
+                      <option value="DO-CON">DO-CON - Docker & Kubernetes Pods</option>
+                    </>
+                  )}
+                </select>
+                {editingSubjectName && (
+                  <div className="text-[11px] text-amber-400 font-semibold mt-1">
+                    Selected Module: {editingSubjectName}
+                  </div>
+                )}
               </div>
 
-              <div className="w-48">
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Room / Venue</label>
-                <input
-                  type="text"
-                  value={editingRoom}
-                  onChange={(e) => setEditingRoom(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                />
+              {/* Assigned Faculty Teacher */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Assigned Faculty Instructor</label>
+                <select
+                  value={editingTeacherId}
+                  onChange={(e) => setEditingTeacherId(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                >
+                  <option value="">-- Select Lead Faculty --</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.display_name} ({t.employee_id}) &bull; Rating: {t.rating_avg}/5
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-emerald-400" />
-                  Available Subject Qualified Substitutes
+              {/* Venue & Slot Type */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Room / Venue</label>
+                  <input
+                    type="text"
+                    value={editingRoom}
+                    onChange={(e) => setEditingRoom(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white"
+                    placeholder="Tech Lab 101 / Virtual Zoom"
+                  />
                 </div>
-                {loadingSubstitutes && <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Slot Type</label>
+                  <select
+                    value={editingSlotType}
+                    onChange={(e) => setEditingSlotType(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white"
+                  >
+                    <option value="lecture">Technical Lecture</option>
+                    <option value="lab">Hands-On Lab Sandbox</option>
+                    <option value="holiday">Holiday / Off-Period</option>
+                    <option value="assessment">Capstone / Assessment</option>
+                  </select>
+                </div>
               </div>
 
-              {substitutes.length === 0 && !loadingSubstitutes ? (
-                <div className="p-4 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-center text-xs text-slate-400">
-                  No alternate teachers found with matching subject qualifications.
+              {/* 1-Click Launch Live Class */}
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Video className="w-4 h-4 text-cyan-400" />
+                    Live Video Classroom Stream
+                  </div>
+                  <div className="text-[11px] text-slate-400">Launch live Zoom or WebRTC broadcast for this session.</div>
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {substitutes.map((sub) => (
-                    <div
-                      key={sub.teacher_id}
-                      className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
-                        sub.is_free
-                          ? 'bg-slate-950/80 border-slate-800 hover:border-emerald-500/50'
-                          : 'bg-slate-950/40 border-slate-900 opacity-60'
-                      }`}
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{sub.display_name}</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
-                            {sub.employee_id}
-                          </span>
-                          <span className="text-[10px] flex items-center gap-0.5 text-amber-400 font-bold">
-                            <Star className="w-3 h-3 fill-current" /> {sub.rating_avg}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {sub.qualification} &bull; Load today: {sub.current_day_load}/{sub.max_daily_periods} periods
-                        </div>
-                        <div className={`text-[10px] font-medium ${sub.is_free ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {sub.conflict_notes}
-                        </div>
-                      </div>
+                <button
+                  type="button"
+                  onClick={() => handleLaunchLiveSession(activeSlotModal)}
+                  disabled={launchingLiveClass}
+                  className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>{launchingLiveClass ? 'Launching...' : 'Launch Class'}</span>
+                </button>
+              </div>
 
-                      <button
-                        onClick={() => handleAssignSubstitute(sub.teacher_id)}
-                        disabled={!sub.is_free}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              {/* Substitutes Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-400" />
+                    Available Subject Qualified Substitutes
+                  </div>
+                  {loadingSubstitutes && <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+                </div>
+
+                {substitutes.length === 0 && !loadingSubstitutes ? (
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-400">
+                    No alternate teachers found with matching subject qualifications.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                    {substitutes.map((sub) => (
+                      <div
+                        key={sub.teacher_id}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
                           sub.is_free
-                            ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
-                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'bg-slate-950/80 border-slate-800 hover:border-emerald-500/50'
+                            : 'bg-slate-950/40 border-slate-900 opacity-60'
                         }`}
                       >
-                        Assign Substitute
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">{sub.display_name}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
+                              {sub.employee_id}
+                            </span>
+                            <span className="text-[10px] flex items-center gap-0.5 text-amber-400 font-bold">
+                              <Star className="w-3 h-3 fill-current" /> {sub.rating_avg}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            Load today: {sub.current_day_load}/{sub.max_daily_periods} periods
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAssignSubstitute(sub.teacher_id)}
+                          disabled={!sub.is_free}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                            sub.is_free
+                              ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Assign Sub
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
@@ -1460,9 +1715,196 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               <button
                 type="button"
                 onClick={handleSaveSlotEdits}
-                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all"
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-amber-500/20"
               >
-                Save Venue Changes
+                Save Slot Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slot Viewer & Live Launcher Modal (FACULTY & STUDENT) */}
+      {showSlotViewerModal && selectedSlotForView && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-400" />
+                  {selectedSlotForView.day_of_week} &bull; Period {selectedSlotForView.period_number}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {selectedSlotForView.start_time} - {selectedSlotForView.end_time} &bull; {selectedSlotForView.room_or_venue || 'Technical Lab Hall'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSlotViewerModal(false)}
+                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {(() => {
+              const norm = getNormalizedSlot(selectedSlotForView, currentGrade?.grade_number || 1)
+              return (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${norm.color || '#f59e0b'}20`, color: norm.color || '#f59e0b' }}>
+                        {norm.code}
+                      </span>
+                      <span className="text-xs font-bold text-white">{norm.name}</span>
+                    </div>
+                    <div className="text-xs text-slate-400 flex items-center justify-between">
+                      <span>Faculty: <strong className="text-slate-200">{norm.teacher}</strong></span>
+                      <span>Venue: <strong className="text-slate-200">{norm.room}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchLiveSession(selectedSlotForView)}
+                      disabled={launchingLiveClass}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                    >
+                      <Play className="w-4 h-4 fill-slate-950" />
+                      <span>{isTeacher ? 'Launch Live Video Broadcast' : 'Join Live Video Session'}</span>
+                    </button>
+
+                    {isStudent && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSlotViewerModal(false)
+                          if (selectedSlotForView.teacher_id) {
+                            setFeedbackTeacherId(selectedSlotForView.teacher_id)
+                            setShowFeedbackModal(true)
+                          }
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Star className="w-3.5 h-3.5 text-amber-400" />
+                        Rate Faculty Instructor
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Manage Holidays & Off-Days Modal (ADMIN ONLY) */}
+      {isAdmin && showHolidayModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
+                  <Palmtree className="w-4 h-4 text-amber-400" />
+                  Institute Holiday & Off-Day Manager
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Set institute-wide holidays, weekend off-days, hackathons, and custom breaks.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHolidayModal(false)}
+                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Select Day</label>
+                  <select
+                    value={holidayTargetDay}
+                    onChange={(e) => setHolidayTargetDay(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100"
+                  >
+                    {ALL_WEEKDAYS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Holiday Reason / Tag</label>
+                  <input
+                    type="text"
+                    value={holidayReasonInput}
+                    onChange={(e) => setHolidayReasonInput(e.target.value)}
+                    placeholder="e.g. Sunday Weekend Off, Hackathon"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleDayHoliday(holidayTargetDay, holidayReasonInput)
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-amber-500/20"
+                >
+                  {holidays[holidayTargetDay] ? 'Update / Clear Holiday' : 'Mark as Holiday'}
+                </button>
+              </div>
+
+              {/* List of active holidays */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Active Institute Holidays ({Object.keys(holidays).length})
+                </div>
+
+                {Object.keys(holidays).length === 0 ? (
+                  <div className="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">
+                    No holidays configured. All 7 days are active.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                    {Object.entries(holidays).map(([day, reason]) => (
+                      <div
+                        key={day}
+                        className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/20 flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <Palmtree className="w-3.5 h-3.5 text-amber-400" />
+                            {day}
+                          </div>
+                          <div className="text-[11px] text-amber-300/90">{reason}</div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDayHoliday(day)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-[11px] transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowHolidayModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700"
+              >
+                Done
               </button>
             </div>
           </div>
@@ -1598,7 +2040,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   onChange={(e) => setLeaveDay(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
                 >
-                  {WEEKDAYS.map((d) => (
+                  {ALL_WEEKDAYS.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
@@ -1610,7 +2052,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   type="text"
                   value={leaveReason}
                   onChange={(e) => setLeaveReason(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 text-sm"
                 />
               </div>
 

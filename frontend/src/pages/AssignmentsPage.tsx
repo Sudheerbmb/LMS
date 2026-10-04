@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import type { Assignment, Course, User, AssignmentSubmission } from '../lib/api'
+import type { Assignment, Course, User, AssignmentSubmission, AdminInstituteCourse } from '../lib/api'
 import {
   getCourses,
+  getAdminCourses,
   createAssignment,
   submitAssignment,
   getAssignments,
@@ -16,7 +17,8 @@ import {
   CheckCircle2,
   Eye,
   Loader2,
-  BookOpen
+  BookOpen,
+  Layers
 } from 'lucide-react'
 
 type AssignmentsPageProps = {
@@ -26,14 +28,17 @@ type AssignmentsPageProps = {
 export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
   const isTeacher = user.role === 'teacher' || user.role === 'admin'
   const [courses, setCourses] = useState<Course[]>([])
+  const [adminCourses, setAdminCourses] = useState<AdminInstituteCourse[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [selectedCourse, setSelectedCourse] = useState<string>('')
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   // Create Assignment Modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [assignmentSubject, setAssignmentSubject] = useState('')
   const [maxScore, setMaxScore] = useState(100)
   const [dueDate, setDueDate] = useState('')
 
@@ -67,11 +72,36 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
 
   const loadCourses = async () => {
     try {
-      const res = await getCourses()
+      const [res, adminRes] = await Promise.all([
+        getCourses().catch(() => ({ items: [], total: 0 })),
+        getAdminCourses().catch(() => [])
+      ])
       const items = res.items || []
-      setCourses(items)
-      if (items.length > 0) {
-        setSelectedCourse(items[0].id)
+      setAdminCourses(adminRes || [])
+
+      if (adminRes && adminRes.length > 0) {
+        const normalized: Course[] = adminRes.map(ac => ({
+          id: ac.id,
+          organization_id: 'default',
+          current_version: 1,
+          title: ac.title,
+          slug: ac.slug,
+          description: ac.description || '',
+          level: (ac.level as any) || 'intermediate',
+          price: ac.price || 0,
+          is_free: ac.is_free ?? true,
+          status: (ac.status as any) || 'published',
+          enrolled_count: ac.enrolled_count || 0
+        }))
+        setCourses(normalized)
+        if (normalized.length > 0 && !selectedCourse) {
+          setSelectedCourse(normalized[0].id)
+        }
+      } else {
+        setCourses(items)
+        if (items.length > 0 && !selectedCourse) {
+          setSelectedCourse(items[0].id)
+        }
       }
     } catch (err) {
       console.error(err)
@@ -300,21 +330,49 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         )}
       </div>
 
-      {/* Course Filter */}
-      <div className="flex items-center gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-        <BookOpen className="w-4 h-4 text-amber-400" />
-        <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Select Curriculum Course:</label>
-        <select
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-          className="bg-slate-950 text-slate-200 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-cyan-500"
-        >
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
+      {/* Course & Subject Module Filters */}
+      <div className="flex flex-wrap items-center gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-amber-400" />
+          <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Course Track:</label>
+          <select
+            value={selectedCourse}
+            onChange={(e) => {
+              setSelectedCourse(e.target.value)
+              setSelectedSubjectCode('')
+            }}
+            className="bg-slate-950 text-slate-200 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-cyan-500 font-semibold"
+          >
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {(() => {
+          const activeAdminCourse = adminCourses.find(c => c.id === selectedCourse)
+          if (!activeAdminCourse || !activeAdminCourse.subjects || activeAdminCourse.subjects.length === 0) return null
+          return (
+            <div className="flex items-center gap-2 pl-4 border-l border-slate-800">
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Subject Module:</label>
+              <select
+                value={selectedSubjectCode}
+                onChange={(e) => setSelectedSubjectCode(e.target.value)}
+                className="bg-slate-950 text-slate-200 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-cyan-500 font-semibold"
+              >
+                <option value="">All Subjects in Course</option>
+                {activeAdminCourse.subjects.map(s => (
+                  <option key={s.id} value={s.code}>
+                    {s.code} - {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Assignments List */}
@@ -572,13 +630,29 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
             </div>
             <form onSubmit={handleCreateAssignment} className="space-y-4 text-xs">
               <div>
+                <label className="text-slate-400 font-bold">Target Course & Subject Module:</label>
+                <select
+                  value={assignmentSubject}
+                  onChange={(e) => setAssignmentSubject(e.target.value)}
+                  className="w-full mt-1 bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="">General Course Project</option>
+                  {adminCourses.find(c => c.id === selectedCourse)?.subjects.map(s => (
+                    <option key={s.id} value={s.code}>
+                      {s.code} - {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="text-slate-400 font-bold">Assignment Title:</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Quadratic Roots Problem Set 2"
+                  placeholder="e.g. Asynchronous Pipeline & Coroutines Lab"
                   className="w-full mt-1 bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>

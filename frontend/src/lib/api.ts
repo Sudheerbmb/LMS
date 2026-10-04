@@ -383,6 +383,7 @@ export const createAdminUser = (payload: {
   role: 'admin' | 'teacher' | 'student'
   phone_number?: string
   course_ids?: string[]
+  subject_ids?: string[]
 }) => request<AdminInstituteUser>('/api/v1/admin/users', {
   method: 'POST',
   body: JSON.stringify(payload),
@@ -397,6 +398,7 @@ export const updateAdminUser = (
     role?: 'admin' | 'teacher' | 'student'
     status?: 'active' | 'pending' | 'suspended' | 'rejected'
     course_ids?: string[]
+    subject_ids?: string[]
   }
 ) => request<AdminInstituteUser>(`/api/v1/admin/users/${userId}`, {
   method: 'PUT',
@@ -734,14 +736,10 @@ export const swapSlots = (slotId1: string, slotId2: string) =>
 
   })
 
-export const updateSlot = (slotId: string, payload: { subject_id?: string; teacher_id?: string; room_or_venue?: string }) =>
-
+export const updateSlot = (slotId: string, payload: { subject_id?: string; teacher_id?: string; room_or_venue?: string; slot_type?: string }) =>
   request<TimetableSlot>(`/api/v1/timetable/slots/${slotId}`, {
-
     method: 'PUT',
-
     body: JSON.stringify(payload)
-
   })
 
 export const recordTeacherLeave = (payload: { teacher_id: string; day_of_week: string; reason: string }) =>

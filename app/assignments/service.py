@@ -26,14 +26,10 @@ class SubmissionAlreadyExistsError(ValueError):
 
 async def create_assignment(session: AsyncSession, course_id: UUID, data: AssignmentCreate, user: User) -> Assignment:
     course = await session.scalar(select(Course).where(Course.id == course_id))
-    membership = await session.scalar(
-        select(OrganizationMembership).where(
-            OrganizationMembership.organization_id == course.organization_id if course else None,
-            OrganizationMembership.user_id == user.id,
-        )
-    )
-    if not course or not membership:
-        raise AssignmentAccessError("User cannot manage this course")
+    if not course:
+        raise AssignmentNotFoundError("Course not found")
+    if user.role not in ("admin", "teacher"):
+        raise AssignmentAccessError("User cannot manage assignments for this course")
     assignment = Assignment(course_id=course_id, **data.model_dump())
     session.add(assignment)
     await session.commit()
@@ -45,11 +41,6 @@ async def submit_assignment(session: AsyncSession, assignment_id: UUID, data: Su
     assignment = await session.scalar(select(Assignment).where(Assignment.id == assignment_id))
     if not assignment:
         raise AssignmentNotFoundError("Assignment not found")
-    enrollment = await session.scalar(
-        select(Enrollment).where(Enrollment.course_id == assignment.course_id, Enrollment.user_id == user.id)
-    )
-    if not enrollment:
-        raise AssignmentAccessError("User is not enrolled in this course")
     existing = await session.scalar(
         select(AssignmentSubmission).where(
             AssignmentSubmission.assignment_id == assignment_id,
@@ -70,14 +61,9 @@ async def grade_submission(session: AsyncSession, submission_id: UUID, data: Gra
     if not submission:
         raise AssignmentNotFoundError("Submission not found")
     assignment = await session.scalar(select(Assignment).where(Assignment.id == submission.assignment_id))
-    course = await session.scalar(select(Course).where(Course.id == assignment.course_id))
-    membership = await session.scalar(
-        select(OrganizationMembership).where(
-            OrganizationMembership.organization_id == course.organization_id,
-            OrganizationMembership.user_id == user.id,
-        )
-    )
-    if not membership:
+    if not assignment:
+        raise AssignmentNotFoundError("Assignment not found")
+    if user.role not in ("admin", "teacher"):
         raise AssignmentAccessError("User cannot grade this assignment")
     if data.score > assignment.max_score:
         raise AssignmentAccessError("Score exceeds assignment maximum")
@@ -97,8 +83,15 @@ async def grade_submission(session: AsyncSession, submission_id: UUID, data: Gra
     await session.refresh(submission)
     return submission
 
+
 async def get_course_assignments(session: AsyncSession, course_id: UUID) -> list[Assignment]:
     stmt = select(Assignment).where(Assignment.course_id == course_id).order_by(Assignment.created_at.desc())
+    result = await session.scalars(stmt)
+    return list(result.all())
+
+
+async def get_all_assignments(session: AsyncSession, user: User) -> list[Assignment]:
+    stmt = select(Assignment).order_by(Assignment.created_at.desc())
     result = await session.scalars(stmt)
     return list(result.all())
 

@@ -77,6 +77,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   const [formPhone, setFormPhone] = useState('')
   const [formPassword, setFormPassword] = useState('')
   const [formSelectedCourses, setFormSelectedCourses] = useState<string[]>([])
+  const [formSelectedSubjects, setFormSelectedSubjects] = useState<string[]>([])
   const [submittingUser, setSubmittingUser] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -140,6 +141,8 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       setFlushingNotifs(true)
       setNotifications([])
       await flushAllNotifications()
+      const fresh = await getNotifications().catch(() => [])
+      setNotifications(fresh || [])
     } catch (err) {
       console.error('Failed to flush notifications:', err)
       const fresh = await getNotifications().catch(() => [])
@@ -169,6 +172,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     setFormPhone('')
     setFormPassword(role === 'student' ? 'Student123!' : 'Teacher123!')
     setFormSelectedCourses([])
+    setFormSelectedSubjects([])
     setFormError('')
     setShowAddUserModal(true)
   }
@@ -180,6 +184,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     setFormPhone(u.phone_number || '')
     setFormPassword('')
     setFormSelectedCourses(u.enrolled_courses?.map((c) => c.id) || [])
+    setFormSelectedSubjects(u.assigned_subjects?.map((s) => s.id) || [])
     setFormError('')
     setShowEditUserModal(true)
   }
@@ -195,7 +200,8 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         phone_number: formPhone.trim() || undefined,
         password: formPassword,
         role: userModalRole,
-        course_ids: formSelectedCourses,
+        course_ids: userModalRole === 'student' ? formSelectedCourses : [],
+        subject_ids: userModalRole === 'teacher' ? formSelectedSubjects : [],
       })
       setShowAddUserModal(false)
       await loadAllData()
@@ -216,7 +222,8 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         display_name: formName.trim(),
         phone_number: formPhone.trim() || undefined,
         password: formPassword.trim() ? formPassword.trim() : undefined,
-        course_ids: formSelectedCourses,
+        course_ids: editingUser.role === 'student' ? formSelectedCourses : undefined,
+        subject_ids: editingUser.role === 'teacher' ? formSelectedSubjects : undefined,
       })
       setShowEditUserModal(false)
       setEditingUser(null)
@@ -1146,31 +1153,71 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 />
               </div>
 
-              {/* Multi-course selection for students and teachers */}
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  {userModalRole === 'student' ? 'Enroll in Course Track(s)' : 'Assign to Technical Track(s)'}
-                </label>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
-                  {courses.map((c) => (
-                    <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
-                      <input
-                        type="checkbox"
-                        checked={formSelectedCourses.includes(c.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormSelectedCourses((prev) => [...prev, c.id])
-                          } else {
-                            setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
-                          }
-                        }}
-                        className="rounded border-slate-700 bg-slate-900 text-amber-500"
-                      />
-                      <span>{c.title}</span>
-                    </label>
-                  ))}
+              {/* Subject assignment for teachers OR Course enrollment for students */}
+              {userModalRole === 'teacher' ? (
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-2">
+                    Assign Subject Modules Across Tracks (Multi-Select)
+                  </label>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    Select specific subject modules this faculty member will handle across technical courses.
+                  </p>
+                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    {courses.map((c) => (
+                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-slate-900 last:border-0 last:pb-0">
+                        <span className="text-[10px] font-extrabold uppercase text-amber-400 tracking-wider">
+                          {c.title}
+                        </span>
+                        <div className="grid grid-cols-1 gap-1.5 pl-2">
+                          {c.subjects.map((s) => (
+                            <label key={s.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                              <input
+                                type="checkbox"
+                                checked={formSelectedSubjects.includes(s.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFormSelectedSubjects((prev) => [...prev, s.id])
+                                  } else {
+                                    setFormSelectedSubjects((prev) => prev.filter((id) => id !== s.id))
+                                  }
+                                }}
+                                className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+                              />
+                              <span className="font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800">
+                                {s.code}
+                              </span>
+                              <span className="truncate">{s.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-2">Enroll in Course Track(s)</label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-2.5 bg-slate-950 rounded-xl border border-slate-800">
+                    {courses.map((c) => (
+                      <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                        <input
+                          type="checkbox"
+                          checked={formSelectedCourses.includes(c.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormSelectedCourses((prev) => [...prev, c.id])
+                            } else {
+                              setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
+                            }
+                          }}
+                          className="rounded border-slate-700 bg-slate-900 text-amber-500"
+                        />
+                        <span>{c.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button
@@ -1247,8 +1294,48 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 />
               </div>
 
-              {/* Course enrollments sync for students */}
-              {editingUser.role === 'student' && (
+              {/* Subject assignments for teachers OR Course enrollments for students */}
+              {editingUser.role === 'teacher' ? (
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-2">
+                    Assigned Subject Modules (Multi-Select)
+                  </label>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    Manage subjects taught by this instructor across one or multiple courses.
+                  </p>
+                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    {courses.map((c) => (
+                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-slate-900 last:border-0 last:pb-0">
+                        <span className="text-[10px] font-extrabold uppercase text-amber-400 tracking-wider">
+                          {c.title}
+                        </span>
+                        <div className="grid grid-cols-1 gap-1.5 pl-2">
+                          {c.subjects.map((s) => (
+                            <label key={s.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                              <input
+                                type="checkbox"
+                                checked={formSelectedSubjects.includes(s.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFormSelectedSubjects((prev) => [...prev, s.id])
+                                  } else {
+                                    setFormSelectedSubjects((prev) => prev.filter((id) => id !== s.id))
+                                  }
+                                }}
+                                className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+                              />
+                              <span className="font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800">
+                                {s.code}
+                              </span>
+                              <span className="truncate">{s.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div>
                   <label className="block text-slate-300 font-semibold mb-2">Enrolled Courses</label>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">

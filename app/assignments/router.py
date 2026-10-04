@@ -9,6 +9,7 @@ from app.assignments.service import (
     AssignmentNotFoundError,
     SubmissionAlreadyExistsError,
     create_assignment,
+    get_all_assignments,
     get_assignment_submissions,
     get_course_assignments,
     grade_submission,
@@ -20,6 +21,15 @@ from app.platform.database import get_session
 
 
 router = APIRouter(prefix="/api/v1/assignments", tags=["assignments"])
+
+
+@router.get("", response_model=list[AssignmentRead])
+@router.get("/all", response_model=list[AssignmentRead])
+async def list_all(
+    current_user: User = Depends(require_permission("course:read")),
+    session: AsyncSession = Depends(get_session),
+) -> list[AssignmentRead]:
+    return await get_all_assignments(session, current_user)
 
 
 @router.get("/courses/{course_id}", response_model=list[AssignmentRead])

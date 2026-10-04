@@ -296,13 +296,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     }
   }
 
+  const [selectedScheduleDay, setSelectedScheduleDay] = useState<string>('')
+
   const activeLiveClass = liveClasses.find(c => c.status === 'live')
   const currentWeekday = currentTime.toLocaleDateString('en-US', { weekday: 'long' })
+  const activeDisplayDay = selectedScheduleDay || currentWeekday
+
   const todayTeacherSlots = teacherSlots
-    .filter(slot => slot.day_of_week.toLowerCase() === currentWeekday.toLowerCase())
+    .filter(slot => slot.day_of_week.toLowerCase() === activeDisplayDay.toLowerCase())
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
   const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes()
   const isCurrentPeriod = (slot: TeacherTimetableSlot) => {
+    if (activeDisplayDay.toLowerCase() !== currentWeekday.toLowerCase()) return false
     const toMinutes = (value: string) => {
       const [hours, minutes] = value.split(':').map(Number)
       return hours * 60 + minutes
@@ -707,38 +712,88 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       {/* ── TEACHER INTERACTIVE TIMETABLE SCHEDULE BOARD ──────────────────── */}
       {user.role === 'teacher' && (
         <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-400" />
-                Your Teaching Schedule (Today's Assigned Periods)
+                Your Teaching Schedule ({activeDisplayDay}'s Assigned Periods)
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 One-click live classroom launching with synchronized whiteboard and automatic Cloudinary recording.
               </p>
             </div>
-            <button
-              onClick={() => setCurrentTab('timetable')}
-              className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
-            >
-              <span>Full Timetable Grid</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentTab('timetable')}
+                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+              >
+                <span>Full Timetable Grid</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 7-Day Quick Switcher Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-[#06080F] rounded-2xl border border-slate-800">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+              const isToday = day.toLowerCase() === currentWeekday.toLowerCase()
+              const isSelected = activeDisplayDay.toLowerCase() === day.toLowerCase()
+              const daySlotCount = teacherSlots.filter(s => s.day_of_week.toLowerCase() === day.toLowerCase()).length
+              return (
+                <button
+                  key={day}
+                  onClick={() => setSelectedScheduleDay(day)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <span>{day.slice(0, 3)}</span>
+                  {isToday && (
+                    <span className={`text-[9px] px-1 rounded font-extrabold uppercase ${isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-amber-500/20 text-amber-400'}`}>
+                      Today
+                    </span>
+                  )}
+                  {daySlotCount > 0 && (
+                    <span className={`text-[10px] px-1.5 rounded-full ${isSelected ? 'bg-slate-950/30 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'}`}>
+                      {daySlotCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {todayTeacherSlots.length === 0 ? (
             <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-3">
               <Sparkles className="w-8 h-8 text-amber-400 mx-auto opacity-50" />
-              <p className="text-sm font-semibold text-slate-300">No timetable periods assigned to your profile today.</p>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Ask the administrator to run the AI Auto-Scheduler or switch to the Timetable tab to configure your periods.
+              <p className="text-sm font-semibold text-slate-300">
+                {activeDisplayDay === 'Sunday' || activeDisplayDay === 'Saturday'
+                  ? `${activeDisplayDay} Weekend • Scheduled Institute Off-Day & Self-Paced Coding Sandbox`
+                  : `No timetable periods assigned to your profile for ${activeDisplayDay}.`}
               </p>
-              <button
-                onClick={() => setCurrentTab('timetable')}
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-amber-500/20"
-              >
-                Open Timetable Hub
-              </button>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                {activeDisplayDay === 'Sunday' || activeDisplayDay === 'Saturday'
+                  ? 'Faculty lectures resume on Monday. You can preview Monday\'s technical schedule below or configure slots in the Timetable hub.'
+                  : 'Ask the administrator to run the AI Auto-Scheduler or switch to the Timetable tab to configure your periods.'}
+              </p>
+              <div className="flex items-center justify-center gap-3 pt-1">
+                {(activeDisplayDay === 'Sunday' || activeDisplayDay === 'Saturday') && (
+                  <button
+                    onClick={() => setSelectedScheduleDay('Monday')}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-amber-500/20"
+                  >
+                    Preview Monday's Schedule &rarr;
+                  </button>
+                )}
+                <button
+                  onClick={() => setCurrentTab('timetable')}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all"
+                >
+                  Open Timetable Hub
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
