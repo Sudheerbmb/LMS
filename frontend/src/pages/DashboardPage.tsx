@@ -430,7 +430,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   <Award className="w-3.5 h-3.5 text-amber-400" />
                   Candidate Training Portal
                 </span>
-                <span className="text-xs text-slate-400">Professional Technology Track</span>
+                <span className="text-xs text-slate-400">Professional Course Program</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Hello, {user.display_name}
@@ -1137,7 +1137,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   >
                     <div className="min-w-0 space-y-1 text-left">
                       <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-yellow-300 transition-colors truncate">
-                        {en.course?.title || (en.course as any)?.slug?.replace(/-/g, ' ') || 'Technical Track'}
+                        {en.course?.title || (en.course as any)?.slug?.replace(/-/g, ' ') || 'Institute Course'}
                       </h4>
                       <p className="text-[11px] text-slate-400">
                         Status: <span className="capitalize text-emerald-400 font-semibold">{en.status}</span>

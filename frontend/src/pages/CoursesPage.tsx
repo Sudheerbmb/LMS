@@ -572,7 +572,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     <div className="space-y-1.5 mb-4">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 flex items-center gap-1">
                         <Layers className="w-3 h-3" />
-                        <span>Assigned Subjects in this Track ({course.subjects.length})</span>
+                        <span>Assigned Subjects in this Course ({course.subjects.length})</span>
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {course.subjects.map((sub) => (
@@ -734,7 +734,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
                     {activeRoadmapCourse.level}
                   </span>
-                  <span className="text-xs text-slate-400 font-bold">Track: /{activeRoadmapCourse.slug}</span>
+                  <span className="text-xs text-slate-400 font-bold">Course: /{activeRoadmapCourse.slug}</span>
                   {activeSubjectFilter && (
                     <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                       Subject: {activeSubjectFilter}
@@ -926,7 +926,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
 
             <form onSubmit={handleSaveResource} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Target Course Track</label>
+                <label className="block text-slate-300 font-bold mb-1">Target Course</label>
                 <select
                   value={resourceCourseId}
                   onChange={(e) => setResourceCourseId(e.target.value)}

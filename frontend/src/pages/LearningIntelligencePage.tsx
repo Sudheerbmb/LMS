@@ -53,7 +53,7 @@ import type { CohortStudentProfile } from '../lib/evidenceEngine'
 // ── Initial Grade Configurations ─────────────────────────────────────────────
 
 function initializeCurriculumStructure(trackNumber: number, studentId: string, studentName: string): FullStudentNeuralState {
-  const trackName = `Track ${trackNumber || 1}: Professional Curriculum`
+  const trackName = `Course ${trackNumber || 1}: Professional Curriculum`
 
   const subjectsConfig: Record<string, string[]> = {
     'Python & GenAI Core': [
@@ -412,8 +412,8 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-amber-400" />
                 {isAdmin && selectedClassGrade === 0
-                  ? 'Institute-Wide Candidate Cognitive Directory (All Technical Tracks)'
-                  : `Track ${selectedClassGrade} Candidate Cognitive Directory`}
+                  ? 'Institute-Wide Candidate Cognitive Directory (All Courses)'
+                  : `Course ${selectedClassGrade} Candidate Cognitive Directory`}
               </h2>
               <p className="text-xs text-slate-400">
                 {isAdmin
