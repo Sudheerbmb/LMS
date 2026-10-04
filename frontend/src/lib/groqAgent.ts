@@ -50,8 +50,10 @@ export interface DynamicRoadmapItem {
   action_plan: string
 }
 
+import { getApiBaseUrl } from './api'
+
 /**
- * Direct Groq API completion caller with automatic JSON and retry handling
+ * Server-proxied Groq API completion caller with automatic JSON parsing and local fallback
  */
 export async function callGroqChat(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
@@ -60,33 +62,62 @@ export async function callGroqChat(
   const model = options.model || 'llama-3.3-70b-versatile'
   const temperature = options.temperature ?? 0.2
 
+  // 1. Primary: Secure backend proxy (No client-side key required)
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+    const token = localStorage.getItem('lms_access_token')
+    const res = await fetch(`${baseUrl}/api/v1/agents/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify({
         model,
         messages,
         temperature,
-        ...(options.jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        json_mode: options.jsonMode ?? false,
       }),
     })
 
-    if (!res.ok) {
-      const errBody = await res.text()
-      console.warn('Groq API returned non-200:', res.status, errBody)
-      throw new Error(`Groq API error: ${res.status}`)
+    if (res.ok) {
+      const data = await res.json()
+      const content = data.choices?.[0]?.message?.content
+      if (content && content !== '{}') {
+        return content
+      }
     }
-
-    const data = await res.json()
-    return data.choices?.[0]?.message?.content || ''
-  } catch (error) {
-    console.error('Groq LLM call failed:', error)
-    throw error
+  } catch (backendErr) {
+    console.warn('Backend Groq proxy attempt failed, checking fallback:', backendErr)
   }
+
+  // 2. Secondary fallback: Direct key if provided in environment
+  if (GROQ_API_KEY) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+          ...(options.jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.choices?.[0]?.message?.content || ''
+      }
+    } catch (directErr) {
+      console.error('Direct Groq LLM fallback failed:', directErr)
+    }
+  }
+
+  return ''
 }
 
 /**
