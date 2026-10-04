@@ -893,7 +893,7 @@ async def ask_class_ai_doubt(
     question = payload.question.strip()
 
     system_agent_prompt = f"""You are Acharya-Agent, an autonomous AI educational study agent for this recorded video lecture.
-Lecture Metadata: Title: "{title}", Subject: "{subject}", Grade: {grade_num}.
+Lecture Metadata: Title: "{title}", Subject: "{subject}", Track: {grade_num}.
 Verbatim Audio Transcript:
 {transcript or 'Instructor delivered comprehensive curriculum lecture.'}
 
@@ -920,9 +920,9 @@ Output valid JSON matching:
 
     return {
         "thought": "Direct pedagogical explanation",
-        "answer": f"### Concept Explanation\n\nIn **{title}** ({subject}), this concept is essential for understanding the curriculum fundamentals.",
+        "answer": f"### Concept Explanation\n\nIn **{title}** ({subject}), this architecture is essential for understanding core engineering principles and production deployment.",
         "actions": [{"type": "SEEK_VIDEO", "timestamp": 0.0, "label": "00:00 • Overview"}],
-        "suggested_followups": ["Can you explain with an example?", "What is the key formula?"]
+        "suggested_followups": ["Can you provide an implementation example?", "What are the common concurrency pitfalls?"]
     }
 
 
@@ -936,13 +936,13 @@ async def get_class_ai_summary_endpoint(
     if live_class and live_class.summary_json:
         return live_class.summary_json
 
-    title = live_class.title if live_class else "Lecture"
-    subject = live_class.subject_name if live_class else "Academic Subject"
+    title = live_class.title if live_class else "Technical Lecture"
+    subject = live_class.subject_name if live_class else "Software Engineering"
     grade_num = live_class.grade_number if live_class else 1
 
-    prompt = f"""Analyze this lecture: Title: "{title}", Subject: "{subject}", Grade: {grade_num}.
+    prompt = f"""Analyze this technical lecture: Title: "{title}", Subject: "{subject}", Track: {grade_num}.
 Transcript:
-{transcript or 'Comprehensive instructional session.'}
+{transcript or 'Comprehensive instructional session on core technical topics.'}
 
 Generate JSON with:
 - 'overview': 2-3 sentences summary
@@ -967,10 +967,10 @@ Generate JSON with:
             pass
 
     return summary_data or {
-        "overview": f"Comprehensive lecture on {title} covering foundational {subject} topics.",
-        "key_topics": ["Foundational Principles", "Problem Solving", "Applications"],
-        "whiteboard_notes": ["Core theorem definition", "Step-by-step resolution technique"],
-        "exam_takeaways": ["Review practice questions in chapter syllabus"],
+        "overview": f"Comprehensive lecture on {title} covering foundational {subject} architectures and lab implementations.",
+        "key_topics": ["Architecture Fundamentals", "Hands-On Lab Implementation", "Production Optimization"],
+        "whiteboard_notes": ["Core design pattern", "Error handling and async execution boundaries"],
+        "exam_takeaways": ["Review hands-on lab challenges in the course syllabus"],
         "quiz": []
     }
 
