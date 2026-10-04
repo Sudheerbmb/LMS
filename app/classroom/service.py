@@ -455,6 +455,15 @@ async def get_school_live_classes(
     result = []
     for c in classes:
         is_host = (user.role == "admin" or c.teacher_id == user.id)
+        rec_url = c.recording_url
+        if not rec_url:
+            db_rec = await session.scalar(
+                select(ClassRecording).where(ClassRecording.class_id == c.id).order_by(ClassRecording.created_at.desc())
+            )
+            if db_rec and (db_rec.play_url or db_rec.download_url):
+                rec_url = db_rec.play_url or db_rec.download_url
+                c.recording_url = rec_url
+
         result.append({
             "id": c.id,
             "title": c.title,
@@ -463,7 +472,7 @@ async def get_school_live_classes(
             "starts_at": c.starts_at,
             "ends_at": c.ends_at,
             "meeting_url": c.zoom_join_url or c.meeting_url,
-            "recording_url": c.recording_url,
+            "recording_url": rec_url,
             "status": c.status,
             "grade_number": c.grade_number,
             "section_name": c.section_name,
@@ -650,11 +659,54 @@ async def get_class_attendances(session: AsyncSession, class_id: UUID) -> List[C
 
 
 async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[ClassRecording]:
-    return list((await session.scalars(
+    recs = list((await session.scalars(
         select(ClassRecording)
         .where(ClassRecording.class_id == class_id)
         .order_by(ClassRecording.recording_start.desc())
     )).all())
+
+    if not recs:
+        live_class = await session.get(LiveClass, class_id)
+        if live_class and live_class.zoom_meeting_id and zoom_service.is_configured():
+            try:
+                recordings_data, transcript_text = await zoom_service.get_recordings_and_transcript(live_class.zoom_meeting_id)
+                if recordings_data and recordings_data.recording_files:
+                    for rf in recordings_data.recording_files:
+                        existing = await session.scalar(select(ClassRecording).where(ClassRecording.zoom_recording_id == rf.id))
+                        if not existing:
+                            rec_item = ClassRecording(
+                                class_id=class_id,
+                                zoom_meeting_id=str(recordings_data.id),
+                                zoom_recording_id=rf.id,
+                                recording_type=rf.recording_type,
+                                file_type=rf.file_type,
+                                file_size_bytes=rf.file_size,
+                                play_url=rf.play_url,
+                                download_url=rf.download_url,
+                                status=rf.status,
+                                recording_start=rf.recording_start,
+                                recording_end=rf.recording_end,
+                            )
+                            session.add(rec_item)
+                            recs.append(rec_item)
+                        if not live_class.recording_url and (rf.play_url or rf.download_url):
+                            live_class.recording_url = rf.play_url or rf.download_url
+
+                    if transcript_text and not live_class.transcript_text:
+                        live_class.transcript_text = transcript_text
+                        existing_ts = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == class_id))
+                        if not existing_ts:
+                            session.add(ClassTranscript(
+                                class_id=class_id,
+                                zoom_meeting_id=live_class.zoom_meeting_id,
+                                raw_text=transcript_text,
+                                status="available",
+                            ))
+                    await session.commit()
+            except Exception as e:
+                logger.warning("On-demand Zoom recording sync for class %s: %s", class_id, e)
+
+    return recs
 
 
 async def get_class_transcript(session: AsyncSession, class_id: UUID) -> Optional[ClassTranscript]:

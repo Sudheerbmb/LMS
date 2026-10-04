@@ -527,6 +527,8 @@ async def sync_class_with_zoom_endpoint(
                     recording_end=rf.recording_end,
                 ))
                 recordings_count += 1
+            if not live_class.recording_url and (rf.play_url or rf.download_url):
+                live_class.recording_url = rf.play_url or rf.download_url
         await session.commit()
 
     if transcript_text:

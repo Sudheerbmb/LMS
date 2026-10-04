@@ -96,6 +96,8 @@ import {
   deleteLiveClass,
   flushAllLiveClasses,
   uploadClassRecording,
+  syncClassWithZoom,
+  getClassRecordings,
   getTeacherCopilotAssistance,
   getStudentTutorAssistance,
   getWsBaseUrl,
@@ -424,6 +426,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const instantLaunch = true
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
   const [flushingClasses, setFlushingClasses] = useState(false)
+  const [syncingRecordingId, setSyncingRecordingId] = useState<string | null>(null)
   
 
   // Active Video Call Room State
@@ -1045,6 +1048,33 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
       loadClassroomData()
     } finally {
       setFlushingClasses(false)
+    }
+  }
+
+  const handleSyncClassRecording = async (classItem: SchoolLiveClass) => {
+    try {
+      setSyncingRecordingId(classItem.id)
+      const res = await syncClassWithZoom(classItem.id)
+      await loadClassroomData()
+      const recs = await getClassRecordings(classItem.id).catch(() => [])
+      if (recs && recs.length > 0) {
+        const streamUrl = recs[0].play_url || recs[0].download_url
+        if (streamUrl) {
+          setSelectedRecordingUrl(streamUrl)
+          setSelectedRecordingClass(classItem)
+          return
+        }
+      }
+      if (res.recordings_found > 0) {
+        alert('Zoom cloud recording synchronized successfully!')
+      } else {
+        alert('Zoom is currently processing and encoding this cloud recording. It is usually available within 1-3 minutes after the session concludes. Please click again shortly!')
+      }
+    } catch (err: any) {
+      console.warn('Sync recording error:', err)
+      alert('Zoom recording is still encoding or not available yet. Please try again shortly.')
+    } finally {
+      setSyncingRecordingId(null)
     }
   }
 
@@ -6536,7 +6566,7 @@ const handleTriggerTeacherCopilot = async (
           }`}
         >
           <Video className="w-3.5 h-3.5 text-amber-400" />
-          <span>Watch Recordings ({classes.filter(c => !!c.recording_url).length})</span>
+          <span>Watch Recordings ({classes.filter(c => !!c.recording_url || c.status === 'ended').length})</span>
         </button>
         {availableCourses.map((crs, idx) => (
           <button
@@ -6573,7 +6603,7 @@ const handleTriggerTeacherCopilot = async (
         ) : (
           classes
             .filter(cls => {
-              if (filterRecordingOnly) return !!cls.recording_url
+              if (filterRecordingOnly) return !!cls.recording_url || cls.status === 'ended'
               if (filterGrade !== 'all') return cls.grade_number === filterGrade
               return true
             })
@@ -6694,6 +6724,20 @@ const handleTriggerTeacherCopilot = async (
 
                       </button>
 
+                    </div>
+
+                  ) : isEnded ? (
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSyncClassRecording(cls)}
+                        disabled={syncingRecordingId === cls.id}
+                        className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                        title="Fetch recording from Zoom Cloud"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
+                        <span>{syncingRecordingId === cls.id ? 'Syncing...' : '🔄 Sync / Play Zoom Recording'}</span>
+                      </button>
                     </div>
 
                   ) : (
