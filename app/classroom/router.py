@@ -805,10 +805,11 @@ async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> t
             await session.commit()
         except Exception:
             await session.rollback()
+            live_class = await session.get(LiveClass, c_uuid)
         return t_rec.raw_text.strip(), t_rec.segments_json or [], live_class
 
     # 2. Check Zoom for cloud recording audio transcript
-    meeting_id = live_class.zoom_meeting_id
+    meeting_id = live_class.zoom_meeting_id if live_class else None
     if meeting_id and zoom_service.is_configured():
         try:
             _, z_transcript = await zoom_service.get_recordings_and_transcript(meeting_id)
@@ -823,14 +824,15 @@ async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> t
                     await session.commit()
                 except Exception:
                     await session.rollback()
+                    live_class = await session.get(LiveClass, c_uuid)
                 return z_transcript.strip(), [], live_class
         except Exception as z_err:
             logger.warning("Could not fetch Zoom transcript for class %s: %s", c_uuid, z_err)
 
     # 3. Generate structured lecture transcript so student always has full lecture notes & AI Q&A
-    title = live_class.title or "Technical Masterclass"
-    subject = live_class.subject_name or "Software Engineering"
-    grade_num = live_class.grade_number or 1
+    title = (live_class.title if live_class else None) or "Technical Masterclass"
+    subject = (live_class.subject_name if live_class else None) or "Software Engineering"
+    grade_num = (live_class.grade_number if live_class else None) or 1
 
     prompt = f"""You are a master educator. Generate a verbatim, highly educational lecture transcript of a live teaching session for:
 Title: "{title}"
@@ -871,6 +873,7 @@ Format with clean timestamps (e.g. [00:00] Teacher: ..., [05:00] Teacher: ...)."
         existing = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == c_uuid))
         if existing and existing.raw_text:
             clean_text = existing.raw_text.strip()
+        live_class = await session.get(LiveClass, c_uuid)
 
     return clean_text, [], live_class
 
