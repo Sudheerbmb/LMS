@@ -293,9 +293,12 @@ async def delete_school_live_class(
     session: AsyncSession,
     class_id: UUID,
     user: User,
+    delete_from_zoom: bool = False,
 ) -> bool:
     """
-    Deletes a live class session and cancels the associated Zoom meeting.
+    Deletes a live class session from LMS.
+    If delete_from_zoom is True, also cancels the associated Zoom meeting.
+    If delete_from_zoom is False (default), preserves the existing Zoom meeting and only removes from LMS.
     """
     live_class = await session.get(LiveClass, class_id)
     if not live_class:
@@ -304,7 +307,7 @@ async def delete_school_live_class(
     if user.role != "admin" and live_class.teacher_id != user.id:
         raise ClassroomAccessError("Unauthorized to delete this class")
 
-    if live_class.zoom_meeting_id and zoom_service.is_configured():
+    if delete_from_zoom and live_class.zoom_meeting_id and zoom_service.is_configured():
         try:
             await zoom_service.cancel_meeting_for_class(live_class.zoom_meeting_id)
         except Exception as e:
@@ -318,9 +321,11 @@ async def delete_school_live_class(
 async def flush_all_school_live_classes(
     session: AsyncSession,
     user: User,
+    delete_from_zoom: bool = False,
 ) -> int:
     """
     Deletes all live class sessions for clean retesting (Admin and Faculty).
+    Optionally cancels Zoom meetings if delete_from_zoom is True.
     """
     if user.role not in ("admin", "teacher"):
         raise ClassroomAccessError("Only administrators and faculty can flush live classes")
@@ -328,7 +333,7 @@ async def flush_all_school_live_classes(
     classes = list((await session.scalars(select(LiveClass))).all())
     count = len(classes)
     for c in classes:
-        if c.zoom_meeting_id and zoom_service.is_configured():
+        if delete_from_zoom and c.zoom_meeting_id and zoom_service.is_configured():
             try:
                 await zoom_service.cancel_meeting_for_class(c.zoom_meeting_id)
             except Exception:

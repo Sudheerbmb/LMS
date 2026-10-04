@@ -999,15 +999,21 @@ export const cancelLiveClass = (classId: string) =>
     method: 'POST'
   })
 
-export const deleteLiveClass = (classId: string) =>
-  request<{ status: string; id: string }>(`/api/v1/classroom/classes/${classId}`, {
-    method: 'DELETE'
-  })
+export const deleteLiveClass = (classId: string, deleteFromZoom: boolean = false) =>
+  request<{ status: string; id: string; deleted_from_zoom?: boolean; message?: string }>(
+    `/api/v1/classroom/classes/${classId}?delete_from_zoom=${deleteFromZoom}`,
+    {
+      method: 'DELETE'
+    }
+  )
 
-export const flushAllLiveClasses = () =>
-  request<{ status: string; deleted_count: number; message: string }>('/api/v1/classroom/classes/flush-all', {
-    method: 'POST'
-  })
+export const flushAllLiveClasses = (deleteFromZoom: boolean = false) =>
+  request<{ status: string; deleted_count: number; message: string }>(
+    `/api/v1/classroom/classes/flush-all?delete_from_zoom=${deleteFromZoom}`,
+    {
+      method: 'POST'
+    }
+  )
 
 export const startLiveClass = (classId: string) =>
   request<{ status: string; start_url: string; join_url?: string; meeting_id?: string; password?: string }>(

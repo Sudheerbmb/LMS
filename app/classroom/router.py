@@ -359,15 +359,21 @@ async def cancel_live_class_endpoint(
 @router.delete("/classes/{class_id}")
 async def delete_live_class_endpoint(
     class_id: UUID,
+    delete_from_zoom: bool = Query(False, description="If True, also cancels the meeting on Zoom. If False (default), removes only from LMS, preserving existing Zoom meeting."),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
     """
-    Deletes a live class session and its associated Zoom meeting.
+    Deletes a live class session from LMS. Preserves Zoom meeting by default unless delete_from_zoom is True.
     """
     try:
-        await delete_school_live_class(session, class_id, current_user)
-        return {"status": "deleted", "id": str(class_id)}
+        await delete_school_live_class(session, class_id, current_user, delete_from_zoom=delete_from_zoom)
+        return {
+            "status": "deleted",
+            "id": str(class_id),
+            "deleted_from_zoom": delete_from_zoom,
+            "message": "Class removed from LMS successfully" + (" and cancelled on Zoom." if delete_from_zoom else " (Zoom meeting preserved).")
+        }
     except ClassroomAccessError as err:
         raise HTTPException(status_code=403, detail=str(err)) from err
     except Exception as exc:
@@ -377,6 +383,7 @@ async def delete_live_class_endpoint(
 @router.post("/classes/flush-all")
 @router.delete("/classes/flush-all")
 async def flush_all_live_classes_endpoint(
+    delete_from_zoom: bool = Query(False, description="If True, also cancels all meetings on Zoom. If False, removes from LMS only."),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
@@ -384,8 +391,8 @@ async def flush_all_live_classes_endpoint(
     Purges all live class sessions to reset testing state.
     """
     try:
-        deleted_count = await flush_all_school_live_classes(session, current_user)
-        return {"status": "success", "deleted_count": deleted_count, "message": f"Successfully flushed {deleted_count} live classes."}
+        deleted_count = await flush_all_school_live_classes(session, current_user, delete_from_zoom=delete_from_zoom)
+        return {"status": "success", "deleted_count": deleted_count, "message": f"Successfully flushed {deleted_count} live classes from LMS."}
     except ClassroomAccessError as err:
         raise HTTPException(status_code=403, detail=str(err)) from err
     except Exception as exc:

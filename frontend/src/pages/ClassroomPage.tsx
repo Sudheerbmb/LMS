@@ -424,6 +424,8 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [instantLaunch, setInstantLaunch] = useState(true)
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
   const [flushingClasses, setFlushingClasses] = useState(false)
+  const [classToDelete, setClassToDelete] = useState<SchoolLiveClass | null>(null)
+  const [deletingSession, setDeletingSession] = useState(false)
   
 
   // Active Video Call Room State
@@ -1024,22 +1026,34 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
     }
   }
 
-  const handleDeleteClass = async (classId: string) => {
+  const handleDeleteClass = (cls: SchoolLiveClass) => {
+    setClassToDelete(cls)
+  }
+
+  const confirmDeleteClass = async (deleteFromZoom: boolean) => {
+    if (!classToDelete) return
     try {
-      setClasses(prev => prev.filter(c => c.id !== classId))
-      await deleteLiveClass(classId)
+      setDeletingSession(true)
+      const targetId = classToDelete.id
+      setClasses(prev => prev.filter(c => c.id !== targetId))
+      await deleteLiveClass(targetId, deleteFromZoom)
+      setClassToDelete(null)
+      await loadClassroomData()
     } catch (err: any) {
       console.error('Failed to delete live class:', err)
-      loadClassroomData()
+      alert(`Error removing class: ${err.message || 'Unknown error'}`)
+      await loadClassroomData()
+    } finally {
+      setDeletingSession(false)
     }
   }
 
   const handleFlushAllClasses = async () => {
-    if (!window.confirm('Are you sure you want to flush all live classes? This will reset all class sessions so you can test freshly.')) return
+    if (!window.confirm('Are you sure you want to flush all live classes from LMS? This will clear all class sessions from your LMS view (Zoom meetings will be preserved).')) return
     try {
       setFlushingClasses(true)
       setClasses([])
-      await flushAllLiveClasses()
+      await flushAllLiveClasses(false)
     } catch (err: any) {
       console.error('Failed to flush live classes:', err)
       loadClassroomData()
@@ -6627,10 +6641,10 @@ const handleTriggerTeacherCopilot = async (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDeleteClass(cls.id)
+                            handleDeleteClass(cls)
                           }}
-                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                          title="Delete class session"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          title="Remove scheduled class from LMS / Zoom"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -6963,6 +6977,81 @@ const handleTriggerTeacherCopilot = async (
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: REMOVE SCHEDULED MEETING OPTIONS (LMS ONLY VS ZOOM) ──────── */}
+      {classToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#0B0F19] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Remove Scheduled Meeting</h3>
+                  <p className="text-xs text-slate-400">Choose removal target</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setClassToDelete(null)}
+                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <p className="text-xs font-bold text-white line-clamp-1">{classToDelete.title}</p>
+              <p className="text-[11px] text-slate-400">
+                {classToDelete.subject_name || classToDelete.subject_code} &bull; Period {classToDelete.period_number || 1} &bull; Batch {classToDelete.section_name || 'A'}
+              </p>
+              {classToDelete.zoom_meeting_id && (
+                <p className="text-[10px] font-mono text-blue-400">Zoom Meeting ID: {classToDelete.zoom_meeting_id}</p>
+              )}
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => confirmDeleteClass(false)}
+                disabled={deletingSession}
+                className="w-full py-3 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-start gap-0.5 transition-all text-left cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                <span className="flex items-center gap-1.5 font-extrabold text-amber-200">
+                  <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                  Remove from LMS Schedule Only (Keep in Zoom)
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal ml-5">
+                  Removes the session from LMS timetable and live classes without touching or cancelling your meeting in Zoom.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => confirmDeleteClass(true)}
+                disabled={deletingSession}
+                className="w-full py-3 px-4 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-bold text-xs flex flex-col items-start gap-0.5 transition-all text-left cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                <span className="flex items-center gap-1.5 font-extrabold text-rose-200">
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  Cancel Zoom Meeting & Remove Everywhere
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal ml-5">
+                  Permanently cancels the scheduled meeting in Zoom Cloud and deletes it from LMS.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClassToDelete(null)}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

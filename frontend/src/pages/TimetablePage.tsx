@@ -46,6 +46,7 @@ import {
   getAdminCourses,
   createSchoolLiveClass,
   getSchoolLiveClasses,
+  deleteLiveClass,
   type SchoolGrade,
   type SchoolLiveClass,
   type TimetableSlot,
@@ -440,6 +441,25 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       setLiveClasses(updated || [])
     } catch (err: any) {
       alert('Failed to launch live class: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLaunchingLiveClass(false)
+    }
+  }
+
+  const handleRemoveLiveSession = async (liveClassId: string, deleteFromZoom: boolean = false) => {
+    try {
+      setLaunchingLiveClass(true)
+      await deleteLiveClass(liveClassId, deleteFromZoom)
+      setStatusMessage(
+        deleteFromZoom
+          ? 'Live session removed from LMS and cancelled on Zoom.'
+          : 'Live session removed from LMS schedule (Zoom meeting preserved in Zoom account).'
+      )
+      setShowSlotViewerModal(false)
+      const updated = await getSchoolLiveClasses().catch(() => [])
+      setLiveClasses(updated || [])
+    } catch (err: any) {
+      alert('Failed to remove live session: ' + (err.message || 'Unknown error'))
     } finally {
       setLaunchingLiveClass(false)
     }
@@ -2069,6 +2089,19 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             ? 'Resume / Join Live Video Broadcast'
                             : 'Launch Live Video Broadcast (Zoom Session)'}
                         </span>
+                      </button>
+                    )}
+
+                    {(isTeacher || isAdmin) && isLive && activeLive && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLiveSession(activeLive.id, false)}
+                        disabled={launchingLiveClass}
+                        className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-amber-400 hover:text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        title="Remove this live broadcast from LMS schedule while keeping your Zoom meeting active"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove from LMS Schedule (Keep Zoom Meeting)</span>
                       </button>
                     )}
 
