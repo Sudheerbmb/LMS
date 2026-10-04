@@ -364,7 +364,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
       const norm = getNormalizedSlot(slot)
-      await createSchoolLiveClass({
+      const res = await createSchoolLiveClass({
         title: `${norm.name} (${norm.code}) Live Session`,
         starts_at: now.toISOString(),
         ends_at: end.toISOString(),
@@ -376,9 +376,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         room_number: slot.room_or_venue || 'Virtual Zoom Room',
         status: 'live'
       })
-      setStatusMessage(`Live Session for ${norm.name} launched successfully! Head to Live Classroom.`)
+      setStatusMessage(`Live Session for ${norm.name} active! Provisioned Zoom link opened.`)
       setActiveSlotModal(null)
       setShowSlotViewerModal(false)
+
+      const zoomUrl = isTeacher ? (res.zoom_start_url || res.zoom_join_url || res.meeting_url) : (res.zoom_join_url || res.meeting_url)
+      if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
+        window.open(zoomUrl, '_blank')
+      }
     } catch (err: any) {
       alert('Failed to launch live class: ' + (err.message || 'Unknown error'))
     } finally {
@@ -1161,21 +1166,23 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                           <div className="flex items-center gap-2 shrink-0">
                             {(isTeacher || isAdmin) && (
                               <button
-                                onClick={() => handleSlotClick(slot)}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                                onClick={() => handleLaunchLiveSession(slot)}
+                                disabled={launchingLiveClass}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
                               >
                                 <Video className="w-4 h-4" />
-                                <span>Launch Zoom</span>
+                                <span>{launchingLiveClass ? 'Launching...' : 'Launch Zoom'}</span>
                               </button>
                             )}
 
                             {isStudent && (
                               <button
-                                onClick={() => handleSlotClick(slot)}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                                onClick={() => handleLaunchLiveSession(slot)}
+                                disabled={launchingLiveClass}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
                               >
                                 <Play className="w-4 h-4 fill-current" />
-                                <span>Join Live Class</span>
+                                <span>{launchingLiveClass ? 'Connecting...' : 'Join Live Class'}</span>
                               </button>
                             )}
 

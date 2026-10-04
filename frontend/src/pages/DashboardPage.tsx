@@ -237,7 +237,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     try {
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
-      await createSchoolLiveClass({
+      const res = await createSchoolLiveClass({
         title: `${slot.subject_name} Live Session (Track ${slot.grade_number} • Batch ${slot.section_name})`,
         starts_at: now.toISOString(),
         ends_at: end.toISOString(),
@@ -250,6 +250,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         status: 'live'
       })
       showToast(`Launching Live Session for Track ${slot.grade_number} • Batch ${slot.section_name}...`, 'success')
+      const zoomUrl = res.zoom_start_url || res.zoom_join_url || res.meeting_url
+      if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
+        window.open(zoomUrl, '_blank')
+      }
       setCurrentTab('classroom')
     } catch (err: any) {
       showToast(err.message || 'Could not launch class session.', 'error')

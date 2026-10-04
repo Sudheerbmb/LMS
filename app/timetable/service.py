@@ -1156,7 +1156,7 @@ async def generate_zoom_classes_from_timetable_service(
     from datetime import datetime, timedelta, timezone
     from app.classroom.models import LiveClass
     from app.classroom.schemas import LiveClassCreate
-    from app.classroom.service import schedule_school_live_class
+    from app.classroom.service import schedule_school_live_class, ScheduleConflictError
 
     now = datetime.now(timezone.utc)
     slots = (
@@ -1232,10 +1232,13 @@ async def generate_zoom_classes_from_timetable_service(
                 auto_create_zoom=True,
             )
 
-            new_class = await schedule_school_live_class(session, create_data, teacher_user)
-            classes_created += 1
-            if new_class.zoom_meeting_id:
-                zoom_meetings_synced += 1
+            try:
+                new_class = await schedule_school_live_class(session, create_data, teacher_user)
+                classes_created += 1
+                if new_class.zoom_meeting_id:
+                    zoom_meetings_synced += 1
+            except ScheduleConflictError:
+                continue
 
     return {
         "status": "success",

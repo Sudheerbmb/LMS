@@ -102,10 +102,10 @@ async def get_teacher_timetable_slots_for_scheduling(
     if not result and profile.skills:
         for sk in profile.skills:
             if sk.subject:
-                for g_num in [6, 7]:
+                for g_num in [1, 2]:
                     result.append({
                         "grade_number": g_num,
-                        "grade_name": f"Class {g_num}",
+                        "grade_name": f"Track {g_num}",
                         "section_name": "A",
                         "subject_code": sk.subject.code,
                         "subject_name": sk.subject.name,
@@ -113,7 +113,7 @@ async def get_teacher_timetable_slots_for_scheduling(
                         "day_of_week": "Monday",
                         "start_time": "09:20",
                         "end_time": "10:10",
-                        "room_or_venue": f"Room {g_num}01",
+                        "room_or_venue": f"Tech Lab {g_num}01",
                     })
 
     return result
@@ -128,16 +128,36 @@ async def schedule_school_live_class(
     """
     Creates an LMS live classroom session and automatically provisions a matching Zoom meeting.
     """
-    # Check for teacher scheduling conflicts
+    # Check for teacher scheduling conflicts among active/scheduled sessions
+    active_statuses = ["scheduled", "live", "in_progress"]
     overlap = await session.scalar(
         select(LiveClass).where(
             LiveClass.teacher_id == teacher.id,
-            LiveClass.status != "cancelled",
+            LiveClass.status.in_(active_statuses),
             LiveClass.starts_at < data.ends_at,
             LiveClass.ends_at > data.starts_at,
         )
     )
     if overlap:
+        # If this is an instant live broadcast launch for an already existing timetable slot:
+        is_instant_launch_for_same_slot = (
+            data.status == "live"
+            and data.period_number is not None
+            and overlap.period_number == data.period_number
+            and overlap.subject_code == data.subject_code
+            and overlap.grade_number == data.grade_number
+            and overlap.section_name == data.section_name
+        )
+        if is_instant_launch_for_same_slot:
+            overlap.status = "live"
+            overlap.starts_at = data.starts_at
+            overlap.ends_at = data.ends_at
+            if data.room_number:
+                overlap.room_number = data.room_number
+            await session.commit()
+            await session.refresh(overlap)
+            return overlap
+
         raise ScheduleConflictError("Teacher has a scheduling conflict during this time period")
 
     duration_mins = max(15, int((data.ends_at - data.starts_at).total_seconds() / 60))
@@ -335,11 +355,11 @@ async def get_school_live_classes(
 
     target_grade = grade_number
     if user.role == "student" and not target_grade:
-        m = re.search(r"class\s*(\d+)", user.display_name or "", re.IGNORECASE) or re.search(r"class(\d+)", user.email or "", re.IGNORECASE)
+        m = re.search(r"track\s*(\d+)", user.display_name or "", re.IGNORECASE) or re.search(r"track(\d+)", user.email or "", re.IGNORECASE) or re.search(r"class\s*(\d+)", user.display_name or "", re.IGNORECASE) or re.search(r"class(\d+)", user.email or "", re.IGNORECASE)
         if m:
             target_grade = int(m.group(1))
         else:
-            target_grade = 10
+            target_grade = 1
 
     if user.role == "student":
         if grade_number is not None:
