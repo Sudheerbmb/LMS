@@ -415,17 +415,15 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [loading, setLoading] = useState(true)
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('timetable')
+  const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('instant')
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
   const [instantSection, setInstantSection] = useState<string>('Batch A')
   const [instantSubjectCode, setInstantSubjectCode] = useState<string>('PY-101')
   const [instantSubject, setInstantSubject] = useState<string>('Python Core & Advanced OOP')
   const [customTitle, setCustomTitle] = useState('')
-  const [instantLaunch, setInstantLaunch] = useState(true)
+  const instantLaunch = true
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
   const [flushingClasses, setFlushingClasses] = useState(false)
-  const [classToDelete, setClassToDelete] = useState<SchoolLiveClass | null>(null)
-  const [deletingSession, setDeletingSession] = useState(false)
   
 
   // Active Video Call Room State
@@ -1026,34 +1024,22 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
     }
   }
 
-  const handleDeleteClass = (cls: SchoolLiveClass) => {
-    setClassToDelete(cls)
-  }
-
-  const confirmDeleteClass = async (deleteFromZoom: boolean) => {
-    if (!classToDelete) return
+  const handleDeleteClass = async (classId: string) => {
     try {
-      setDeletingSession(true)
-      const targetId = classToDelete.id
-      setClasses(prev => prev.filter(c => c.id !== targetId))
-      await deleteLiveClass(targetId, deleteFromZoom)
-      setClassToDelete(null)
-      await loadClassroomData()
+      setClasses(prev => prev.filter(c => c.id !== classId))
+      await deleteLiveClass(classId)
     } catch (err: any) {
       console.error('Failed to delete live class:', err)
-      alert(`Error removing class: ${err.message || 'Unknown error'}`)
-      await loadClassroomData()
-    } finally {
-      setDeletingSession(false)
+      loadClassroomData()
     }
   }
 
   const handleFlushAllClasses = async () => {
-    if (!window.confirm('Are you sure you want to flush all live classes from LMS? This will clear all class sessions from your LMS view (Zoom meetings will be preserved).')) return
+    if (!window.confirm('Are you sure you want to flush all live classes? This will reset all class sessions so you can test freshly.')) return
     try {
       setFlushingClasses(true)
       setClasses([])
-      await flushAllLiveClasses(false)
+      await flushAllLiveClasses()
     } catch (err: any) {
       console.error('Failed to flush live classes:', err)
       loadClassroomData()
@@ -3913,19 +3899,11 @@ const handleTriggerTeacherCopilot = async (
       const endIso = new Date(now.getTime() + 45 * 60 * 1000).toISOString()
 
       const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-      const currentMinutes = now.getHours() * 60 + now.getMinutes()
-      const toMinutes = (timeStr?: string) => {
-        if (!timeStr) return 0
-        const [h, m] = timeStr.split(':').map(Number)
-        return (h || 0) * 60 + (m || 0)
-      }
 
-      // Filter slots for today where end_time >= currentMinutes (active right now or upcoming later today)
-      const upcomingTeacherSlots = teacherSlots.filter(s => {
-        const isToday = (s.day_of_week || '').toLowerCase() === currentDayName
-        const endMin = toMinutes(s.end_time)
-        return isToday && endMin >= currentMinutes
-      })
+      // Order slots: today's slots first, then other weekdays
+      const todaySlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() === currentDayName)
+      const otherSlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() !== currentDayName)
+      const upcomingTeacherSlots = todaySlots.length > 0 ? [...todaySlots, ...otherSlots] : teacherSlots
 
       const enrolledCourseIds = new Set(enrollments.map(e => e.course_id))
       const availableCourses = adminCourses.filter(c => {
@@ -6521,10 +6499,10 @@ const handleTriggerTeacherCopilot = async (
           {isHost && (
             <button
               onClick={() => setShowScheduleModal(true)}
-              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              Schedule / Launch Class
+              <Zap className="w-4 h-4 fill-slate-950" />
+              Launch Instant Live Class
             </button>
           )}
         </div>
@@ -6641,10 +6619,10 @@ const handleTriggerTeacherCopilot = async (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDeleteClass(cls)
+                            handleDeleteClass(cls.id)
                           }}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                          title="Remove scheduled class from LMS / Zoom"
+                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                          title="Delete class session"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -6774,42 +6752,48 @@ const handleTriggerTeacherCopilot = async (
       {showScheduleModal && (
 
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
-
-            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              Schedule / Launch Live Class
-            </h2>
+          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400 fill-amber-400" />
+                Launch Instant Live Class
+              </h2>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="text-slate-400 hover:text-slate-200 text-lg font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
             <p className="text-xs text-slate-400 mb-4">
-              Conduct a curriculum-aligned class from your timetable or launch an instant on-the-spot session on Zoom.
+              Start an instant live Zoom video lecture. Status will immediately sync across student timetables.
             </p>
 
             {/* Mode Switcher */}
             <div className="grid grid-cols-2 gap-2 mb-4 p-1 rounded-2xl bg-slate-900 border border-slate-800">
               <button
                 type="button"
-                onClick={() => setScheduleMode('timetable')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                  scheduleMode === 'timetable'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>From Timetable</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => setScheduleMode('instant')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   scheduleMode === 'instant'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>On-The-Spot Instant</span>
+                <span>Instant Subject Module</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduleMode('timetable')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  scheduleMode === 'timetable'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>From Timetable Slot</span>
               </button>
             </div>
 
@@ -6817,41 +6801,31 @@ const handleTriggerTeacherCopilot = async (
               {scheduleMode === 'timetable' ? (() => {
                 const now = new Date()
                 const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-                const currentMinutes = now.getHours() * 60 + now.getMinutes()
-                const toMinutes = (timeStr?: string) => {
-                  if (!timeStr) return 0
-                  const [h, m] = timeStr.split(':').map(Number)
-                  return (h || 0) * 60 + (m || 0)
-                }
-
-                // Filter slots for today where end_time >= currentMinutes
-                const upcomingSlots = teacherSlots.filter(s => {
-                  const isToday = (s.day_of_week || '').toLowerCase() === currentDayName
-                  const endMin = toMinutes(s.end_time)
-                  return isToday && endMin >= currentMinutes
-                })
+                const todaySlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() === currentDayName)
+                const otherSlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() !== currentDayName)
+                const allSlots = todaySlots.length > 0 ? [...todaySlots, ...otherSlots] : teacherSlots
 
                 return (
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Select Today's Upcoming Timetable Class (after {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                      Select Assigned Timetable Slot to Broadcast Now:
                     </label>
-                    {upcomingSlots.length === 0 ? (
+                    {allSlots.length === 0 ? (
                       <div className="text-xs text-amber-300 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20 space-y-1.5">
-                        <p className="font-bold">No scheduled classes remaining today after {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
+                        <p className="font-bold">No timetable slots assigned yet.</p>
                         <p className="text-[11px] text-slate-400">
-                          All today's timetable periods have completed. Switch to <strong>On-The-Spot Instant</strong> to launch an immediate class session, or view the full schedule in the Timetable tab.
+                          Switch to <strong>Instant Subject Module</strong> tab above to launch an instant lecture for any course module.
                         </p>
                       </div>
                     ) : (
                       <select
                         value={selectedSlotIndex}
                         onChange={e => setSelectedSlotIndex(Number(e.target.value))}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
                       >
-                        {upcomingSlots.map((s, idx) => (
+                        {allSlots.map((s, idx) => (
                           <option key={idx} value={idx}>
-                            {s.grade_name || 'Course'} • Batch {s.section_name} — {s.subject_name} ({s.start_time} - {s.end_time}, Period {s.period_number})
+                            {s.day_of_week} Period {s.period_number} &bull; {s.subject_name} ({s.start_time} - {s.end_time}, Batch {s.section_name})
                           </option>
                         ))}
                       </select>
@@ -6884,7 +6858,7 @@ const handleTriggerTeacherCopilot = async (
                             }
                           }
                         }}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
                       >
                         {availableCourses.map((c) => (
                           <option key={c.id} value={c.slug}>
@@ -6900,7 +6874,7 @@ const handleTriggerTeacherCopilot = async (
                       <select
                         value={instantSection}
                         onChange={e => setInstantSection(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
                       >
                         <option value="Batch-01">Batch-01 (Morning Session)</option>
                         <option value="Batch-02">Batch-02 (Evening Session)</option>
@@ -6921,7 +6895,7 @@ const handleTriggerTeacherCopilot = async (
                         const found = availableSubjectsForCourse.find(s => s.code === code)
                         if (found) setInstantSubject(found.name)
                       }}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
                     >
                       {availableSubjectsForCourse.map((s) => (
                         <option key={s.id || s.code} value={s.code}>
@@ -6941,117 +6915,29 @@ const handleTriggerTeacherCopilot = async (
                   type="text"
                   value={customTitle}
                   onChange={e => setCustomTitle(e.target.value)}
-                  placeholder="e.g. Chapter 4: Live Discussion & Practice"
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  placeholder="e.g. Chapter 4: Live Discussion, Lab Practice & Q&A"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                 />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="instantLaunch"
-                  checked={instantLaunch}
-                  onChange={e => setInstantLaunch(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-950"
-                />
-                <label htmlFor="instantLaunch" className="text-xs font-medium text-slate-300">
-                  Launch Zoom meeting immediately upon creation
-                </label>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingSchedule}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Video className="w-4 h-4 text-blue-200" />
-                  <span>{submittingSchedule ? 'Provisioning Zoom...' : (instantLaunch ? 'Launch Zoom Meeting' : 'Schedule Live Class')}</span>
+                  <Video className="w-4 h-4 fill-slate-950" />
+                  <span>{submittingSchedule ? 'Provisioning Zoom Stream...' : '🚀 Launch Live Zoom Classroom Broadcast'}</span>
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: REMOVE SCHEDULED MEETING OPTIONS (LMS ONLY VS ZOOM) ──────── */}
-      {classToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                  <Trash2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">Remove Scheduled Meeting</h3>
-                  <p className="text-xs text-slate-400">Choose removal target</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setClassToDelete(null)}
-                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
-              <p className="text-xs font-bold text-white line-clamp-1">{classToDelete.title}</p>
-              <p className="text-[11px] text-slate-400">
-                {classToDelete.subject_name || classToDelete.subject_code} &bull; Period {classToDelete.period_number || 1} &bull; Batch {classToDelete.section_name || 'A'}
-              </p>
-              {classToDelete.zoom_meeting_id && (
-                <p className="text-[10px] font-mono text-blue-400">Zoom Meeting ID: {classToDelete.zoom_meeting_id}</p>
-              )}
-            </div>
-
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={() => confirmDeleteClass(false)}
-                disabled={deletingSession}
-                className="w-full py-3 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-start gap-0.5 transition-all text-left cursor-pointer active:scale-95 disabled:opacity-50"
-              >
-                <span className="flex items-center gap-1.5 font-extrabold text-amber-200">
-                  <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                  Remove from LMS Schedule Only (Keep in Zoom)
-                </span>
-                <span className="text-[10px] text-slate-400 font-normal ml-5">
-                  Removes the session from LMS timetable and live classes without touching or cancelling your meeting in Zoom.
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => confirmDeleteClass(true)}
-                disabled={deletingSession}
-                className="w-full py-3 px-4 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-bold text-xs flex flex-col items-start gap-0.5 transition-all text-left cursor-pointer active:scale-95 disabled:opacity-50"
-              >
-                <span className="flex items-center gap-1.5 font-extrabold text-rose-200">
-                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                  Cancel Zoom Meeting & Remove Everywhere
-                </span>
-                <span className="text-[10px] text-slate-400 font-normal ml-5">
-                  Permanently cancels the scheduled meeting in Zoom Cloud and deletes it from LMS.
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setClassToDelete(null)}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       )}

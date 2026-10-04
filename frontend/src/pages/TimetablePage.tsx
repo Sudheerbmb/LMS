@@ -42,11 +42,9 @@ import {
   swapSlots,
   updateSlot,
   recordTeacherLeave,
-  generateZoomClassesFromTimetable,
   getAdminCourses,
   createSchoolLiveClass,
   getSchoolLiveClasses,
-  deleteLiveClass,
   type SchoolGrade,
   type SchoolLiveClass,
   type TimetableSlot,
@@ -298,22 +296,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
     }
   }
 
-  const [generatingZoom, setGeneratingZoom] = useState(false)
 
-  const handleGenerateZoomClasses = async () => {
-    if (!isAdmin && !isTeacher) return
-    try {
-      setGeneratingZoom(true)
-      setStatusMessage(null)
-      const res = await generateZoomClassesFromTimetable(7)
-      setStatusMessage(`✨ Successfully scheduled ${res.classes_created} Zoom live class sessions from timetable! (Synced ${res.zoom_meetings_synced} meetings across ${res.days_ahead} days)`)
-    } catch (err: any) {
-      console.error('Failed to generate Zoom classes:', err)
-      setStatusMessage('Zoom timetable automation failed: ' + (err.message || 'Server error'))
-    } finally {
-      setGeneratingZoom(false)
-    }
-  }
 
   const handleSeed = async () => {
     if (!isAdmin) return
@@ -441,25 +424,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       setLiveClasses(updated || [])
     } catch (err: any) {
       alert('Failed to launch live class: ' + (err.message || 'Unknown error'))
-    } finally {
-      setLaunchingLiveClass(false)
-    }
-  }
-
-  const handleRemoveLiveSession = async (liveClassId: string, deleteFromZoom: boolean = false) => {
-    try {
-      setLaunchingLiveClass(true)
-      await deleteLiveClass(liveClassId, deleteFromZoom)
-      setStatusMessage(
-        deleteFromZoom
-          ? 'Live session removed from LMS and cancelled on Zoom.'
-          : 'Live session removed from LMS schedule (Zoom meeting preserved in Zoom account).'
-      )
-      setShowSlotViewerModal(false)
-      const updated = await getSchoolLiveClasses().catch(() => [])
-      setLiveClasses(updated || [])
-    } catch (err: any) {
-      alert('Failed to remove live session: ' + (err.message || 'Unknown error'))
     } finally {
       setLaunchingLiveClass(false)
     }
@@ -716,16 +680,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             >
               <Database className={`w-4 h-4 ${seeding ? 'animate-spin text-amber-400' : ''}`} />
               {seeding ? 'Seeding...' : 'Reset Defaults'}
-            </button>
-
-            <button
-              onClick={handleGenerateZoomClasses}
-              disabled={generatingZoom}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
-              title="Sync upcoming timetable slots with Zoom and automatically schedule meetings"
-            >
-              <Video className={`w-4 h-4 ${generatingZoom ? 'animate-spin' : ''}`} />
-              {generatingZoom ? 'Provisioning Zoom...' : 'Sync Timetable to Zoom'}
             </button>
 
             <button
@@ -2089,19 +2043,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             ? 'Resume / Join Live Video Broadcast'
                             : 'Launch Live Video Broadcast (Zoom Session)'}
                         </span>
-                      </button>
-                    )}
-
-                    {(isTeacher || isAdmin) && isLive && activeLive && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLiveSession(activeLive.id, false)}
-                        disabled={launchingLiveClass}
-                        className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-amber-400 hover:text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        title="Remove this live broadcast from LMS schedule while keeping your Zoom meeting active"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Remove from LMS Schedule (Keep Zoom Meeting)</span>
                       </button>
                     )}
 
