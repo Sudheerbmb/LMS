@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import type { Assignment, Course, User, AssignmentSubmission, AdminInstituteCourse } from '../lib/api'
 import {
-  getCourses,
   getAdminCourses,
+  getMyEnrollments,
   createAssignment,
   submitAssignment,
   getAssignments,
@@ -72,15 +72,28 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
 
   const loadCourses = async () => {
     try {
-      const [res, adminRes] = await Promise.all([
-        getCourses().catch(() => ({ items: [], total: 0 })),
-        getAdminCourses().catch(() => [])
+      const [adminRes, enrollmentsRes] = await Promise.all([
+        getAdminCourses().catch(() => []),
+        getMyEnrollments().catch(() => [])
       ])
-      const items = res.items || []
-      setAdminCourses(adminRes || [])
+      const enrolledCourseIds = new Set((enrollmentsRes || []).map(e => e.course_id))
 
-      if (adminRes && adminRes.length > 0) {
-        const normalized: Course[] = adminRes.map(ac => ({
+      let filteredAdminCourses = adminRes || []
+      if (user.role === 'teacher') {
+        filteredAdminCourses = (adminRes || []).filter(ac =>
+          ac.subjects?.some(s =>
+            s.teacher_id === user.id ||
+            (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+          )
+        )
+      } else if (user.role === 'student') {
+        filteredAdminCourses = (adminRes || []).filter(ac => enrolledCourseIds.has(ac.id))
+      }
+
+      setAdminCourses(filteredAdminCourses)
+
+      if (filteredAdminCourses.length > 0) {
+        const normalized: Course[] = filteredAdminCourses.map(ac => ({
           id: ac.id,
           organization_id: 'default',
           current_version: 1,
@@ -94,14 +107,12 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
           enrolled_count: ac.enrolled_count || 0
         }))
         setCourses(normalized)
-        if (normalized.length > 0 && !selectedCourse) {
+        if (normalized.length > 0) {
           setSelectedCourse(normalized[0].id)
         }
       } else {
-        setCourses(items)
-        if (items.length > 0 && !selectedCourse) {
-          setSelectedCourse(items[0].id)
-        }
+        setCourses([])
+        setSelectedCourse('')
       }
     } catch (err) {
       console.error(err)

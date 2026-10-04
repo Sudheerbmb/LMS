@@ -488,7 +488,7 @@ async def get_timetable_grid(
     if grade_id:
         slots = [s for s in slots if s.section and s.section.grade_id == grade_id]
 
-    # 2. Student role: Filter to enrolled courses/batches if no explicit grade requested
+    # 2. Student role: Filter strictly to enrolled courses/batches if no explicit grade requested
     elif user and user.role == "student" and not section_id and not grade_id:
         enrollments = (
             await session.scalars(
@@ -504,7 +504,10 @@ async def get_timetable_grid(
             courses = (
                 await session.scalars(
                     select(Course)
-                    .options(selectinload(Course.versions))
+                    .options(
+                        selectinload(Course.versions),
+                        selectinload(Course.subjects),
+                    )
                     .where(Course.id.in_(enrolled_course_ids))
                 )
             ).all()
@@ -512,20 +515,35 @@ async def get_timetable_grid(
                 (c.versions[0].title if c.versions else c.slug).lower()
                 for c in courses
             }
-            enrolled_slugs = {c.slug for c in courses}
+            enrolled_slugs = {c.slug.lower() for c in courses}
+            enrolled_sub_codes = {s.code.upper() for c in courses for s in (c.subjects or []) if s.code}
+
             filtered_slots = [
                 s for s in slots
                 if (s.section and s.section.grade and any(et in s.section.grade.name.lower() for et in enrolled_titles))
-                or (s.subject and s.subject.category in enrolled_slugs)
+                or (s.subject and (s.subject.category in enrolled_slugs or (s.subject.code and s.subject.code.upper() in enrolled_sub_codes)))
             ]
-            if filtered_slots:
-                slots = filtered_slots
+            slots = filtered_slots
+        else:
+            slots = []
 
-    # 3. Teacher role: Filter to teacher's own teaching schedule
+    # 3. Teacher role: Filter strictly to teacher's own assigned subjects and teaching schedule
     elif user and user.role == "teacher" and not teacher_id and not grade_id and not section_id:
+        from app.courses.models import CourseSubject
         prof = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
-        if prof:
-            slots = [s for s in slots if s.teacher_id == prof.id]
+        assigned_subs = (
+            await session.scalars(
+                select(CourseSubject).where(CourseSubject.teacher_id == user.id)
+            )
+        ).all()
+        assigned_sub_codes = {s.code.upper() for s in assigned_subs if s.code}
+
+        filtered_slots = [
+            s for s in slots
+            if (prof and s.teacher_id == prof.id)
+            or (s.subject and s.subject.code and s.subject.code.upper() in assigned_sub_codes)
+        ]
+        slots = filtered_slots
 
     teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher}
     users = (await session.scalars(select(User).where(User.id.in_(teacher_user_ids)))).all() if teacher_user_ids else []

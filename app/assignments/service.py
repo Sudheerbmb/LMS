@@ -91,7 +91,34 @@ async def get_course_assignments(session: AsyncSession, course_id: UUID) -> list
 
 
 async def get_all_assignments(session: AsyncSession, user: User) -> list[Assignment]:
-    stmt = select(Assignment).order_by(Assignment.created_at.desc())
+    from app.courses.models import CourseSubject
+    if user.role == "student":
+        enrollments = (
+            await session.scalars(
+                select(Enrollment).where(
+                    Enrollment.user_id == user.id,
+                    Enrollment.status == "active",
+                )
+            )
+        ).all()
+        enrolled_ids = [e.course_id for e in enrollments]
+        if not enrolled_ids:
+            return []
+        stmt = select(Assignment).where(Assignment.course_id.in_(enrolled_ids)).order_by(Assignment.created_at.desc())
+    elif user.role == "teacher":
+        subs = (
+            await session.scalars(
+                select(CourseSubject).where(CourseSubject.teacher_id == user.id)
+            )
+        ).all()
+        t_course_ids = list({s.course_id for s in subs if s.course_id})
+        if t_course_ids:
+            stmt = select(Assignment).where(Assignment.course_id.in_(t_course_ids)).order_by(Assignment.created_at.desc())
+        else:
+            stmt = select(Assignment).order_by(Assignment.created_at.desc())
+    else:
+        stmt = select(Assignment).order_by(Assignment.created_at.desc())
+
     result = await session.scalars(stmt)
     return list(result.all())
 

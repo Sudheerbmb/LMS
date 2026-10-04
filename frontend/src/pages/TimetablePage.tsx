@@ -187,36 +187,42 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       // If user is a teacher, locate their teacher profile and load their personalized grid
       if (isTeacher) {
-        let profile = (teachersData || []).find(
-          t => t.user_id === currentUser?.id || t.email.toLowerCase() === currentUser?.email.toLowerCase()
+        const profile = (teachersData || []).find(
+          t => t.user_id === currentUser?.id || (currentUser?.email && t.email?.toLowerCase() === currentUser?.email?.toLowerCase())
         )
         setMyTeacherProfile(profile || null)
 
-        if (!profile && teachersData && teachersData.length > 0) {
-          profile = teachersData[0]
-          setMyTeacherProfile(profile)
-        }
-        if (profile) {
-          const teacherSlots = await getTimetableGrid({ teacher_id: profile.id })
-          setSlots(teacherSlots || [])
+        // Backend getTimetableGrid automatically identifies authenticated teacher and returns their assigned slots
+        const teacherSlots = await getTimetableGrid(profile ? { teacher_id: profile.id } : undefined)
+        setSlots(teacherSlots || [])
+      } else if (isStudent) {
+        // Student: fetch grid directly scoped to student's enrolled courses from backend
+        const studentSlots = await getTimetableGrid()
+        setSlots(studentSlots || [])
+
+        // Filter grades to student's enrolled courses
+        const enrolledCourses = (coursesData || []).filter((c: any) => c.is_enrolled)
+        const enrolledTitles = enrolledCourses.map((c: any) => c.title.toLowerCase())
+        const studentGrades = (gradesData || []).filter(g => enrolledTitles.some((t: string) => g.name.toLowerCase().includes(t)))
+
+        if (studentGrades.length > 0) {
+          setSelectedGradeId(studentGrades[0].id)
+          if (studentGrades[0].sections && studentGrades[0].sections.length > 0) {
+            setSelectedSectionId(studentGrades[0].sections[0].id)
+          }
+        } else if (gradesData && gradesData.length > 0) {
+          setSelectedGradeId(gradesData[0].id)
+          if (gradesData[0].sections && gradesData[0].sections.length > 0) {
+            setSelectedSectionId(gradesData[0].sections[0].id)
+          }
         }
       } else {
-        // Admin or Student: Load class section grid
+        // Admin: Load master class section grid
         if (gradesData && gradesData.length > 0) {
-          let targetGrade = gradesData[0]
-          if (isStudent) {
-            // Find grade matching student's enrolled courses if available
-            const enrolledCourses = (coursesData || []).filter((c: any) => c.is_enrolled)
-            if (enrolledCourses.length > 0) {
-              const matched = gradesData.find(g => g.name.toLowerCase() === enrolledCourses[0].title.toLowerCase())
-              if (matched) targetGrade = matched
-            }
-          }
-
-          setSelectedGradeId(targetGrade.id)
-          if (targetGrade.sections && targetGrade.sections.length > 0) {
-            setSelectedSectionId(targetGrade.sections[0].id)
-            await loadGrid(targetGrade.sections[0].id)
+          setSelectedGradeId(gradesData[0].id)
+          if (gradesData[0].sections && gradesData[0].sections.length > 0) {
+            setSelectedSectionId(gradesData[0].sections[0].id)
+            await loadGrid(gradesData[0].sections[0].id)
           }
         }
       }
