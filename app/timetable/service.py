@@ -140,9 +140,15 @@ DEFAULT_POLICY_RULES = [
 ]
 
 
-async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
-    """Populates Grades 1-10, realistic subjects, curricula, rules, and teacher profiles in Neon DB."""
-    # 1. Seed Dynamic Policy Rules
+async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[str, Any]:
+    """
+    Synchronizes the Course Catalog (Course & CourseSubject) with the Timetable Engine
+    (SchoolGrade, SchoolSection, Subject, GradeCurriculum, TeacherProfile, TeacherSubjectSkill).
+    Establishes the Course Catalog as the single source of truth for the LMS schedule.
+    """
+    from app.courses.models import Course, CourseSubject, CourseVersion
+
+    # 1. Ensure dynamic policy rules exist
     for r_data in DEFAULT_POLICY_RULES:
         existing_rule = await session.scalar(select(TimetableRule).where(TimetableRule.rule_type == r_data["rule_type"]))
         if not existing_rule:
@@ -157,173 +163,181 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
             ))
             await session.flush()
 
-    # 2. Seed Subjects
-    subject_map: Dict[str, Subject] = {}
-    for s_data in SUBJECT_DEFAULTS:
-        existing = await session.scalar(select(Subject).where(Subject.code == s_data["code"]))
-        if not existing:
-            existing = Subject(
-                code=s_data["code"],
-                name=s_data["name"],
-                category=s_data["category"],
-                requires_ground=s_data.get("requires_ground", False),
-                requires_lab=s_data.get("requires_lab", False),
-                color=s_data.get("color", "#06b6d4"),
+    # 2. Fetch all published/active courses with versions & subjects
+    courses = (
+        await session.scalars(
+            select(Course)
+            .options(
+                selectinload(Course.versions),
+                selectinload(Course.subjects),
             )
-            session.add(existing)
-            await session.flush()
-        else:
-            existing.name = s_data["name"]
-            existing.category = s_data["category"]
-            existing.requires_ground = s_data.get("requires_ground", False)
-            existing.requires_lab = s_data.get("requires_lab", False)
-            existing.color = s_data.get("color", "#06b6d4")
-            await session.flush()
-        subject_map[existing.code] = existing
+            .order_by(Course.created_at.asc())
+        )
+    ).all()
 
-    # 3. Seed Grades 1 to 10 and Sections A & B
-    grade_map: Dict[int, SchoolGrade] = {}
-    section_list: List[SchoolSection] = []
-    for g_num in range(1, 11):
-        grade = await session.scalar(select(SchoolGrade).where(SchoolGrade.grade_number == g_num))
+    # If no courses exist, seed internal tech courses
+    if not courses:
+        from app.admin import seed_tech_courses_internal
+        await seed_tech_courses_internal(session)
+        courses = (
+            await session.scalars(
+                select(Course)
+                .options(
+                    selectinload(Course.versions),
+                    selectinload(Course.subjects),
+                )
+                .order_by(Course.created_at.asc())
+            )
+        ).all()
+
+    # 3. Fetch all teachers and ensure TeacherProfile exists
+    teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
+    teacher_profiles = (await session.scalars(select(TeacherProfile))).all()
+    profile_by_user_id = {p.user_id: p for p in teacher_profiles}
+
+    for idx, t in enumerate(teachers, start=1):
+        if t.id not in profile_by_user_id:
+            p = TeacherProfile(
+                user_id=t.id,
+                employee_id=f"T{idx:03d}",
+                qualification="Senior Faculty Specialist",
+                max_daily_periods=5,
+                rating_avg=4.9,
+                complaint_count=0,
+            )
+            session.add(p)
+            await session.flush()
+            profile_by_user_id[t.id] = p
+
+    # 4. Synchronize each Course into SchoolGrade, Section, Subject, GradeCurriculum
+    synced_grade_ids = []
+    synced_subject_ids = []
+
+    for idx, c in enumerate(courses, start=1):
+        course_title = c.versions[0].title if c.versions else c.slug.replace("-", " ").title()
+
+        # Match or create SchoolGrade by grade_number or name
+        grade = await session.scalar(
+            select(SchoolGrade).where((SchoolGrade.grade_number == idx) | (SchoolGrade.name == course_title))
+        )
         if not grade:
             grade = SchoolGrade(
-                grade_number=g_num,
-                name=f"Class {g_num}",
+                grade_number=idx,
+                name=course_title,
                 academic_year="2026-2027",
             )
             session.add(grade)
             await session.flush()
-        grade_map[g_num] = grade
-
-        for sec_letter in ["A", "B"]:
-            sec = await session.scalar(
-                select(SchoolSection).where(
-                    SchoolSection.grade_id == grade.id,
-                    SchoolSection.name == sec_letter
-                )
-            )
-            if not sec:
-                sec = SchoolSection(
-                    grade_id=grade.id,
-                    name=sec_letter,
-                    room_number=f"Room {g_num}0{1 if sec_letter == 'A' else 2}",
-                )
-                session.add(sec)
-                await session.flush()
-            section_list.append(sec)
-
-        curr_rules = GRADE_CURRICULUM_MATRIX.get(g_num, [])
-        allowed_subject_ids = [subject_map[code].id for code, _ in curr_rules if code in subject_map]
-        for sub_code, periods in curr_rules:
-            sub = subject_map.get(sub_code)
-            if sub:
-                existing_curr = await session.scalar(
-                    select(GradeCurriculum).where(
-                        GradeCurriculum.grade_id == grade.id,
-                        GradeCurriculum.subject_id == sub.id
-                    )
-                )
-                if not existing_curr:
-                    session.add(GradeCurriculum(
-                        grade_id=grade.id,
-                        subject_id=sub.id,
-                        periods_per_week=periods,
-                    ))
-                else:
-                    existing_curr.periods_per_week = periods
-
-        # Keep existing deployments aligned when the official scheme of studies changes.
-        if allowed_subject_ids:
-            await session.execute(
-                delete(GradeCurriculum).where(
-                    GradeCurriculum.grade_id == grade.id,
-                    GradeCurriculum.subject_id.not_in(allowed_subject_ids),
-                )
-            )
-
-    # 4. Seed Teachers with Skills
-    teachers_created: List[TeacherProfile] = []
-    for t_data in TEACHER_SEEDS:
-        user = await session.scalar(select(User).where(User.email == t_data["email"]))
-        if not user:
-            user = User(
-                email=t_data["email"],
-                display_name=t_data["name"],
-                password_hash=hash_password("Teacher123!"),
-                role="teacher",
-                status="active",
-                email_verified=True,
-            )
-            session.add(user)
-            await session.flush()
         else:
-            user.display_name = t_data["name"]
-            user.role = "teacher"
-            user.status = "active"
+            grade.grade_number = idx
+            grade.name = course_title
+            await session.flush()
+        synced_grade_ids.append(grade.id)
 
-        # Check if TeacherProfile already exists by user_id OR employee_id
-        profile = await session.scalar(
-            select(TeacherProfile).where(
-                (TeacherProfile.user_id == user.id) | (TeacherProfile.employee_id == t_data["emp_id"])
+        # Ensure Section A exists
+        section = await session.scalar(
+            select(SchoolSection).where(
+                SchoolSection.grade_id == grade.id,
+                SchoolSection.name == "A",
             )
         )
-        if not profile:
-            profile = TeacherProfile(
-                user_id=user.id,
-                employee_id=t_data["emp_id"],
-                qualification=t_data.get("qualification", "Senior Technical Specialist"),
-                max_daily_periods=5,
-                rating_avg=t_data["rating"],
-                complaint_count=3 if t_data["rating"] < 3.0 else 0,
+        if not section:
+            section = SchoolSection(
+                grade_id=grade.id,
+                name="A",
+                room_number=f"Tech Lab {idx}01",
             )
-            session.add(profile)
-            await session.flush()
-        else:
-            profile.user_id = user.id
-            profile.employee_id = t_data["emp_id"]
-            profile.qualification = t_data.get("qualification", "Senior Technical Specialist")
-            profile.rating_avg = t_data["rating"]
-            profile.complaint_count = 3 if t_data["rating"] < 3.0 else 0
+            session.add(section)
             await session.flush()
 
-        valid_subject_ids = []
-        for sub_code in t_data["subjects"]:
-            sub = subject_map.get(sub_code)
-            if sub:
-                valid_subject_ids.append(sub.id)
+        # Synchronize course subjects
+        course_subjects = c.subjects or []
+        periods_per_sub = max(5, int(40 / max(1, len(course_subjects))))
+        grade_subject_ids = []
+
+        for sub_idx, cs in enumerate(course_subjects, start=1):
+            sub = await session.scalar(select(Subject).where(Subject.code == cs.code))
+            if not sub:
+                sub = Subject(
+                    code=cs.code,
+                    name=cs.name,
+                    category=c.slug,
+                    requires_ground=False,
+                    requires_lab=True,
+                    color=cs.color or "#3b82f6",
+                )
+                session.add(sub)
+                await session.flush()
+            else:
+                sub.name = cs.name
+                sub.category = c.slug
+                sub.color = cs.color or sub.color
+                await session.flush()
+
+            grade_subject_ids.append(sub.id)
+            synced_subject_ids.append(sub.id)
+
+            # Link GradeCurriculum
+            curr = await session.scalar(
+                select(GradeCurriculum).where(
+                    GradeCurriculum.grade_id == grade.id,
+                    GradeCurriculum.subject_id == sub.id,
+                )
+            )
+            if not curr:
+                curr = GradeCurriculum(
+                    grade_id=grade.id,
+                    subject_id=sub.id,
+                    periods_per_week=periods_per_sub,
+                )
+                session.add(curr)
+            else:
+                curr.periods_per_week = periods_per_sub
+
+            # Assign teacher skill
+            assigned_t_id = cs.teacher_id
+            if not assigned_t_id and teachers:
+                assigned_t_id = teachers[(idx + sub_idx) % len(teachers)].id
+                cs.teacher_id = assigned_t_id
+
+            if assigned_t_id and assigned_t_id in profile_by_user_id:
+                prof = profile_by_user_id[assigned_t_id]
                 existing_skill = await session.scalar(
                     select(TeacherSubjectSkill).where(
-                        TeacherSubjectSkill.teacher_id == profile.id,
+                        TeacherSubjectSkill.teacher_id == prof.id,
                         TeacherSubjectSkill.subject_id == sub.id,
                     )
                 )
                 if not existing_skill:
-                    session.add(TeacherSubjectSkill(teacher_id=profile.id, subject_id=sub.id))
+                    session.add(TeacherSubjectSkill(teacher_id=prof.id, subject_id=sub.id))
 
-        if valid_subject_ids:
+        if grade_subject_ids:
             await session.execute(
-                delete(TeacherSubjectSkill).where(
-                    TeacherSubjectSkill.teacher_id == profile.id,
-                    TeacherSubjectSkill.subject_id.not_in(valid_subject_ids)
+                delete(GradeCurriculum).where(
+                    GradeCurriculum.grade_id == grade.id,
+                    GradeCurriculum.subject_id.not_in(grade_subject_ids),
                 )
             )
-        await session.flush()
-
-        teachers_created.append(profile)
 
     await session.commit()
     return {
-        "grades_seeded": 10,
-        "sections_seeded": len(section_list),
-        "subjects_seeded": len(subject_map),
-        "teachers_seeded": len(teachers_created),
-        "rules_seeded": len(DEFAULT_POLICY_RULES),
+        "status": "success",
+        "courses_synced": len(courses),
+        "grades_synced": len(synced_grade_ids),
+        "subjects_synced": len(synced_subject_ids),
     }
+
+
+async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
+    """Populates institute tracks, subjects, curricula, rules, and teacher profiles dynamically in DB."""
+    return await sync_courses_to_timetable_curriculum(session)
 
 
 async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
     """Runs the LangGraph agent to generate the master school schedule with live database rules."""
+    # Ensure Courses and Subjects are synced into Timetable graph inputs
+    await sync_courses_to_timetable_curriculum(session)
+
     # 1. Fetch live rules from Neon DB
     rules = (await session.scalars(select(TimetableRule).where(TimetableRule.is_enabled == True))).all()
     rules_dict = {r.rule_type: r.parameters for r in rules}
@@ -395,18 +409,27 @@ async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
         "total_sections": len(sections),
         "ground_capacity_complied": True,
         "autonomous_decisions": decisions[:12],
-        "audit_summary": f"Successfully generated dynamic master timetable using live Neon DB policy rules for all 10 grades across 5 weekdays.",
+        "audit_summary": f"Successfully generated dynamic master timetable using live Neon DB policy rules for all courses across weekly periods.",
     }
 
 
 async def get_timetable_grid(
     session: AsyncSession,
+    user: Optional[User] = None,
     section_id: Optional[UUID] = None,
     grade_id: Optional[UUID] = None,
     teacher_id: Optional[UUID] = None,
     day_of_week: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieves timetable slots formatted for weekly display."""
+    """Retrieves timetable slots formatted for weekly display with student/teacher role awareness."""
+    from app.courses.models import Course
+    from app.enrollment.models import Enrollment
+
+    # If no slots exist yet, automatically generate them
+    slot_count = await session.scalar(select(func.count(TimetableSlot.id)))
+    if not slot_count or slot_count == 0:
+        await generate_school_timetable(session)
+
     query = (
         select(TimetableSlot)
         .options(
@@ -426,8 +449,48 @@ async def get_timetable_grid(
 
     slots = (await session.scalars(query)).all()
 
+    # 1. Explicit grade_id filter
     if grade_id:
         slots = [s for s in slots if s.section and s.section.grade_id == grade_id]
+
+    # 2. Student role: Filter to enrolled courses/batches if no explicit grade requested
+    elif user and user.role == "student" and not section_id and not grade_id:
+        enrollments = (
+            await session.scalars(
+                select(Enrollment).where(
+                    Enrollment.user_id == user.id,
+                    Enrollment.status == "active",
+                )
+            )
+        ).all()
+        enrolled_course_ids = [e.course_id for e in enrollments]
+
+        if enrolled_course_ids:
+            courses = (
+                await session.scalars(
+                    select(Course)
+                    .options(selectinload(Course.versions))
+                    .where(Course.id.in_(enrolled_course_ids))
+                )
+            ).all()
+            enrolled_titles = {
+                (c.versions[0].title if c.versions else c.slug).lower()
+                for c in courses
+            }
+            enrolled_slugs = {c.slug for c in courses}
+            filtered_slots = [
+                s for s in slots
+                if (s.section and s.section.grade and s.section.grade.name.lower() in enrolled_titles)
+                or (s.subject and s.subject.category in enrolled_slugs)
+            ]
+            if filtered_slots:
+                slots = filtered_slots
+
+    # 3. Teacher role: Filter to teacher's own teaching schedule
+    elif user and user.role == "teacher" and not teacher_id and not grade_id and not section_id:
+        prof = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
+        if prof:
+            slots = [s for s in slots if s.teacher_id == prof.id]
 
     teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher}
     users = (await session.scalars(select(User).where(User.id.in_(teacher_user_ids)))).all() if teacher_user_ids else []
@@ -454,8 +517,6 @@ async def get_timetable_grid(
             "teacher_id": s.teacher_id,
             "teacher_name": t_name,
         })
-    return result
-
 
 async def get_all_timetable_rules(session: AsyncSession) -> List[TimetableRule]:
     """Retrieves all dynamic school scheduling rules."""

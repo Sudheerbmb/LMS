@@ -128,6 +128,18 @@ async def schedule_school_live_class(
     """
     Creates an LMS live classroom session and automatically provisions a matching Zoom meeting.
     """
+    # Check for teacher scheduling conflicts
+    overlap = await session.scalar(
+        select(LiveClass).where(
+            LiveClass.teacher_id == teacher.id,
+            LiveClass.status != "cancelled",
+            LiveClass.starts_at < data.ends_at,
+            LiveClass.ends_at > data.starts_at,
+        )
+    )
+    if overlap:
+        raise ScheduleConflictError("Teacher has a scheduling conflict during this time period")
+
     duration_mins = max(15, int((data.ends_at - data.starts_at).total_seconds() / 60))
     topic = data.title or f"{data.subject_name or 'Live Class'} - Class {data.grade_number or ''}{data.section_name or ''}"
 

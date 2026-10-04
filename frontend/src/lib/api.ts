@@ -432,6 +432,15 @@ export const addAdminCourseSubject = (
   body: JSON.stringify(payload),
 })
 
+export const updateAdminCourseSubject = (
+  courseId: string,
+  subjectId: string,
+  payload: { code?: string; name?: string; description?: string; color?: string; teacher_id?: string | null }
+) => request<AdminInstituteSubject>(`/api/v1/admin/courses/${courseId}/subjects/${subjectId}`, {
+  method: 'PUT',
+  body: JSON.stringify(payload),
+})
+
 export const deleteAdminCourseSubject = (courseId: string, subjectId: string) =>
   request<{ id: string; deleted: boolean }>(`/api/v1/admin/courses/${courseId}/subjects/${subjectId}`, {
     method: 'DELETE',
@@ -610,29 +619,24 @@ export type TimetableGenerationResult = {
 export const getGrades = () => request<SchoolGrade[]>('/api/v1/timetable/grades')
 
 export const getTimetableGrid = (params?: { section_id?: string; grade_id?: string; teacher_id?: string; day_of_week?: string }) => {
-
   const query = new URLSearchParams()
-
   if (params?.section_id) query.set('section_id', params.section_id)
-
   if (params?.grade_id) query.set('grade_id', params.grade_id)
-
   if (params?.teacher_id) query.set('teacher_id', params.teacher_id)
-
   if (params?.day_of_week) query.set('day_of_week', params.day_of_week)
-
   const qs = query.toString()
-
   return request<TimetableSlot[]>(`/api/v1/timetable/grid${qs ? `?${qs}` : ''}`)
-
 }
 
-export const generateTimetable = () =>
+export const getMyTimetableSchedule = () => request<TimetableSlot[]>('/api/v1/timetable/my-schedule')
 
+export const syncCoursesToTimetable = () =>
+  request<{ status: string; courses_synced: number; grades_synced: number; subjects_synced: number }>('/api/v1/timetable/sync-courses', { method: 'POST' })
+
+export const generateTimetable = () =>
   request<TimetableGenerationResult>('/api/v1/timetable/generate', { method: 'POST' })
 
 export const seedTimetableDefaults = () =>
-
   request<{ status: string; message: string; data: any }>('/api/v1/timetable/seed-defaults', { method: 'POST' })
 
 export const getTeachersWithFeedback = () => request<TeacherProfile[]>('/api/v1/timetable/teachers')
@@ -1334,4 +1338,7 @@ export const submitLensDrill = (payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+
+
+
 

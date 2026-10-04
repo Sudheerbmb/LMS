@@ -54,6 +54,14 @@ class AdminUserUpdate(BaseModel):
     subject_ids: Optional[List[UUID]] = None
 
 
+class AdminUserStatusUpdate(BaseModel):
+    status: Literal["active", "pending", "suspended", "rejected"]
+
+
+class AdminUserRoleUpdate(BaseModel):
+    role: Literal["admin", "teacher", "student"]
+
+
 class AdminSubjectCreate(BaseModel):
     code: str
     name: str
@@ -240,6 +248,52 @@ async def update_user(
     }
 
 
+@router.post("/users/{user_id}/status")
+@router.put("/users/{user_id}/status")
+async def update_user_status(
+    user_id: UUID,
+    data: AdminUserStatusUpdate,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == _admin.id:
+        raise HTTPException(status_code=400, detail="You cannot modify status of your own account")
+    user.status = data.status
+    await session.commit()
+    await session.refresh(user)
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "status": user.status,
+    }
+
+
+@router.post("/users/{user_id}/role")
+@router.put("/users/{user_id}/role")
+async def update_user_role(
+    user_id: UUID,
+    data: AdminUserRoleUpdate,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == _admin.id:
+        raise HTTPException(status_code=400, detail="You cannot modify role of your own account")
+    user.role = data.role
+    await session.commit()
+    await session.refresh(user)
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "role": user.role,
+    }
+
+
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: UUID,
@@ -250,7 +304,7 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.id == _admin.id:
-        raise HTTPException(status_code=400, detail="You cannot delete your own admin account")
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
     await session.delete(user)
     await session.commit()
     return {"id": str(user_id), "deleted": True}
@@ -322,6 +376,14 @@ TECH_COURSES_DATA = [
 
 async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
     """Helper to ensure all professional tech courses & subjects exist."""
+    from app.tenancy.models import Organization
+    default_org = await session.scalar(select(Organization).limit(1))
+    if not default_org:
+        default_org = Organization(name="Omni Training Institute", slug="omni-institute")
+        session.add(default_org)
+        await session.flush()
+    org_id = default_org.id
+
     teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
     teacher_idx = 0
     created = []
@@ -330,6 +392,7 @@ async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
         existing = await session.scalar(select(Course).where(Course.slug == c_data["slug"]))
         if not existing:
             c = Course(
+                organization_id=org_id,
                 slug=c_data["slug"],
                 status="published",
                 level=c_data["level"],
@@ -503,6 +566,14 @@ async def create_admin_course(
     await session.commit()
     await session.refresh(course)
 
+    # Automatically sync Course & Subjects into Timetable and regenerate schedule
+    try:
+        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+        await sync_courses_to_timetable_curriculum(session)
+        await generate_school_timetable(session)
+    except Exception as e:
+        print(f"[Admin Course Sync Warning]: {e}")
+
     return {
         "id": str(course.id),
         "title": data.title,
@@ -534,6 +605,51 @@ async def add_course_subject(
     await session.commit()
     await session.refresh(subject)
 
+    try:
+        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+        await sync_courses_to_timetable_curriculum(session)
+        await generate_school_timetable(session)
+    except Exception as e:
+        print(f"[Admin Subject Add Sync Warning]: {e}")
+
+    return {
+        "id": str(subject.id),
+        "course_id": str(course_id),
+        "code": subject.code,
+        "name": subject.name,
+        "teacher_id": str(subject.teacher_id) if subject.teacher_id else None,
+    }
+
+
+@router.put("/courses/{course_id}/subjects/{subject_id}")
+async def update_course_subject(
+    course_id: UUID,
+    subject_id: UUID,
+    data: AdminSubjectCreate,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    subject = await session.get(CourseSubject, subject_id)
+    if not subject or subject.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    subject.code = data.code.strip().upper()
+    subject.name = data.name.strip()
+    subject.description = data.description
+    subject.teacher_id = data.teacher_id
+    if data.color:
+        subject.color = data.color
+
+    await session.commit()
+    await session.refresh(subject)
+
+    try:
+        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+        await sync_courses_to_timetable_curriculum(session)
+        await generate_school_timetable(session)
+    except Exception as e:
+        print(f"[Admin Subject Update Sync Warning]: {e}")
+
     return {
         "id": str(subject.id),
         "course_id": str(course_id),
@@ -555,6 +671,14 @@ async def delete_course_subject(
         raise HTTPException(status_code=404, detail="Subject not found")
     await session.delete(subject)
     await session.commit()
+
+    try:
+        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+        await sync_courses_to_timetable_curriculum(session)
+        await generate_school_timetable(session)
+    except Exception as e:
+        print(f"[Admin Subject Delete Sync Warning]: {e}")
+
     return {"id": str(subject_id), "deleted": True}
 
 

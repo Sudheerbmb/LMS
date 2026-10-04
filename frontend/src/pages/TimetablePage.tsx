@@ -58,118 +58,18 @@ import {
 export const ALL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 export const DEFAULT_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-export const TRACK_TITLE_MAP: Record<number, string> = {
-  1: 'Python with Generative AI (GenAI)',
-  2: 'Salesforce Administration & Developer Track',
-  3: 'ServiceNow System Administrator & Dev Track',
-  4: 'Full Stack Web Engineering (React & Node.js)',
-  5: 'Cloud & DevOps Engineering (AWS & K8s)',
-  6: 'Python with Generative AI (Advanced)',
-  7: 'Salesforce Administration & Developer (Advanced)',
-  8: 'ServiceNow System Administrator (Advanced)',
-  9: 'Full Stack Web Engineering (Advanced)',
-  10: 'Cloud & DevOps Engineering (Advanced)',
-}
-
 export const getTrackDisplayName = (g: SchoolGrade | undefined | null) => {
-  if (!g) return 'Python with Generative AI (GenAI)'
-  if (g.grade_number && TRACK_TITLE_MAP[g.grade_number]) {
-    return TRACK_TITLE_MAP[g.grade_number]
-  }
-  const match = g.name?.match(/\d+/)
-  if (match) {
-    const num = parseInt(match[0], 10)
-    if (TRACK_TITLE_MAP[num]) return TRACK_TITLE_MAP[num]
-  }
-  return g.name || 'Technical Track'
+  if (!g) return 'Course Track'
+  return g.name || 'Course Track'
 }
 
-const TRACK_TECH_MODULES: Record<number, Record<number, { code: string; name: string; teacher: string; color: string }>> = {
-  1: {
-    1: { code: 'PY-101', name: 'Python Core & Advanced OOP', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
-    2: { code: 'GEN-201', name: 'Prompt Engineering & LangChain', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
-    3: { code: 'RAG-301', name: 'RAG Architecture & Vector DBs', teacher: 'Prof. Alan Turing', color: '#10b981' },
-    4: { code: 'AI-401', name: 'Autonomous Agents & FastAPI', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
-    5: { code: 'AI-401', name: 'Agentic AI Capstone & Live Testing', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
-    6: { code: 'PY-101', name: 'Python Asynchronous Lab', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
-    7: { code: 'GEN-201', name: 'Tool Calling & Structured Outputs', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
-    8: { code: 'RAG-301', name: 'ChromaDB & Hybrid Search', teacher: 'Prof. Alan Turing', color: '#10b981' },
-    9: { code: 'AI-401', name: 'LangGraph Multi-Agent Workflows', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
-    10: { code: 'AI-401', name: 'Docker & FastAPI Cloud Deploy', teacher: 'Dr. Sarah Connor', color: '#f59e0b' },
-    11: { code: 'PY-101', name: 'Python Metaclasses & Decorators', teacher: 'Dr. Sarah Connor', color: '#3b82f6' },
-    12: { code: 'GEN-201', name: 'Few-Shot Prompt Engineering', teacher: 'Prof. Alan Turing', color: '#8b5cf6' },
-  },
-  2: {
-    1: { code: 'SF-ADM', name: 'Salesforce Admin Essentials', teacher: 'Marc Benioff', color: '#0284c7' },
-    2: { code: 'SF-DEV', name: 'Apex Programming & SOQL Queries', teacher: 'Marc Benioff', color: '#0ea5e9' },
-    3: { code: 'SF-LWC', name: 'Lightning Web Components (LWC)', teacher: 'Marc Benioff', color: '#38bdf8' },
-    4: { code: 'SF-DEV', name: 'Apex Triggers & Governor Limits', teacher: 'Marc Benioff', color: '#0ea5e9' },
-    5: { code: 'SF-LWC', name: 'LWC Enterprise Project Lab', teacher: 'Marc Benioff', color: '#38bdf8' },
-    6: { code: 'SF-ADM', name: 'Flow Builder Automation', teacher: 'Marc Benioff', color: '#0284c7' },
-    7: { code: 'SF-DEV', name: 'Asynchronous Apex & Batch Jobs', teacher: 'Marc Benioff', color: '#0ea5e9' },
-    8: { code: 'SF-LWC', name: 'LMS Message Channel & Events', teacher: 'Marc Benioff', color: '#38bdf8' },
-    9: { code: 'SF-DEV', name: 'Apex REST Integration', teacher: 'Marc Benioff', color: '#0ea5e9' },
-    10: { code: 'SF-LWC', name: 'Lightning Data Service & Wire', teacher: 'Marc Benioff', color: '#38bdf8' },
-    11: { code: 'SF-ADM', name: 'Role Hierarchy & Security', teacher: 'Marc Benioff', color: '#0284c7' },
-    12: { code: 'SF-DEV', name: 'Apex Unit Testing & Coverage', teacher: 'Marc Benioff', color: '#0ea5e9' },
-  },
-  3: {
-    1: { code: 'SN-FND', name: 'ServiceNow Platform Administration', teacher: 'Fred Luddy', color: '#14b8a6' },
-    2: { code: 'SN-DEV', name: 'Flow Designer & Scripting', teacher: 'Fred Luddy', color: '#06b6d4' },
-    3: { code: 'SN-DEV', name: 'Business Rules & Script Includes', teacher: 'Fred Luddy', color: '#06b6d4' },
-    4: { code: 'SN-FND', name: 'ITSM Incident & SLA Workshop', teacher: 'Fred Luddy', color: '#14b8a6' },
-    5: { code: 'SN-DEV', name: 'Service Portal Widget Lab', teacher: 'Fred Luddy', color: '#06b6d4' },
-    6: { code: 'SN-FND', name: 'CMDB & User Administration', teacher: 'Fred Luddy', color: '#14b8a6' },
-    7: { code: 'SN-DEV', name: 'GlideRecord & Server APIs', teacher: 'Fred Luddy', color: '#06b6d4' },
-    8: { code: 'SN-DEV', name: 'Client Scripts & UI Policies', teacher: 'Fred Luddy', color: '#06b6d4' },
-    9: { code: 'SN-FND', name: 'Change Advisory & Problem Mgmt', teacher: 'Fred Luddy', color: '#14b8a6' },
-    10: { code: 'SN-DEV', name: 'REST Integration Spokes', teacher: 'Fred Luddy', color: '#06b6d4' },
-    11: { code: 'SN-FND', name: 'Service Catalog Configuration', teacher: 'Fred Luddy', color: '#14b8a6' },
-    12: { code: 'SN-DEV', name: 'Automated Test Framework (ATF)', teacher: 'Fred Luddy', color: '#06b6d4' },
-  },
-  4: {
-    1: { code: 'FS-REA', name: 'React 19 & TypeScript Components', teacher: 'Dan Abramov', color: '#6366f1' },
-    2: { code: 'FS-NOD', name: 'Node.js & FastAPI Architecture', teacher: 'Dan Abramov', color: '#4f46e5' },
-    3: { code: 'FS-REA', name: 'Custom Hooks & State Management', teacher: 'Dan Abramov', color: '#6366f1' },
-    4: { code: 'FS-NOD', name: 'PostgreSQL, Prisma & Microservices', teacher: 'Dan Abramov', color: '#4f46e5' },
-    5: { code: 'FS-REA', name: 'Full Stack Capstone Lab', teacher: 'Dan Abramov', color: '#6366f1' },
-    6: { code: 'FS-REA', name: 'TailwindCSS Layouts & Glass UI', teacher: 'Dan Abramov', color: '#6366f1' },
-    7: { code: 'FS-NOD', name: 'JWT Authentication & Security', teacher: 'Dan Abramov', color: '#4f46e5' },
-    8: { code: 'FS-REA', name: 'React Router & Dynamic Routes', teacher: 'Dan Abramov', color: '#6366f1' },
-    9: { code: 'FS-NOD', name: 'Database Migrations & ORM', teacher: 'Dan Abramov', color: '#4f46e5' },
-    10: { code: 'FS-REA', name: 'Performance Optimization & Vite', teacher: 'Dan Abramov', color: '#6366f1' },
-    11: { code: 'FS-NOD', name: 'REST & GraphQL API Endpoints', teacher: 'Dan Abramov', color: '#4f46e5' },
-    12: { code: 'FS-REA', name: 'Full Stack Cloud Deployment', teacher: 'Dan Abramov', color: '#6366f1' },
-  },
-  5: {
-    1: { code: 'DO-CON', name: 'Linux Automation & Docker Containers', teacher: 'Linus Torvalds', color: '#ec4899' },
-    2: { code: 'DO-CICD', name: 'CI/CD GitHub Actions & Pipelines', teacher: 'Linus Torvalds', color: '#f43f5e' },
-    3: { code: 'DO-CON', name: 'Kubernetes Pods, Ingress & Helm', teacher: 'Linus Torvalds', color: '#ec4899' },
-    4: { code: 'DO-CICD', name: 'AWS Cloud Architecture & Terraform', teacher: 'Linus Torvalds', color: '#f43f5e' },
-    5: { code: 'DO-CON', name: 'DevOps Cloud Cluster Lab', teacher: 'Linus Torvalds', color: '#ec4899' },
-    6: { code: 'DO-CON', name: 'Multi-Stage Docker Builds', teacher: 'Linus Torvalds', color: '#ec4899' },
-    7: { code: 'DO-CICD', name: 'Automated Test & Release Workflows', teacher: 'Linus Torvalds', color: '#f43f5e' },
-    8: { code: 'DO-CON', name: 'Kubernetes ConfigMaps & Secrets', teacher: 'Linus Torvalds', color: '#ec4899' },
-    9: { code: 'DO-CICD', name: 'IAM Security & AWS S3/RDS', teacher: 'Linus Torvalds', color: '#f43f5e' },
-    10: { code: 'DO-CON', name: 'Helm Charts & Package Management', teacher: 'Linus Torvalds', color: '#ec4899' },
-    11: { code: 'DO-CICD', name: 'Infrastructure as Code with Terraform', teacher: 'Linus Torvalds', color: '#f43f5e' },
-    12: { code: 'DO-CON', name: 'Production DevOps Cluster Monitoring', teacher: 'Linus Torvalds', color: '#ec4899' },
-  }
-}
-
-const getNormalizedSlot = (slot: TimetableSlot, gradeNum: number = 1) => {
-  const normGrade = ((gradeNum - 1) % 5) + 1
-  const trackModules = TRACK_TECH_MODULES[normGrade] || TRACK_TECH_MODULES[1]
-  const moduleInfo = trackModules[slot.period_number] || trackModules[1]
-
-  const isLegacy = !slot.subject_code || ['MATH', 'ENG', 'HIN', 'SCI', 'PHY', 'CHEM', 'BIO', 'SST', 'HIST', 'GEOG', 'CS', 'CTAI', 'SKILL', 'ART', 'PET', 'EVS', 'VAL'].includes(slot.subject_code)
-
+const getNormalizedSlot = (slot: TimetableSlot) => {
   return {
-    code: isLegacy ? moduleInfo.code : slot.subject_code,
-    name: isLegacy ? moduleInfo.name : slot.subject_name,
-    teacher: isLegacy ? moduleInfo.teacher : (slot.teacher_name || moduleInfo.teacher),
-    color: isLegacy ? moduleInfo.color : (slot.subject_color || moduleInfo.color),
-    room: isLegacy ? `Tech Lab ${normGrade}01` : slot.room_or_venue
+    code: slot.subject_code || (slot.slot_type === 'assembly' ? 'STANDUP' : slot.slot_type === 'lunch' ? 'BREAK' : 'SESSION'),
+    name: slot.subject_name || (slot.slot_type === 'assembly' ? 'Morning Standup & Overview' : slot.slot_type === 'lunch' ? 'Lunch & Peer Networking Break' : 'Academic Lecture'),
+    teacher: slot.teacher_name || 'Faculty Lead',
+    color: slot.subject_color || '#4f46e5',
+    room: slot.room_or_venue || 'Tech Lab'
   }
 }
 
@@ -297,17 +197,12 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         if (gradesData && gradesData.length > 0) {
           let targetGrade = gradesData[0]
           if (isStudent) {
-            const emailMatch = currentUser?.email?.match(/class(\\d+)/i)
-            const nameMatch = currentUser?.display_name?.match(/Class\\s*(\\d+)/i)
-            const matchGradeNum = emailMatch ? parseInt(emailMatch[1], 10) : nameMatch ? parseInt(nameMatch[1], 10) : null
-            if (matchGradeNum) {
-              const matched = gradesData.find(g => g.grade_number === matchGradeNum)
+            // Find grade matching student's enrolled courses if available
+            const enrolledCourses = (coursesData || []).filter((c: any) => c.is_enrolled)
+            if (enrolledCourses.length > 0) {
+              const matched = gradesData.find(g => g.name.toLowerCase() === enrolledCourses[0].title.toLowerCase())
               if (matched) targetGrade = matched
-            } else {
-              targetGrade = gradesData.find(g => g.grade_number === 9) || gradesData[0]
             }
-          } else {
-            targetGrade = gradesData.find(g => g.grade_number === 9) || gradesData[0]
           }
 
           setSelectedGradeId(targetGrade.id)
@@ -460,7 +355,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       setLaunchingLiveClass(true)
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
-      const norm = getNormalizedSlot(slot, currentGrade?.grade_number || 1)
+      const norm = getNormalizedSlot(slot)
       await createSchoolLiveClass({
         title: `${norm.name} (${norm.code}) Live Session`,
         starts_at: now.toISOString(),
@@ -1146,7 +1041,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             )
                           }
 
-                          const norm = getNormalizedSlot(slot, currentGrade?.grade_number || 1)
+                          const norm = getNormalizedSlot(slot)
                           const isSelectedForSwap = selectedSlotForSwap?.id === slot.id
 
                           return (
@@ -1747,7 +1642,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             </div>
 
             {(() => {
-              const norm = getNormalizedSlot(selectedSlotForView, currentGrade?.grade_number || 1)
+              const norm = selectedSlotForView ? getNormalizedSlot(selectedSlotForView) : null
+              if (!norm) return null
               return (
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">

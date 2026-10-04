@@ -234,11 +234,26 @@ async def create_school_live_class_endpoint(
             "zoom_status": live_class.zoom_status,
             "zoom_last_synced_at": live_class.zoom_last_synced_at,
         }
+    except ScheduleConflictError as conflict_err:
+        logger.warning("Schedule conflict detected: %s", conflict_err)
+        raise HTTPException(status_code=409, detail=str(conflict_err)) from conflict_err
     except Exception as error:
         logger.error("Failed to create live class: %s", error)
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
+@router.post("/courses/{course_id}/classes", response_model=LiveClassRead, status_code=status.HTTP_201_CREATED)
+async def create_course_live_class_endpoint(
+    course_id: UUID,
+    data: LiveClassCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    data.course_id = course_id
+    return await create_school_live_class_endpoint(data=data, current_user=current_user, session=session)
+
+
+@router.get("/schedule", response_model=List[LiveClassRead])
 @router.get("/classes", response_model=List[LiveClassRead])
 async def get_school_live_classes_endpoint(
     grade_number: Optional[int] = Query(None),

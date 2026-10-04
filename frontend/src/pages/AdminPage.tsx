@@ -22,6 +22,8 @@ import {
   getNotifications,
   deleteNotification,
   flushAllNotifications,
+  updateAdminCourseSubject,
+  syncCoursesToTimetable,
 } from '../lib/api'
 import {
   Users,
@@ -353,6 +355,28 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       await loadAllData()
     } catch (err: any) {
       alert(`Seeding failed: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAssignTeacherToSubject = async (courseId: string, subjectId: string, teacherId: string) => {
+    try {
+      await updateAdminCourseSubject(courseId, subjectId, { teacher_id: teacherId || null })
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Failed to assign instructor: ${err.message}`)
+    }
+  }
+
+  const handleSyncCoursesAndTimetable = async () => {
+    try {
+      setLoading(true)
+      const res = await syncCoursesToTimetable()
+      alert(`Synced! ${res.courses_synced} courses and ${res.subjects_synced} subjects synchronized with master timetable.`)
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Sync failed: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -802,6 +826,40 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       {/* ── Tab 3: Courses & Subject Architecture ─────────────────────────── */}
       {activeTab === 'courses' && (
         <div className="space-y-6">
+          {/* Top Actions Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl">
+            <div>
+              <h3 className="text-sm font-bold text-white">Course Tracks & Modular Hierarchy</h3>
+              <p className="text-[11px] text-slate-400">All subjects automatically link to teacher timetable grids and student dashboards.</p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={handleSyncCoursesAndTimetable}
+                disabled={loading}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                title="Synchronize course subjects into timetable slots"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <span>Sync with Timetable</span>
+              </button>
+              <button
+                onClick={handleSeedTechTracks}
+                disabled={loading}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Re-seed 5 Tracks</span>
+              </button>
+              <button
+                onClick={() => setShowAddCourseModal(true)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Track</span>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-6">
             {courses.length === 0 ? (
               <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-500 space-y-4">
@@ -916,11 +974,20 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2 pt-2 border-t border-slate-900 text-[11px]">
-                              <span className="text-slate-500 font-medium">Faculty:</span>
-                              <span className="text-amber-300 font-semibold truncate">
-                                {subj.teacher_name || 'Unassigned'}
-                              </span>
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-900 text-[11px]">
+                              <span className="text-slate-500 font-medium shrink-0">Faculty:</span>
+                              <select
+                                value={subj.teacher_id || ''}
+                                onChange={(e) => handleAssignTeacherToSubject(course.id, subj.id, e.target.value)}
+                                className="bg-slate-900 border border-slate-700/80 rounded-md px-2 py-0.5 text-[11px] text-amber-300 font-semibold focus:outline-none focus:border-amber-500 max-w-[170px] truncate"
+                              >
+                                <option value="">Unassigned</option>
+                                {teachersList.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.display_name}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
                           </div>
                         ))}

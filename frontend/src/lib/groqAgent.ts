@@ -7,10 +7,7 @@ const getGroqKey = () => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GROQ_API_KEY) {
     return import.meta.env.VITE_GROQ_API_KEY
   }
-  // Standard runtime key resolution
-  const p1 = 'gsk_'
-  const p2 = 'B2qjrbj1FGaq3crAiSiiWGdyb3FYvBxMzUPmTpcUTPreNFAWLaVZ'
-  return `${p1}${p2}`
+  return ''
 }
 
 const GROQ_API_KEY = getGroqKey()

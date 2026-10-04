@@ -132,7 +132,7 @@ async def reason_copilot_intent(req: CopilotReasonRequest) -> CopilotReasonRespo
     # ── FALLBACK AGENT REASONING ENGINE (Context-Aware) ──────────────────────
     lower = query.lower()
 
-    if "start class" in lower or "launch class" in lower or "start lecture" in lower or "create class" in lower:
+    if any(k in lower for k in ["start class", "start live class", "live class", "launch class", "start lecture", "create class", "start a class"]):
         if role == "student":
             return CopilotReasonResponse(
                 action_type="RESTRICTED_ACTION",

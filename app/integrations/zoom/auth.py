@@ -33,8 +33,14 @@ class ZoomOAuthManager:
         self._lock = asyncio.Lock()
 
     def is_configured(self) -> bool:
-        """Returns True if full S2S OAuth credentials are present."""
-        return bool(self.account_id and self.client_id and self.client_secret)
+        """Returns True if full S2S OAuth credentials are present and not placeholders."""
+        if not (self.account_id and self.client_id and self.client_secret):
+            return False
+        placeholders = ("your-", "dummy", "placeholder", "mock", "example", "none", "xxx")
+        for p in placeholders:
+            if p in self.account_id.lower() or p in self.client_id.lower() or p in self.client_secret.lower():
+                return False
+        return True
 
     async def get_access_token(self, force_refresh: bool = False) -> str:
         """

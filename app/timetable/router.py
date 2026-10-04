@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.identity.auth import get_current_user
+from app.identity.auth import get_current_user, get_optional_user
 from app.identity.models import User
 from app.platform.database import get_session
 from app.timetable.models import (
@@ -49,6 +49,7 @@ from app.timetable.service import (
     get_all_timetable_rules,
     get_timetable_grid,
     seed_school_defaults,
+    sync_courses_to_timetable_curriculum,
     swap_slots,
     toggle_timetable_rule,
     update_slot,
@@ -63,13 +64,22 @@ router = APIRouter(prefix="/api/v1/timetable", tags=["timetable"])
 async def seed_defaults_endpoint(
     session: AsyncSession = Depends(get_session),
 ):
-    """Initializes Grades 1 to 10, subjects, curricula, teacher profiles, dynamic policy rules, and sample reviews."""
+    """Initializes courses, tracks, subjects, curricula, teacher profiles, dynamic policy rules, and sample reviews."""
     result = await seed_school_defaults(session)
     return {
         "status": "success",
-        "message": "Initialized Grades 1-10, CBSE-aligned subjects, teacher faculty, dynamic rules, and sample feedback restrictions.",
+        "message": "Initialized course tracks, subjects, teacher faculty, dynamic rules, and sample feedback restrictions.",
         "data": result,
     }
+
+
+@router.post("/sync-courses", response_model=Dict[str, Any])
+async def sync_courses_endpoint(
+    session: AsyncSession = Depends(get_session),
+):
+    """Synchronizes active course catalog modules and assigned teachers into the timetable curriculum engine."""
+    result = await sync_courses_to_timetable_curriculum(session)
+    return result
 
 
 @router.post("/generate", response_model=TimetableGenerationResult)
@@ -81,17 +91,28 @@ async def generate_timetable_endpoint(
     return result
 
 
+@router.get("/my-schedule", response_model=List[TimetableSlotRead])
+async def get_my_schedule_endpoint(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns the personalized weekly schedule for the authenticated student or teacher."""
+    return await get_timetable_grid(session, user=current_user)
+
+
 @router.get("/grid", response_model=List[TimetableSlotRead])
 async def get_grid_endpoint(
     section_id: Optional[UUID] = Query(None, description="Filter by section ID"),
     grade_id: Optional[UUID] = Query(None, description="Filter by grade ID"),
     teacher_id: Optional[UUID] = Query(None, description="Filter by teacher profile ID"),
     day_of_week: Optional[str] = Query(None, description="Filter by weekday (Monday - Friday)"),
+    current_user: Optional[User] = Depends(get_optional_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Retrieves timetable slots formatted for weekly display."""
+    """Retrieves timetable slots formatted for weekly display with student/teacher role awareness."""
     return await get_timetable_grid(
         session,
+        user=current_user,
         section_id=section_id,
         grade_id=grade_id,
         teacher_id=teacher_id,
