@@ -74,8 +74,8 @@ async def call_groq_llm_for_crew(messages: List[Dict[str, str]]) -> Optional[str
     return None
 
 async def run_crew_curriculum_designer(req: CrewCurriculumRequest) -> CrewCurriculumResponse:
-    topic = req.topic.strip() or "Calculus & Optimization"
-    grade = req.grade_level.strip() or "Class 10"
+    topic = req.topic.strip() or "Autonomous AI Agents with LangGraph & Multi-Agent Systems"
+    grade = req.grade_level.strip() or "Track 1: Python & GenAI"
 
     groq_crew_prompt = [
         {

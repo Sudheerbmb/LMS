@@ -29,8 +29,8 @@ router = APIRouter(prefix="/api/v1/lens", tags=["LENS-Omega & SN1 Adaptive Engin
 # ── Request / Response Schemas ───────────────────────────────────────────────
 
 class GenerateDiagnosticRequest(BaseModel):
-    grade_name: str = Field(default="Class 4")
-    subjects: List[str] = Field(default=["Mathematics", "Science (EVS)", "English Grammar", "Social Studies"])
+    grade_name: str = Field(default="Track 1: Python & GenAI")
+    subjects: List[str] = Field(default=["Python Core & OOP", "Prompt Engineering & LLMs", "RAG & Vector DBs", "Autonomous AI Agents"])
     num_questions: int = Field(default=6)
 
 
@@ -43,8 +43,8 @@ class SubmitDiagnosticRequest(BaseModel):
 
 
 class DrillGenerateRequest(BaseModel):
-    grade_name: str = "Class 4"
-    subject: str = "Mathematics"
+    grade_name: str = "Track 1: Python & GenAI"
+    subject: str = "Python Core & OOP"
     concept_id: str
     concept_name: str
     num_questions: int = 3
@@ -64,7 +64,7 @@ class DrillSubmitRequest(BaseModel):
 
 class SN1ChatRequest(BaseModel):
     query: str
-    grade_name: Optional[str] = "Class 4"
+    grade_name: Optional[str] = "Track 1: Python & GenAI"
     subjects: Optional[List[str]] = None
     state_vector: Optional[Dict[str, Any]] = None
 
@@ -330,7 +330,7 @@ async def sn1_chat(
     """
     Live AI SN1 student agent chat executed via LangGraph multi-node state machine.
     """
-    subjects = req.subjects or ["Mathematics", "Science (EVS)", "English Grammar", "Social Studies"]
+    subjects = req.subjects or ["Python Core & OOP", "Prompt Engineering & LLMs", "RAG & Vector DBs", "Autonomous AI Agents"]
     state_vec = req.state_vector or {
         "is_calibrated": False,
         "mastery": 0.0,
@@ -342,7 +342,7 @@ async def sn1_chat(
 
     graph_res = await execute_sn1_langgraph(
         student_name=user_name,
-        grade_name=req.grade_name or "Class 4",
+        grade_name=req.grade_name or "Track 1: Python & GenAI",
         subjects=subjects,
         state_vector=state_vec,
         user_query=req.query

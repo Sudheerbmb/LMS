@@ -105,28 +105,30 @@ def assess_state_node(state: CognitiveAgentState) -> Dict[str, Any]:
 
 
 def retrieve_curriculum_node(state: CognitiveAgentState) -> Dict[str, Any]:
-    """Node 2: Dynamic Curriculum Grounding & Concept Retrieval"""
-    grade = state.get("grade_name", "Class 4")
-    subjects = state.get("subjects", ["Mathematics", "Science (EVS)"])
+    """Node 2: Dynamic Curriculum Grounding & Concept Retrieval for Technical Tracks"""
+    grade = state.get("grade_name", "Track 1: Python & GenAI")
+    subjects = state.get("subjects", ["Python Core & OOP", "Prompt Engineering & LLMs"])
 
-    # Extract grade number
+    # Match track from grade_name or fallback to track 1
     import re
     g_match = re.search(r"(\d+)", grade)
-    g_num = int(g_match.group(1)) if g_match else 4
+    t_idx = (int(g_match.group(1)) - 1) if g_match else 0
 
-    curriculum_keys = [k for k in CHAPTERS_DB.keys() if f"_{g_num}" in k]
+    from app.timetable.curriculum_data import TECH_CURRICULUM
+    target_track = TECH_CURRICULUM[t_idx % len(TECH_CURRICULUM)] if TECH_CURRICULUM else None
+
     retrieved = []
-
-    for k in curriculum_keys:
-        chapters = CHAPTERS_DB.get(k, [])
-        ch_titles = [c.get("title", "") for c in chapters[:3]]
-        retrieved.append(f"{k.replace(f'_{g_num}', '')} (Grade {g_num}): Chapters -> {', '.join(ch_titles)}")
-
-    if not retrieved:
-        retrieved.append(f"Standard Grade {g_num} foundational curriculum in {', '.join(subjects)}.")
+    if target_track:
+        track_title = target_track.get("title", grade)
+        for subj in target_track.get("subjects", []):
+            retrieved.append(f"{subj.get('code', 'MOD')}: {subj.get('name')} - {subj.get('description')}")
+        for ch in target_track.get("chapters", [])[:4]:
+            retrieved.append(f"Chapter {ch.get('num')}: {ch.get('title')} ({', '.join(ch.get('topics', []))})")
+    else:
+        retrieved.append(f"Curriculum grounding for {grade} covering {', '.join(subjects)}.")
 
     trace = state.get("pedagogical_trace", [])
-    trace.append(f"Grounding curriculum context for Grade {g_num} ({len(retrieved)} subject modules retrieved)")
+    trace.append(f"Grounding curriculum context for {grade} ({len(retrieved)} modules/chapters retrieved)")
 
     return {
         "retrieved_curriculum": retrieved,
@@ -137,7 +139,7 @@ def retrieve_curriculum_node(state: CognitiveAgentState) -> Dict[str, Any]:
 async def generate_response_node(state: CognitiveAgentState) -> Dict[str, Any]:
     """Node 3: Pedagogical Synthesis with Groq LPU API"""
     student_name = state.get("student_name", "Student")
-    grade_name = state.get("grade_name", "Class 4")
+    grade_name = state.get("grade_name", "Track 1: Python & GenAI")
     user_query = state.get("user_query", "")
     diagnostics = state.get("concept_diagnostics", [])
     curriculum = state.get("retrieved_curriculum", [])

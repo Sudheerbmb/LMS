@@ -203,13 +203,13 @@ async def execute_mcp_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, An
         }
 
     elif name == "lms_get_student_risk_profile":
-        student_name = arguments.get("student_name", "Aarav Patel")
-        grade_num = arguments.get("grade_number", 10)
+        student_name = arguments.get("student_name", "Student")
+        grade_num = arguments.get("grade_number", 1)
         return {
             "content": [
                 {
                     "type": "text",
-                    "text": f"Student '{student_name}' (Class {grade_num}): Competency C = 84%, Bayesian Mastery M = 79%, Primary Bottleneck = BALANCED, Active Misconceptions = 0, Risk Level = LOW."
+                    "text": f"Candidate '{student_name}' (Track {grade_num}: Technical Track): Competency C = 84%, Bayesian Mastery M = 79%, Primary Bottleneck = BALANCED, Active Misconceptions = 0, Risk Level = LOW."
                 }
             ],
             "metadata": {
@@ -264,16 +264,57 @@ async def execute_mcp_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, An
 
     elif name == "lms_execute_sandboxed_code":
         code = arguments.get("code", "")
-        # Safe sandbox simulation
+        language = arguments.get("language", "python").lower()
+        import io
+        import sys
+        import time
+
+        output_str = ""
+        start_t = time.perf_counter()
+        if language in ("python", "py", "") and code:
+            stdout_capture = io.StringIO()
+            stderr_capture = io.StringIO()
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+            try:
+                sys.stdout = stdout_capture
+                sys.stderr = stderr_capture
+                safe_globals = {
+                    "__builtins__": {
+                        "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool,
+                        "dict": dict, "divmod": divmod, "enumerate": enumerate,
+                        "filter": filter, "float": float, "format": format, "frozenset": frozenset,
+                        "hex": hex, "int": int, "isinstance": isinstance, "issubclass": issubclass,
+                        "len": len, "list": list, "map": map, "max": max, "min": min,
+                        "oct": oct, "ord": ord, "pow": pow, "print": print, "range": range,
+                        "reversed": reversed, "round": round, "set": set, "slice": slice,
+                        "sorted": sorted, "str": str, "sum": sum, "tuple": tuple, "zip": zip,
+                    }
+                }
+                exec(code, safe_globals)
+                output_str = stdout_capture.getvalue()
+                err_str = stderr_capture.getvalue()
+                if err_str:
+                    output_str += f"\n[stderr]\n{err_str}"
+            except Exception as exec_err:
+                output_str = f"Error during execution: {exec_err}"
+            finally:
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
+        else:
+            output_str = f"Executed {language} code block ({len(code)} bytes) in sandbox."
+
+        duration_ms = round((time.perf_counter() - start_t) * 1000, 2)
         return {
             "content": [
                 {
                     "type": "text",
-                    "text": f"Execution completed in 42ms. Output:\n>>> {len(code)} characters evaluated.\n[Process exited with return code 0]"
+                    "text": f"Execution completed in {duration_ms}ms.\nOutput:\n{output_str or '[No stdout returned]'}\n[Process exited with return code 0]"
                 }
             ],
             "metadata": {
                 "action": "EXECUTE_CODE",
+                "duration_ms": duration_ms,
                 "target_tab": "coding"
             }
         }

@@ -46,13 +46,13 @@ Return ONLY a JSON object with a key "questions" containing a list of {num_quest
 }}
 
 Requirements:
-1. Ensure questions strictly match {grade_name} standard curriculum (e.g. Class 4 for grade 4, Class 10 for grade 10).
+1. Ensure questions strictly match {grade_name} curriculum topics in {', '.join(subjects)}.
 2. Exactly 4 options per question with 1 unambiguous correct answer.
-3. Vary cognitive levels across FOUNDATION, APPLICATION, REASONING.
+3. Vary cognitive levels across FOUNDATION, APPLICATION, REASONING, TRANSFER.
 """
     response_text = await call_groq_llm(
         messages=[
-            {"role": "system", "content": "You are a specialized curriculum psychometric test generator. Output valid JSON only."},
+            {"role": "system", "content": "You are a specialized technical institute psychometric assessment generator. Output valid JSON only."},
             {"role": "user", "content": prompt}
         ],
         model="llama-3.3-70b-versatile",
@@ -67,133 +67,69 @@ Requirements:
         except Exception as e:
             print(f"JSON parsing error: {e}")
 
-    # High-fidelity grade-aligned fallback if network is unreachable
-    if "4" in grade_name or "5" in grade_name:
-        return [
-            {
-                "id": "q1",
-                "subject": "Mathematics",
-                "concept": "Multi-digit Arithmetic",
-                "prompt": "What is the product of 34 × 12?",
-                "options": ["398", "408", "418", "428"],
-                "correct_index": 1,
-                "difficulty": 0.40,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q2",
-                "subject": "Science (EVS)",
-                "concept": "Plant Photosynthesis",
-                "prompt": "What gas do green plants absorb from the air during photosynthesis?",
-                "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
-                "correct_index": 1,
-                "difficulty": 0.35,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q3",
-                "subject": "Mathematics",
-                "concept": "Fractions",
-                "prompt": "Which fraction is larger: 3/5 or 2/5?",
-                "options": ["2/5", "3/5", "They are equal", "Cannot be compared"],
-                "correct_index": 1,
-                "difficulty": 0.45,
-                "cognitive_level": "APPLICATION",
-            },
-            {
-                "id": "q4",
-                "subject": "English Grammar",
-                "concept": "Parts of Speech",
-                "prompt": "Which word is a verb in: 'The children played happily in the garden.'?",
-                "options": ["Children", "Played", "Happily", "Garden"],
-                "correct_index": 1,
-                "difficulty": 0.30,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q5",
-                "subject": "Science (EVS)",
-                "concept": "States of Matter",
-                "prompt": "When water freezes into ice, it changes from a:",
-                "options": ["Liquid to a Solid", "Solid to a Gas", "Gas to a Liquid", "Liquid to a Gas"],
-                "correct_index": 0,
-                "difficulty": 0.30,
-                "cognitive_level": "APPLICATION",
-            },
-            {
-                "id": "q6",
-                "subject": "Social Studies",
-                "concept": "Maps & Directions",
-                "prompt": "If you face the rising sun in the morning, which direction is to your left?",
-                "options": ["West", "South", "North", "East"],
-                "correct_index": 2,
-                "difficulty": 0.50,
-                "cognitive_level": "REASONING",
-            },
-        ]
-    else:
-        return [
-            {
-                "id": "q1",
-                "subject": "Mathematics",
-                "concept": "Quadratic Equations",
-                "prompt": "What are the roots of the quadratic equation x² - 5x + 6 = 0?",
-                "options": ["x = 2, 3", "x = -2, -3", "x = 1, 6", "x = -1, -6"],
-                "correct_index": 0,
-                "difficulty": 0.45,
-                "cognitive_level": "APPLICATION",
-            },
-            {
-                "id": "q2",
-                "subject": "Physics & Chemistry",
-                "concept": "Chemical Equations",
-                "prompt": "In the reaction 2H₂ + O₂ → 2H₂O, the ratio of hydrogen to oxygen molecules is:",
-                "options": ["1:1", "2:1", "1:2", "2:2"],
-                "correct_index": 1,
-                "difficulty": 0.40,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q3",
-                "subject": "Physics & Chemistry",
-                "concept": "Refraction of Light",
-                "prompt": "The ratio of the speed of light in a vacuum to the speed of light in a medium is called:",
-                "options": ["Refractive Index", "Focal Length", "Power of Lens", "Dispersion Index"],
-                "correct_index": 0,
-                "difficulty": 0.50,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q4",
-                "subject": "Life Sciences",
-                "concept": "Cellular Respiration",
-                "prompt": "The first step of glucose breakdown occurring in the cytoplasm without oxygen is:",
-                "options": ["Krebs Cycle", "Glycolysis", "Electron Transport", "Fermentation"],
-                "correct_index": 1,
-                "difficulty": 0.55,
-                "cognitive_level": "REASONING",
-            },
-            {
-                "id": "q5",
-                "subject": "Mathematics",
-                "concept": "Trigonometry",
-                "prompt": "If tan(θ) = 1, what is the value of θ for 0° < θ < 90°?",
-                "options": ["30°", "45°", "60°", "90°"],
-                "correct_index": 1,
-                "difficulty": 0.35,
-                "cognitive_level": "FOUNDATION",
-            },
-            {
-                "id": "q6",
-                "subject": "Social Science",
-                "concept": "Democratic Politics",
-                "prompt": "Power sharing between different levels of government (Central, State, Local) is known as:",
-                "options": ["Horizontal Division", "Vertical Division", "Community Government", "Coalition Power"],
-                "correct_index": 1,
-                "difficulty": 0.45,
-                "cognitive_level": "APPLICATION",
-            },
-        ]
+    # High-fidelity technical institute aligned fallback bank
+    return [
+        {
+            "id": "q1",
+            "subject": "Python Core & Advanced OOP",
+            "concept": "AsyncIO & Structured Concurrency",
+            "prompt": "In Python 3.12+, which construct provides structured concurrency ensuring all child tasks complete or cancel gracefully?",
+            "options": ["async with asyncio.TaskGroup() as tg: ...", "asyncio.gather(*tasks)", "threading.Thread(target=task).start()", "loop.run_until_complete(tasks)"],
+            "correct_index": 0,
+            "difficulty": 0.45,
+            "cognitive_level": "APPLICATION",
+        },
+        {
+            "id": "q2",
+            "subject": "Prompt Engineering, LLMs & LangChain",
+            "concept": "LangChain LCEL Runnables",
+            "prompt": "Which LangChain Runnable primitive allows passing incoming state unmodified to subsequent dictionary branches?",
+            "options": ["RunnablePassthrough()", "RunnableFallback()", "RunnableLambda()", "RunnableSequence()"],
+            "correct_index": 0,
+            "difficulty": 0.40,
+            "cognitive_level": "FOUNDATION",
+        },
+        {
+            "id": "q3",
+            "subject": "RAG & Vector DBs",
+            "concept": "Vector Indexing Algorithms",
+            "prompt": "Which graph-based index algorithm is most widely used in vector databases for sub-millisecond Approximate Nearest Neighbor (ANN) search?",
+            "options": ["HNSW (Hierarchical Navigable Small World)", "B-Tree Indexing", "Inverted Hash Table", "Radix Tree"],
+            "correct_index": 0,
+            "difficulty": 0.50,
+            "cognitive_level": "REASONING",
+        },
+        {
+            "id": "q4",
+            "subject": "Autonomous Agents & FastAPI Deployment",
+            "concept": "LangGraph Stateful Agents",
+            "prompt": "In LangGraph multi-agent architectures, what component manages graph memory persistence and time-travel debugging?",
+            "options": ["BaseCheckpointSaver (e.g. MemorySaver)", "FastAPI BackgroundTasks", "HTTP Session Cookies", "Uvicorn Worker State"],
+            "correct_index": 0,
+            "difficulty": 0.55,
+            "cognitive_level": "REASONING",
+        },
+        {
+            "id": "q5",
+            "subject": "Enterprise Backend & Cloud",
+            "concept": "Database Concurrency & ACID",
+            "prompt": "In SQLAlchemy AsyncSession, what occurs if an unhandled exception triggers before session.commit()?",
+            "options": ["The transaction rolls back automatically upon context manager exit", "Data is partially persisted to disk", "The connection pool hangs indefinitely", "The database table locks permanently"],
+            "correct_index": 0,
+            "difficulty": 0.45,
+            "cognitive_level": "APPLICATION",
+        },
+        {
+            "id": "q6",
+            "subject": "Cloud & DevOps AWS SRE",
+            "concept": "Docker Multi-Stage Optimization",
+            "prompt": "Why are multi-stage Docker builds recommended for Python & React production containers?",
+            "options": ["They exclude build tools and compilers from the final image, drastically reducing size and attack surface", "They increase CPU clock speed during runtime", "They bypass the need for environment variables", "They allow running multiple OS kernels in one container"],
+            "correct_index": 0,
+            "difficulty": 0.35,
+            "cognitive_level": "FOUNDATION",
+        },
+    ]
 
 
 async def generate_sn1_chat_response(

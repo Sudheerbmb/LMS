@@ -75,43 +75,43 @@ Strict Rules:
     console.warn(`Groq live question generation fallback for ${subject}:`, err)
   }
 
-  // High-fidelity fallback bank
+  // High-fidelity fallback bank for technical training institute modules
   return [
     {
       id: `${subject}_fallback_1`,
       subject,
       concept_id: `${subject}_c1`,
-      concept_name: `${subject} Fundamentals`,
-      prompt: `In ${gradeName} ${subject}, which statement represents a core foundational rule?`,
+      concept_name: `${subject} Architecture & Core Principles`,
+      prompt: `In ${gradeName} (${subject}), which architectural pattern best ensures high availability, maintainability, and clean separation of concerns?`,
       options: [
-        `Accurately analyzing the problem before applying equations or rules in ${subject}`,
-        'Guessing randomly without checking steps',
-        'Skipping calculations and memorizing final answers',
-        'Ignoring units and dimensions',
+        `Layered service and repository architecture with explicit contracts in ${subject}`,
+        'Placing all database queries, UI logic, and business rules inside a single global script',
+        'Suppressing all exceptions and error logging',
+        'Hardcoding credentials and configurations directly in source files',
       ],
       correct_index: 0,
-      difficulty: 0.30,
+      difficulty: 0.35,
       cognitive_level: 'FOUNDATION',
-      explanation: 'Foundational analytical reasoning is the primary prerequisite for conceptual mastery.',
-      misconception_tag: 'premature_calculation_error',
+      explanation: 'Layered architecture segregates business rules, data access, and transport layers cleanly.',
+      misconception_tag: 'monolithic_coupling_misconception',
     },
     {
       id: `${subject}_fallback_2`,
       subject,
       concept_id: `${subject}_c2`,
-      concept_name: `${subject} Applied Methods`,
-      prompt: `When encountering a novel multi-step problem in ${subject}, what is the optimal procedure?`,
+      concept_name: `${subject} Production Diagnostics & Resilience`,
+      prompt: `When debugging an unexpected latency bottleneck or throughput degradation in ${subject}, what is the recommended practice?`,
       options: [
-        'Decompose the problem into sub-goals and systematically solve each stage',
-        'Combine numbers randomly without logical justification',
-        'Give up immediately on unfamiliar questions',
-        'Assume the shortest answer is always correct',
+        'Profile trace spans, inspect slow database queries, and analyze asynchronous event loop lag',
+        'Restart the server repeatedly without reading error logs',
+        'Disable all database indexing to speed up queries',
+        'Remove request validation middleware',
       ],
       correct_index: 0,
-      difficulty: 0.50,
+      difficulty: 0.55,
       cognitive_level: 'APPLICATION',
-      explanation: 'Problem decomposition ensures manageable cognitive load and error isolation.',
-      misconception_tag: 'decomposition_omission',
+      explanation: 'APM profiling and query execution plan analysis identify root performance bottlenecks systematically.',
+      misconception_tag: 'blind_debugging_omission',
     },
   ]
 }
