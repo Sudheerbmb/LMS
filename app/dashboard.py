@@ -45,6 +45,7 @@ async def summary(
     )
     assessments = await session.scalar(select(func.count(Assessment.id))) or 0
     coding_exercises = await session.scalar(select(func.count(CodingExercise.id))) or 0
+    events = await session.scalar(select(func.count(OutboxEvent.id))) or 0
     non_legacy_filter = [
         ~User.email.like("%@school.edu"),
         ~User.display_name.like("%Class %"),
