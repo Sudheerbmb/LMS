@@ -6,8 +6,7 @@ import type {
 } from '../lib/api'
 import { 
   getAdminCourses, 
-  getMyEnrollments, 
-  enrollInCourse,
+  getMyEnrollments,
 } from '../lib/api'
 import { 
   Search, 
@@ -160,16 +159,6 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
       console.error('Failed to load courses data:', err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleEnroll = async (courseId: string) => {
-    try {
-      await enrollInCourse(courseId)
-      await loadData()
-      alert('Successfully enrolled in the technical track!')
-    } catch (err: any) {
-      alert(err.message || 'Failed to enroll')
     }
   }
 
@@ -439,12 +428,9 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     </button>
 
                     {user.role === 'student' && !isEnrolled && (
-                      <button
-                        onClick={() => handleEnroll(course.id)}
-                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all"
-                      >
-                        Enroll
-                      </button>
+                      <span className="py-2.5 px-3 rounded-xl bg-slate-800/80 text-slate-400 text-[11px] font-semibold border border-slate-700/60 flex items-center justify-center">
+                        Admin Assigned
+                      </span>
                     )}
                   </div>
                 </div>

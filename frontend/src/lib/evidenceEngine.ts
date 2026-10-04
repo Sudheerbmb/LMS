@@ -356,7 +356,7 @@ export function getCohortForGrade(gradeNumber: number): CohortStudentProfile[] {
           competency: Number(customC.toFixed(2)),
           uncertainty: Number(customU.toFixed(2)),
           bottleneck: item.bType as any,
-          active_misconceptions: item.bType === 'MISCONCEPTION' && cIdx === 0 ? ['sign_reversal_error'] : [],
+          active_misconceptions: item.bType === 'MISCONCEPTION' && cIdx === 0 ? ['async_blocking_event_loop'] : [],
         }
       })
 

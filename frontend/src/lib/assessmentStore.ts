@@ -263,40 +263,41 @@ export async function generateAIQuestionSet(
     ? `\n\nATTACHED REFERENCE SYLLABUS / EXAM DOCUMENT CONTENT:\n"""\n${documentText.slice(0, 4000)}\n"""\nDirectly synthesize the question items based strictly upon this document text!`
     : ''
 
-  const prompt = `You are an elite academic curriculum architect and senior examination board setter (CBSE/ICSE/IB standard).
-Generate an ultra-rigorous, deeply specific ${questionCount}-question examination paper for **${grade} ${subject}** on the syllabus topic **"${topic}"**.
+  const prompt = `You are an elite Principal Software Architect, Cloud Systems Engineer, and Senior Technical Curriculum Director.
+Generate an ultra-rigorous, production-grade ${questionCount}-question technical benchmark exam for **${grade} • ${subject}** on the topic **"${topic}"**.
 
 ${docSection}
 
 STRICT SPECIFICATION REQUIREMENTS:
 1. **NO GENERIC OR TRIVIAL QUESTIONS**:
-   - For Mathematics: Use actual equations, exact coefficients, multi-step problem solving, real discriminant analysis, geometric theorems, or word problems.
-   - For Science/Physics/Chemistry: Use concrete reactions (balanced equations), physical constants, circuit diagrams/laws (Ohm's, Snell's), biological mechanisms (enzymatic reactions, photosynthesis light/dark phase).
-   - For English/Social: Deep analytical text synthesis, historical chronology, constitutional articles.
+   - For Python & Generative AI: Concrete code snippets, async coroutines, Pydantic V2 models, LangChain LCEL runnables, RAG embeddings, vector search indexes (HNSW, cosine similarity), or token optimization.
+   - For Full Stack / React / Node / FastAPI: Component lifecycles, hook memoization, state machine reducers, async SQLAlchemy ORM queries, JWT authentication, or REST/GraphQL schema contracts.
+   - For Salesforce / ServiceNow: Apex trigger architecture, governor limit mitigation, SOQL relationship queries, Lightning Web Components, GlideRecord, Script Includes, and ACL security rules.
+   - For Cloud & DevOps: Docker multi-stage builds, Kubernetes pod lifecycle, AWS VPC/IAM security, CI/CD pipeline automation, and Linux kernel fundamentals.
 2. **COGNITIVE TAXONOMY DISTRIBUTION**:
-   - 1 FOUNDATION item (Rigorous definition / core theorem test)
-   - 2 APPLICATION items (Multi-step calculation or direct problem solving)
-   - 1 REASONING item (Conceptual derivation or "Why/Explain" question)
-   - 1 TRANSFER item (Novel problem formulation or inter-disciplinary challenge)
+   - 1 FOUNDATION item (Core syntax, architectural definitions, time complexity)
+   - 2 APPLICATION items (Code evaluation, bug fixing, API construction, or governor limit handling)
+   - 1 REASONING item (System trade-off analysis, concurrency bottleneck diagnosis)
+   - 1 TRANSFER item (End-to-end architectural design or production failover scenario)
 3. **OPTIONS & DISTRACTORS**:
-   - Provide 4 distinct options where the distractors represent authentic, common student misconceptions (e.g., sign errors, forgetting to square, inverted fractions).
+   - Provide 4 distinct options where the distractors represent authentic, common software engineering bugs (e.g., race conditions, blocking event loop, memory leaks, unhandled exceptions).
    - Exactly ONE option must be correct. Provide correct_answer as the integer index (0, 1, 2, or 3).
 4. **EXPLANATION**:
-   - Provide a full mathematical or scientific step-by-step derivation.
+   - Provide a full architectural breakdown and code derivation.
 
 Return ONLY a valid JSON object matching this schema exactly (no markdown backticks outside, pure JSON):
 {
   "questions": [
     {
       "id": "q1",
-      "question_text": "Rigorously formatted question prompt with exact values and notation.",
+      "question_text": "Rigorously formatted technical question with exact code snippets or architectural specifications.",
       "question_type": "multiple_choice",
-      "options": ["Option A (Exact formula/value)", "Option B (Misconception)", "Option C", "Option D"],
+      "options": ["Option A (Correct architectural solution)", "Option B (Subtle anti-pattern / bug)", "Option C", "Option D"],
       "correct_answer": 0,
       "points": 10,
       "cognitive_level": "APPLICATION",
       "concept_name": "${topic}",
-      "explanation": "Complete step-by-step mathematical/scientific derivation."
+      "explanation": "Complete technical explanation and production best practice analysis."
     }
   ]
 }`

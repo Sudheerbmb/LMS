@@ -349,7 +349,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </div>
             <div className="text-3xl font-black text-amber-400 font-mono">{cohortData.length}</div>
             <div className="text-[11px] text-slate-500">
-              {selectedClassGrade === 0 ? 'Across Entire School' : `Enrolled in Class ${selectedClassGrade}`}
+              {selectedClassGrade === 0 ? 'Across Entire Institute' : `Enrolled in Track ${selectedClassGrade}`}
             </div>
           </div>
 
@@ -373,11 +373,11 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
           <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
             <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-              <span>High Risk Students</span>
+              <span>High Risk Candidates</span>
               <AlertTriangle className="w-4 h-4 text-rose-400" />
             </div>
             <div className="text-3xl font-black text-rose-400 font-mono">{highRiskCount}</div>
-            <div className="text-[11px] text-slate-500">Require Direct Intervention</div>
+            <div className="text-[11px] text-slate-500">Require Direct Faculty Mentorship</div>
           </div>
 
           <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
@@ -387,7 +387,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </div>
             <div className="text-3xl font-black text-amber-400 font-mono">{misconceptionCount}</div>
             <div className="text-[11px] text-slate-500">
-              {isAdmin ? `${overriddenCount} Admin Overrides Active` : 'Cognitive Deficiencies'}
+              {isAdmin ? `${overriddenCount} Admin Overrides Active` : 'Code Delivery Bottlenecks'}
             </div>
           </div>
         </div>
@@ -399,8 +399,8 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-amber-400" />
                 {isAdmin && selectedClassGrade === 0
-                  ? 'All-School Student Cognitive Directory (All Grades)'
-                  : `Class ${selectedClassGrade} Student Cognitive Directory`}
+                  ? 'Institute-Wide Candidate Cognitive Directory (All Technical Tracks)'
+                  : `Track ${selectedClassGrade} Candidate Cognitive Directory`}
               </h2>
               <p className="text-xs text-slate-400">
                 {isAdmin
@@ -736,7 +736,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     <span>Administrator Override in Effect</span>
                   </div>
                   <p className="text-[11px] text-slate-300">
-                    {selectedStudentForModal.admin_override.notes || 'Manually reviewed and adjusted by School Administrator.'}
+                    {selectedStudentForModal.admin_override.notes || 'Manually reviewed and adjusted by Technical Director / Administrator.'}
                   </p>
                 </div>
               )}

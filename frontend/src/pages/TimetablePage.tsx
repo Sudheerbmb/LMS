@@ -115,6 +115,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
   // 7-day, 6-day, 5-day View State (Default 7-days with Saturday & Sunday support)
   const [visibleDaysCount, setVisibleDaysCount] = useState<number>(7)
+
+  // Teacher & Student Schedule View Mode (Default to daily agenda for teachers)
+  const [scheduleViewMode, setScheduleViewMode] = useState<'daily' | 'grid'>(isTeacher ? 'daily' : 'grid')
+  const [selectedScheduleDay, setSelectedScheduleDay] = useState<string>(() => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const today = dayNames[new Date().getDay()]
+    return today === 'Sunday' || today === 'Saturday' ? 'Monday' : today
+  })
   
   // Real DB Courses & Subject Modules
   const [adminCourses, setAdminCourses] = useState<AdminInstituteCourse[]>([])
@@ -902,215 +910,466 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           {/* View Mode & Holiday Management Strip */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0B0F19] p-3.5 rounded-2xl border border-amber-500/15">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Week View:</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">View Mode:</span>
               <button
-                onClick={() => setVisibleDaysCount(7)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  visibleDaysCount === 7
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                onClick={() => setScheduleViewMode('daily')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  scheduleViewMode === 'daily'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
                     : 'bg-slate-800 text-slate-300 hover:text-white'
                 }`}
               >
-                7 Days (Mon - Sun)
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Daily Masterclasses Agenda</span>
               </button>
+
               <button
-                onClick={() => setVisibleDaysCount(6)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  visibleDaysCount === 6
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                onClick={() => setScheduleViewMode('grid')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  scheduleViewMode === 'grid'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
                     : 'bg-slate-800 text-slate-300 hover:text-white'
                 }`}
               >
-                6 Days (Mon - Sat)
-              </button>
-              <button
-                onClick={() => setVisibleDaysCount(5)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  visibleDaysCount === 5
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'bg-slate-800 text-slate-300 hover:text-white'
-                }`}
-              >
-                5 Days (Mon - Fri)
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Full Weekly Grid</span>
               </button>
             </div>
+
+            {scheduleViewMode === 'grid' && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Days:</span>
+                <button
+                  onClick={() => setVisibleDaysCount(7)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    visibleDaysCount === 7 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  7 Days
+                </button>
+                <button
+                  onClick={() => setVisibleDaysCount(6)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    visibleDaysCount === 6 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  6 Days
+                </button>
+                <button
+                  onClick={() => setVisibleDaysCount(5)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    visibleDaysCount === 5 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  5 Days
+                </button>
+              </div>
+            )}
 
             {isAdmin && (
               <button
                 onClick={() => setShowHolidayModal(true)}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition-all"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition-all ml-auto"
               >
                 <Palmtree className="w-3.5 h-3.5 text-amber-400" />
-                Manage Holidays & Off-Days ({Object.keys(holidays).length})
+                Holidays ({Object.keys(holidays).length})
               </button>
             )}
           </div>
 
-          {/* Timetable Weekly Matrix */}
-          {loading ? (
-            <div className="h-96 flex items-center justify-center text-slate-400 gap-3">
-              <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
-              Loading Schedule Grid...
-            </div>
-          ) : slots.length === 0 ? (
-            <div className="h-80 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-3">
-              <Calendar className="w-10 h-10 text-slate-600" />
-              <p className="text-sm font-medium">No timetable generated yet.</p>
-              {isAdmin && (
-                <button
-                  onClick={handleGenerate}
-                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
-                >
-                  Run AI Agent Generator
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-800 shadow-xl bg-slate-950/60">
-              <table className="w-full text-left border-collapse min-w-[900px]">
-                <thead>
-                  <tr className="bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="p-4 w-44 border-r border-slate-800">Time & Period</th>
-                    {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
-                      const isHoliday = !!holidays[day]
-                      return (
-                        <th key={day} className="p-4 border-r border-slate-800 last:border-r-0 min-w-[170px]">
-                          <div className="flex items-center justify-between">
-                            <span className={isHoliday ? 'text-amber-400' : 'text-slate-200'}>{day}</span>
-                            {isHoliday && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                                <Palmtree className="w-3 h-3" /> Holiday
-                              </span>
-                            )}
-                          </div>
-                          {isHoliday && (
-                            <div className="text-[10px] text-amber-400/80 font-normal lowercase first-letter:uppercase truncate mt-0.5">
-                              {holidays[day]}
+          {/* ── DAILY MASTERCLASSES & AGENDA VIEW ── */}
+          {scheduleViewMode === 'daily' && (
+            <div className="space-y-6">
+              {/* Day Selector Pill Bar */}
+              <div className="flex flex-wrap items-center gap-2 p-2 bg-[#0B0F19] rounded-2xl border border-amber-500/15">
+                {ALL_WEEKDAYS.map((day) => {
+                  const daySlots = slots.filter((s) => s.day_of_week.toLowerCase() === day.toLowerCase())
+                  const isSelected = selectedScheduleDay.toLowerCase() === day.toLowerCase()
+                  const isToday = day.toLowerCase() === new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase()
+                  const isHoliday = !!holidays[day]
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedScheduleDay(day)}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black scale-105'
+                          : 'bg-[#111726] text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
+                      }`}
+                    >
+                      <span>{day}</span>
+                      {isToday && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase ${isSelected ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300'}`}>
+                          Today
+                        </span>
+                      )}
+                      {isHoliday ? (
+                        <span className="text-[10px] text-amber-400">🌴</span>
+                      ) : daySlots.length > 0 ? (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-300'}`}>
+                          {daySlots.length}
+                        </span>
+                      ) : null}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Workload & Telemetry Summary Cards for Selected Day */}
+              {(() => {
+                const daySlots = slots.filter((s) => s.day_of_week.toLowerCase() === selectedScheduleDay.toLowerCase())
+                const teachingSlots = daySlots.filter((s) => s.subject_name || s.subject_code)
+                const uniqueBatches = Array.from(new Set(daySlots.map((s) => s.section_name).filter(Boolean)))
+                const uniqueSubjects = Array.from(new Set(daySlots.map((s) => s.subject_name).filter(Boolean)))
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Scheduled Sessions</div>
+                      <div className="text-2xl font-black text-amber-400 mt-1">{teachingSlots.length} Masterclasses</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{selectedScheduleDay} Agenda</div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Teaching Duration</div>
+                      <div className="text-2xl font-black text-emerald-400 mt-1">{(teachingSlots.length * 1.25).toFixed(1)} Hours</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Live Masterclass & Lab</div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Cohorts</div>
+                      <div className="text-2xl font-black text-white mt-1">{uniqueBatches.length || (isTeacher ? 2 : 1)} Batches</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Parallel Tech Tracks</div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Subjects Covered</div>
+                      <div className="text-2xl font-black text-amber-300 mt-1">{uniqueSubjects.length || (teachingSlots.length ? 1 : 0)} Modules</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Assigned Syllabus Focus</div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Day Masterclasses Chronological List */}
+              {loading ? (
+                <div className="h-64 flex items-center justify-center text-slate-400 gap-3 bg-[#0B0F19] rounded-2xl border border-amber-500/15">
+                  <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+                  Loading {selectedScheduleDay}'s schedule...
+                </div>
+              ) : (() => {
+                const daySlots = slots
+                  .filter((s) => s.day_of_week.toLowerCase() === selectedScheduleDay.toLowerCase())
+                  .sort((a, b) => a.period_number - b.period_number)
+
+                const isHoliday = !!holidays[selectedScheduleDay]
+
+                if (isHoliday) {
+                  return (
+                    <div className="p-12 text-center bg-[#0B0F19] rounded-3xl border border-amber-500/20 space-y-3">
+                      <Palmtree className="w-12 h-12 text-amber-400 mx-auto" />
+                      <h3 className="text-lg font-bold text-white">{selectedScheduleDay} • Scheduled Institute Holiday</h3>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">{holidays[selectedScheduleDay]}</p>
+                      <button
+                        onClick={() => setSelectedScheduleDay('Monday')}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all mt-2"
+                      >
+                        View Monday's Masterclasses &rarr;
+                      </button>
+                    </div>
+                  )
+                }
+
+                if (daySlots.length === 0) {
+                  return (
+                    <div className="p-12 text-center bg-[#0B0F19] rounded-3xl border border-amber-500/15 space-y-3">
+                      <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
+                      <h3 className="text-base font-bold text-white">No Sessions Scheduled for {selectedScheduleDay}</h3>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        {isTeacher
+                          ? 'You have no assigned teaching periods on this day according to institute policy.'
+                          : 'No batch lectures scheduled on this day. Check the full weekly grid.'}
+                      </p>
+                      <button
+                        onClick={() => setSelectedScheduleDay('Monday')}
+                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all mt-2"
+                      >
+                        Check Monday Schedule
+                      </button>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {daySlots.map((slot) => {
+                      const meta = getPeriodMeta(slot.period_number)
+                      const isBreak = meta.isBreak
+
+                      if (isBreak) {
+                        return (
+                          <div
+                            key={slot.id || `break_${slot.period_number}`}
+                            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-4 ${meta.bg || 'bg-slate-900/60 border-slate-800 text-slate-300'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-mono font-black opacity-80">{slot.start_time} - {slot.end_time}</span>
+                              <span className="font-bold text-xs uppercase tracking-wider">{meta.label}</span>
                             </div>
-                          )}
-                        </th>
+                            <span className="text-[11px] opacity-70">Institute Wide</span>
+                          </div>
+                        )
+                      }
+
+                      const norm = getNormalizedSlot(slot)
+
+                      return (
+                        <div
+                          key={slot.id}
+                          className="p-5 rounded-2xl bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                        >
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-extrabold font-mono">
+                                Period {slot.period_number} &bull; {slot.start_time} - {slot.end_time}
+                              </span>
+                              <span
+                                className="px-2.5 py-1 rounded-lg text-xs font-bold"
+                                style={{ backgroundColor: `${norm.color}20`, color: norm.color }}
+                              >
+                                {norm.code}
+                              </span>
+                              <span className="text-[11px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800">
+                                {slot.slot_type === 'lab' ? 'Hands-On Lab' : 'Live Masterclass'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h3 className="text-base font-extrabold text-white group-hover:text-amber-300 transition-colors">
+                                {norm.name}
+                              </h3>
+                              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                                <span>{isTeacher ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}` : `Faculty: ${norm.teacher}`}</span>
+                                <span>&bull;</span>
+                                <span className="text-slate-500">Venue: {norm.room}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            {(isTeacher || isAdmin) && (
+                              <button
+                                onClick={() => handleSlotClick(slot)}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                              >
+                                <Video className="w-4 h-4" />
+                                <span>Launch Zoom</span>
+                              </button>
+                            )}
+
+                            {isStudent && (
+                              <button
+                                onClick={() => handleSlotClick(slot)}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                              >
+                                <Play className="w-4 h-4 fill-current" />
+                                <span>Join Live Class</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                setSelectedSlotForView(slot)
+                                setEditingSubjectCode(slot.subject_code || '')
+                                setEditingSubjectName(slot.subject_name || '')
+                                setEditingTeacherId(slot.teacher_id || '')
+                                setEditingSlotType(slot.slot_type || 'lecture')
+                                setShowSlotViewerModal(true)
+                              }}
+                              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-bold transition-all"
+                              title="View Session Details & Feedback"
+                            >
+                              <Edit3 className="w-4 h-4 text-amber-400" />
+                            </button>
+                          </div>
+                        </div>
                       )
                     })}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 text-sm">
-                  {periodNumbers.map((pNum) => {
-                    const meta = getPeriodMeta(pNum)
+                  </div>
+                )
+              })()}
+            </div>
+          )}
 
-                    if (meta.isBreak) {
+          {/* ── TIMETABLE WEEKLY MATRIX VIEW ── */}
+          {scheduleViewMode === 'grid' && (
+            loading ? (
+              <div className="h-96 flex items-center justify-center text-slate-400 gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+                Loading Schedule Grid...
+              </div>
+            ) : slots.length === 0 ? (
+              <div className="h-80 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-3">
+                <Calendar className="w-10 h-10 text-slate-600" />
+                <p className="text-sm font-medium">No timetable generated yet.</p>
+                {isAdmin && (
+                  <button
+                    onClick={handleGenerate}
+                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
+                  >
+                    Run AI Agent Generator
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-slate-800 shadow-xl bg-slate-950/60">
+                <table className="w-full text-left border-collapse min-w-[900px]">
+                  <thead>
+                    <tr className="bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="p-4 w-44 border-r border-slate-800">Time & Period</th>
+                      {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
+                        const isHoliday = !!holidays[day]
+                        return (
+                          <th key={day} className="p-4 border-r border-slate-800 last:border-r-0 min-w-[170px]">
+                            <div className="flex items-center justify-between">
+                              <span className={isHoliday ? 'text-amber-400' : 'text-slate-200'}>{day}</span>
+                              {isHoliday && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                  <Palmtree className="w-3 h-3" /> Holiday
+                                </span>
+                              )}
+                            </div>
+                            {isHoliday && (
+                              <div className="text-[10px] text-amber-400/80 font-normal lowercase first-letter:uppercase truncate mt-0.5">
+                                {holidays[day]}
+                              </div>
+                            )}
+                          </th>
+                        )
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                    {periodNumbers.map((pNum) => {
+                      const meta = getPeriodMeta(pNum)
+
+                      if (meta.isBreak) {
+                        return (
+                          <tr key={pNum} className={meta.bg || 'bg-slate-900/40'}>
+                            <td className="p-4 font-mono text-xs border-r border-amber-500/15 font-bold">
+                              <div>{meta.time}</div>
+                              <div className="text-[11px] opacity-80">{meta.label}</div>
+                            </td>
+                            <td colSpan={visibleDaysCount} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
+                              {meta.label} &bull; All Batches (09:00 AM &ndash; 06:00 PM Schedule)
+                            </td>
+                          </tr>
+                        )
+                      }
+
                       return (
-                        <tr key={pNum} className={meta.bg || 'bg-slate-900/40'}>
-                          <td className="p-4 font-mono text-xs border-r border-amber-500/15 font-bold">
-                            <div>{meta.time}</div>
-                            <div className="text-[11px] opacity-80">{meta.label}</div>
+                        <tr key={pNum} className="hover:bg-slate-900/30 transition-colors">
+                          <td className="p-4 border-r border-slate-800 font-mono text-xs text-slate-400 bg-slate-900/30">
+                            <div className="font-bold text-slate-200">{meta.label}</div>
+                            <div className="text-slate-500">{meta.time}</div>
                           </td>
-                          <td colSpan={visibleDaysCount} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
-                            {meta.label} &bull; All Batches (09:00 AM &ndash; 06:00 PM Schedule)
-                          </td>
+                          {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
+                            const isDayHoliday = !!holidays[day]
+                            const slot = slots.find(
+                              (s) => s.day_of_week === day && s.period_number === pNum
+                            )
+
+                            if (isDayHoliday || (slot?.slot_type as string) === 'holiday') {
+                              return (
+                                <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 align-top">
+                                  <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-950/10 text-slate-300 h-full flex flex-col justify-center items-center text-center space-y-1 min-h-[90px]">
+                                    <Palmtree className="w-4 h-4 text-amber-400" />
+                                    <div className="text-[11px] font-bold text-amber-300">Holiday / Off-Day</div>
+                                    <div className="text-[10px] text-slate-400 line-clamp-1">{holidays[day] || 'Scheduled Off'}</div>
+                                  </div>
+                                </td>
+                              )
+                            }
+
+                            if (!slot) {
+                              return (
+                                <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 text-slate-600 text-xs text-center">
+                                  -
+                                </td>
+                              )
+                            }
+
+                            const norm = getNormalizedSlot(slot)
+                            const isSelectedForSwap = selectedSlotForSwap?.id === slot.id
+
+                            return (
+                              <td
+                                key={day}
+                                onClick={() => handleSlotClick(slot)}
+                                className="p-3 border-r border-slate-800/60 last:border-r-0 align-top cursor-pointer group"
+                                title="Click for details, live class launching, or slot adjustment"
+                              >
+                                <div
+                                  className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
+                                    isSelectedForSwap
+                                      ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
+                                      : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
+                                  }`}
+                                >
+                                  <div>
+                                    <div className="flex items-center justify-between gap-1 mb-1">
+                                      <span
+                                        className="font-bold text-xs px-2 py-0.5 rounded-md"
+                                        style={{
+                                          backgroundColor: `${norm.color || '#f59e0b'}20`,
+                                          color: norm.color || '#f59e0b'
+                                        }}
+                                      >
+                                        {norm.code}
+                                      </span>
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
+                                        LAB
+                                      </span>
+                                    </div>
+                                    <div className="text-xs font-semibold text-slate-100 line-clamp-1">
+                                      {norm.name}
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] space-y-0.5 text-slate-400">
+                                    <div className="truncate font-medium text-slate-300 flex items-center justify-between">
+                                      <span className="truncate">
+                                        {isTeacher
+                                          ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}`
+                                          : norm.teacher}
+                                      </span>
+                                      {isAdmin && (
+                                        <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                      )}
+                                      {isTeacher && (
+                                        <Video className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                      )}
+                                      {isStudent && (
+                                        <Star className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 truncate">
+                                      {norm.room}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            )
+                          })}
                         </tr>
                       )
-                    }
-
-                    return (
-                      <tr key={pNum} className="hover:bg-slate-900/30 transition-colors">
-                        <td className="p-4 border-r border-slate-800 font-mono text-xs text-slate-400 bg-slate-900/30">
-                          <div className="font-bold text-slate-200">{meta.label}</div>
-                          <div className="text-slate-500">{meta.time}</div>
-                        </td>
-                        {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
-                          const isDayHoliday = !!holidays[day]
-                          const slot = slots.find(
-                            (s) => s.day_of_week === day && s.period_number === pNum
-                          )
-
-                          if (isDayHoliday || (slot?.slot_type as string) === 'holiday') {
-                            return (
-                              <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 align-top">
-                                <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-950/10 text-slate-300 h-full flex flex-col justify-center items-center text-center space-y-1 min-h-[90px]">
-                                  <Palmtree className="w-4 h-4 text-amber-400" />
-                                  <div className="text-[11px] font-bold text-amber-300">Holiday / Off-Day</div>
-                                  <div className="text-[10px] text-slate-400 line-clamp-1">{holidays[day] || 'Scheduled Off'}</div>
-                                </div>
-                              </td>
-                            )
-                          }
-
-                          if (!slot) {
-                            return (
-                              <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 text-slate-600 text-xs text-center">
-                                -
-                              </td>
-                            )
-                          }
-
-                          const norm = getNormalizedSlot(slot)
-                          const isSelectedForSwap = selectedSlotForSwap?.id === slot.id
-
-                          return (
-                            <td
-                              key={day}
-                              onClick={() => handleSlotClick(slot)}
-                              className="p-3 border-r border-slate-800/60 last:border-r-0 align-top cursor-pointer group"
-                              title="Click for details, live class launching, or slot adjustment"
-                            >
-                              <div
-                                className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
-                                  isSelectedForSwap
-                                    ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
-                                    : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
-                                }`}
-                              >
-                                <div>
-                                  <div className="flex items-center justify-between gap-1 mb-1">
-                                    <span
-                                      className="font-bold text-xs px-2 py-0.5 rounded-md"
-                                      style={{
-                                        backgroundColor: `${norm.color || '#f59e0b'}20`,
-                                        color: norm.color || '#f59e0b'
-                                      }}
-                                    >
-                                      {norm.code}
-                                    </span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
-                                      LAB
-                                    </span>
-                                  </div>
-                                  <div className="text-xs font-semibold text-slate-100 line-clamp-1">
-                                    {norm.name}
-                                  </div>
-                                </div>
-
-                                <div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] space-y-0.5 text-slate-400">
-                                  <div className="truncate font-medium text-slate-300 flex items-center justify-between">
-                                    <span className="truncate">
-                                      {isTeacher
-                                        ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}`
-                                        : norm.teacher}
-                                    </span>
-                                    {isAdmin && (
-                                      <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
-                                    )}
-                                    {isTeacher && (
-                                      <Video className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
-                                    )}
-                                    {isStudent && (
-                                      <Star className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
-                                    )}
-                                  </div>
-                                  <div className="text-[10px] text-slate-500 truncate">
-                                    {norm.room}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
           )}
         </div>
       )}

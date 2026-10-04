@@ -121,9 +121,9 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
           {
             id: `asg_${courseId}_1`,
             course_id: courseId,
-            title: `${currentCourse?.title || 'Course'} Diagnostic Homework Set`,
-            instructions: 'Solve analytical exercise problems 1 through 5. Show derivations and explain underlying axioms.',
-            description: 'Core analytical problem set assessing mastery and step-by-step reasoning.',
+            title: `${currentCourse?.title || 'Technical Track'} Core Architecture Lab Challenge`,
+            instructions: 'Implement the required async service endpoints, Pydantic schemas, and unit test suites. Submit your GitHub repository link and verification logs.',
+            description: 'Production architecture challenge testing asynchronous handling, schema validation, and database queries.',
             max_score: 100,
             status: 'active',
             due_date: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString()
@@ -131,9 +131,9 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
           {
             id: `asg_${courseId}_2`,
             course_id: courseId,
-            title: `Laboratory & Synthesis Project: ${currentCourse?.slug || 'Module'}`,
-            instructions: 'Submit your typed experimental findings, data calculations, and concluding synthesis.',
-            description: 'Hands-on practical exploration and real-world transfer application.',
+            title: `Hands-On Production Sprint: ${currentCourse?.slug || 'Module'} Integration`,
+            instructions: 'Containerize your service with Docker, implement CI/CD workflow, and submit performance benchmark results.',
+            description: 'Real-world deployment challenge testing system resilience, containerization, and automated test pipelines.',
             max_score: 50,
             status: 'active',
             due_date: new Date(Date.now() + 8 * 24 * 3600 * 1000).toISOString()

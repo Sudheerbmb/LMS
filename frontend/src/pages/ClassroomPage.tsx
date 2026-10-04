@@ -3743,7 +3743,7 @@ const handleTriggerTeacherCopilot = async (
 
   const handleJoinClass = async (liveClass: SchoolLiveClass) => {
     if (isStudent && liveClass.grade_number && liveClass.grade_number !== studentGrade) {
-      alert(`Access Restricted: This live lecture is reserved for Class ${liveClass.grade_number}. You are in Class ${studentGrade}.`)
+      alert(`Access Restricted: This live masterclass is reserved for Track ${liveClass.grade_number}. You are in Track ${studentGrade}.`)
       return
     }
 
