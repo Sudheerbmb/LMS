@@ -74,17 +74,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false)
   const [targetCourseForSubject, setTargetCourseForSubject] = useState<AdminInstituteCourse | null>(null)
 
-  // Edit Subject Modal State
-  const [showEditSubjectModal, setShowEditSubjectModal] = useState(false)
-  const [editingSubjectCourseId, setEditingSubjectCourseId] = useState<string>('')
-  const [editingSubjectId, setEditingSubjectId] = useState<string>('')
-  const [editSubCode, setEditSubCode] = useState('')
-  const [editSubName, setEditSubName] = useState('')
-  const [editSubDesc, setEditSubDesc] = useState('')
-  const [editSubTeacherId, setEditSubTeacherId] = useState('')
-  const [editSubColor, setEditSubColor] = useState('#3b82f6')
-  const [submittingEditSubject, setSubmittingEditSubject] = useState(false)
-
   // Form States for Add/Edit User
   const [formName, setFormName] = useState('')
   const [formEmail, setFormEmail] = useState('')
@@ -360,38 +349,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     }
   }
 
-  const openEditSubject = (courseId: string, subj: any) => {
-    setEditingSubjectCourseId(courseId)
-    setEditingSubjectId(subj.id)
-    setEditSubCode(subj.code)
-    setEditSubName(subj.name)
-    setEditSubDesc(subj.description || '')
-    setEditSubTeacherId(subj.teacher_id || '')
-    setEditSubColor(subj.color || '#3b82f6')
-    setShowEditSubjectModal(true)
-  }
-
-  const handleSaveEditSubject = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingSubjectCourseId || !editingSubjectId) return
-    setSubmittingEditSubject(true)
-    try {
-      await updateAdminCourseSubject(editingSubjectCourseId, editingSubjectId, {
-        code: editSubCode.trim().toUpperCase(),
-        name: editSubName.trim(),
-        description: editSubDesc.trim() || undefined,
-        teacher_id: editSubTeacherId || null,
-        color: editSubColor,
-      })
-      setShowEditSubjectModal(false)
-      await loadAllData()
-    } catch (err: any) {
-      alert(`Error updating subject: ${err.message}`)
-    } finally {
-      setSubmittingEditSubject(false)
-    }
-  }
-
   const handleSeedTechTracks = async () => {
     try {
       setLoading(true)
@@ -532,11 +489,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
         <button
           onClick={() => setActiveTab('students')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'students'
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'students'
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <GraduationCap className="w-4 h-4" />
           <span>Students & Enrollments ({studentsList.length})</span>
@@ -544,11 +500,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
         <button
           onClick={() => setActiveTab('teachers')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'teachers'
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'teachers'
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <Users className="w-4 h-4" />
           <span>Faculty & Instructors ({teachersList.length})</span>
@@ -556,11 +511,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'courses'
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'courses'
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <BookOpen className="w-4 h-4" />
           <span>Course & Subject Modules ({courses.length})</span>
@@ -571,11 +525,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             setActiveTab('zoom')
             loadZoomData()
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'zoom'
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'zoom'
               ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <Video className="w-4 h-4 text-blue-400" />
           <span>Zoom Live Infrastructure</span>
@@ -583,11 +536,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
         <button
           onClick={() => setActiveTab('notifications')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'notifications'
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'notifications'
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <Bell className="w-4 h-4 text-amber-400" />
           <span>System Notifications ({notifications.length})</span>
@@ -728,11 +680,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
                         <td className="p-4">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              s.status === 'active'
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${s.status === 'active'
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}
+                              }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
                             {s.status}
@@ -852,11 +803,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
                         <td className="p-4">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              t.status === 'active'
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${t.status === 'active'
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}
+                              }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
                             {t.status}
@@ -1025,22 +975,13 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                   {subj.code}
                                 </span>
 
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => openEditSubject(course.id, subj)}
-                                    title="Edit subject & instructor"
-                                    className="text-slate-400 hover:text-amber-400 transition-colors p-1 cursor-pointer"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSubject(course.id, subj.id, subj.name)}
-                                    title="Delete subject"
-                                    className="text-slate-400 hover:text-red-400 transition-colors p-1 cursor-pointer"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
+                                <button
+                                  onClick={() => handleDeleteSubject(course.id, subj.id, subj.name)}
+                                  title="Delete subject"
+                                  className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-opacity p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
 
                               <h4 className="text-xs font-bold text-slate-200">{subj.name}</h4>
@@ -1786,9 +1727,8 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                       key={color}
                       type="button"
                       onClick={() => setSubColor(color)}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                        subColor === color ? 'scale-125 border-white' : 'border-transparent'
-                      }`}
+                      className={`w-6 h-6 rounded-full border-2 transition-transform ${subColor === color ? 'scale-125 border-white' : 'border-transparent'
+                        }`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -1809,107 +1749,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
                 >
                   {submittingSubject ? 'Adding...' : 'Add Subject Class'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Edit Subject Class & Assign Teacher ─────────────────────── */}
-      {showEditSubjectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-400" />
-                Edit Subject Class & Assigned Faculty
-              </h3>
-              <button onClick={() => setShowEditSubjectModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditSubject} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Subject / Class Code</label>
-                <input
-                  type="text"
-                  required
-                  value={editSubCode}
-                  onChange={(e) => setEditSubCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Subject Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editSubName}
-                  onChange={(e) => setEditSubName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Description / Modules</label>
-                <textarea
-                  rows={2}
-                  value={editSubDesc}
-                  onChange={(e) => setEditSubDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Assigned Faculty / Instructor</label>
-                <select
-                  value={editSubTeacherId}
-                  onChange={(e) => setEditSubTeacherId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="">Unassigned</option>
-                  {teachersList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.display_name} ({t.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Badge Color Theme</label>
-                <div className="flex items-center gap-2">
-                  {['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'].map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setEditSubColor(color)}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform cursor-pointer ${
-                        editSubColor === color ? 'scale-125 border-white' : 'border-transparent'
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowEditSubjectModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingEditSubject}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingEditSubject ? 'Saving Changes...' : 'Save Subject Changes'}
                 </button>
               </div>
             </form>

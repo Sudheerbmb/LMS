@@ -59,8 +59,8 @@ export const ALL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 export const DEFAULT_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export const getTrackDisplayName = (g: SchoolGrade | undefined | null) => {
-  if (!g) return 'Course Track'
-  return g.name || 'Course Track'
+  if (!g) return 'Course'
+  return g.name || 'Course'
 }
 
 const getNormalizedSlot = (slot: TimetableSlot) => {
@@ -617,11 +617,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
             {isAdmin && 'Batch Schedule & Timetable Engine'}
             {isTeacher && (myTeacherProfile ? `${myTeacherProfile.display_name} - Faculty Schedule` : 'Faculty Teaching Schedule')}
-            {isStudent && `${currentGrade?.name || 'Technical Track'} - Weekly Batch Schedule`}
+            {isStudent && `${currentGrade?.name || 'Course'} - Weekly Batch Schedule`}
           </h1>
 
           <p className="text-slate-400 text-sm max-w-2xl">
-            {isAdmin && 'Automated timetable generator for technical tracks (Python with GenAI, Salesforce, ServiceNow, Full Stack, DevOps) with Zoom scheduling integration.'}
+            {isAdmin && 'Automated timetable generator for institute courses with Zoom scheduling integration.'}
             {isTeacher && `Assigned technical lectures across institute batches. Daily maximum workload capped at ${myTeacherProfile?.max_daily_periods || 5} sessions.`}
             {isStudent && 'Your weekly training schedule (09:00 AM - 06:00 PM). Click any session to join Zoom live or submit course feedback.'}
           </p>
@@ -688,11 +688,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>Technical Tracks & Batches</span>
+              <span>Courses & Batches</span>
               <Building className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-2xl font-black text-white">{grades.length || 5} Tracks &bull; 10 Batches</div>
-            <div className="text-xs text-slate-500">Python, Salesforce, ServiceNow, Web, DevOps</div>
+            <div className="text-2xl font-black text-white">{grades.length || 0} Courses &bull; {grades.reduce((acc, g) => acc + (g.sections?.length || 0), 0) || 'Active'} Batches</div>
+            <div className="text-xs text-slate-500">Curriculum-aligned database courses</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
@@ -833,7 +833,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               <div className="flex flex-wrap items-center gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Training Track / Course
+                    Course
                   </label>
                   <select
                     value={selectedGradeId}
@@ -896,7 +896,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 </button>
 
                 <div className="text-right pl-3 border-l border-slate-800">
-                  <div className="text-[11px] text-slate-400">Track Matrix</div>
+                  <div className="text-[11px] text-slate-400">Course & Batch</div>
                   <div className="text-sm font-bold text-slate-200">
                     {getTrackDisplayName(currentGrade)} &bull; Batch {currentSection?.name || 'A'}
                   </div>
@@ -1051,7 +1051,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Cohorts</div>
                       <div className="text-2xl font-black text-white mt-1">{uniqueBatches.length || (isTeacher ? 2 : 1)} Batches</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Parallel Tech Tracks</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Parallel Courses</div>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">

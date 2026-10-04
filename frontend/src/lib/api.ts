@@ -94,21 +94,21 @@ export type Organization = { id: string; name: string; slug: string; status: str
 
 export type OrgMember = { id: string; user_id: string; role: string; user?: User }
 
-export type Course = { 
+export type Course = {
 
-  id: string; 
+  id: string;
 
-  organization_id: string; 
+  organization_id: string;
 
-  title: string; 
+  title: string;
 
-  slug: string; 
+  slug: string;
 
   description?: string;
 
   level?: string;
 
-  status: string; 
+  status: string;
 
   current_version: number;
 
@@ -138,7 +138,16 @@ export type Assignment = { id: string; course_id: string; title: string; descrip
 
 export type Certificate = { id: string; user_id: string; course_id: string; certificate_number: string; issued_at: string; pdf_url?: string }
 
-export type Enrollment = { id: string; user_id: string; course_id: string; status: string; enrolled_at: string; course?: Course }
+export type Enrollment = {
+  id: string
+  user_id: string
+  course_id: string
+  status: string
+  enrolled_at: string
+  course?: Course
+  course_name?: string
+  course_slug?: string
+}
 
 export type CodingExercise = { id: string; title: string; prompt: string; starter_code: string; language: string }
 
@@ -296,10 +305,12 @@ export const verifyCertificate = (certificateNumber: string) =>
 
 // Coding Exercises
 
-export const createCodingExercise = (courseId: string, payload: { title: string; prompt: string; starter_code: string; language: string }) =>
-  request<CodingExercise>(`/api/v1/coding/courses/${courseId}/exercises`, { method: 'POST', body: JSON.stringify(payload) })
+export const getCodingExercises = (courseId: string) =>
+  request<CodingExercise[]>(`/api/v1/coding/courses/${courseId}/exercises`)
 
-export const getCodingExercises = (courseId: string) => request<CodingExercise[]>(`/api/v1/coding/courses/${courseId}/exercises`)
+export const createCodingExercise = (courseId: string, payload: { title: string; prompt: string; starter_code: string; language: string }) =>
+
+  request<CodingExercise>(`/api/v1/coding/courses/${courseId}/exercises`, { method: 'POST', body: JSON.stringify(payload) })
 
 export const submitCodingSolution = (exerciseId: string, payload: { code?: string; source_code?: string }) =>
   request<CodingSubmission>(`/api/v1/coding/exercises/${exerciseId}/submissions`, {
@@ -865,6 +876,7 @@ export interface SchoolLiveClass {
   recording_url?: string | null
   status: 'scheduled' | 'live' | 'ended' | 'cancelled'
   grade_number?: number
+  grade_name?: string
   section_name?: string
   subject_code?: string
   subject_name?: string

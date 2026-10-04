@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Users,
   Sparkles,
@@ -7,7 +7,7 @@ import {
   Loader2,
   FileCode
 } from 'lucide-react'
-import { getApiBaseUrl } from '../lib/api'
+import { getApiBaseUrl, getAdminCourses, type AdminInstituteCourse } from '../lib/api'
 
 type CrewCurriculumModalProps = {
   isOpen: boolean
@@ -20,12 +20,24 @@ export const CrewCurriculumModal: React.FC<CrewCurriculumModalProps> = ({
   isOpen,
   onClose,
   initialTopic = 'AsyncIO & LangChain Agent Orchestration',
-  initialGrade = 'Track 1: Python & GenAI'
+  initialGrade = 'Python with Generative AI (GenAI)'
 }) => {
+  const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
   const [topic, setTopic] = useState(initialTopic)
   const [gradeLevel, setGradeLevel] = useState(initialGrade)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
+
+  useEffect(() => {
+    getAdminCourses().then(res => {
+      if (res && res.length > 0) {
+        setCourses(res)
+        if (!initialGrade || initialGrade.includes('Track')) {
+          setGradeLevel(res[0].title)
+        }
+      }
+    }).catch(() => {})
+  }, [initialGrade])
 
   if (!isOpen) return null
 
@@ -64,11 +76,11 @@ export const CrewCurriculumModal: React.FC<CrewCurriculumModalProps> = ({
             avatar_color: 'from-cyan-500 to-blue-600',
             reasoning: `Decomposed '${topic}' into foundational concept milestones and prerequisite dependencies.`,
             output_deliverable: {
-              core_prerequisites: ['Foundational algebra', 'Analytical geometry'],
+              core_prerequisites: ['Foundational concepts', 'Analytical reasoning'],
               key_modules: [
                 { title: `Module 1: Principles of ${topic}`, hours: 4 },
-                { title: `Module 2: Core Theorems & Derivations`, hours: 6 },
-                { title: `Module 3: Edge Cases & Applications`, hours: 5 }
+                { title: `Module 2: Core Architecture & Implementation`, hours: 6 },
+                { title: `Module 3: Edge Cases & Production Deployment`, hours: 5 }
               ]
             }
           },
@@ -153,23 +165,21 @@ export const CrewCurriculumModal: React.FC<CrewCurriculumModalProps> = ({
           </div>
 
           <div>
-            <label className="text-slate-400 font-bold">Target Cohort / Track:</label>
+            <label className="text-slate-400 font-bold">Target Course:</label>
             <select
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
               className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
             >
-              {[
-                'Track 1: Python & GenAI',
-                'Track 2: Salesforce Developer',
-                'Track 3: ServiceNow CAD',
-                'Track 4: Full Stack Web',
-                'Track 5: Cloud DevOps'
-              ].map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
+              {courses.length > 0 ? (
+                courses.map((c) => (
+                  <option key={c.id} value={c.title}>
+                    {c.title}
+                  </option>
+                ))
+              ) : (
+                <option value="Python with Generative AI (GenAI)">Python with Generative AI (GenAI)</option>
+              )}
             </select>
           </div>
 

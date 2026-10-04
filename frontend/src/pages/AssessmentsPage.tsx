@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
-import type { User } from '../lib/api'
+import {
+  type User,
+  type AdminInstituteCourse,
+  type Enrollment,
+  getAdminCourses,
+  getMyEnrollments
+} from '../lib/api'
 import {
   CheckSquare,
   Plus,
@@ -27,6 +33,7 @@ import {
   saveScheduledAssessment,
   deleteScheduledAssessment,
   getAssessmentsForStudent,
+  getAssessmentsForTeacher,
   generateAIQuestionSet,
   submitStudentAssessment,
   getAllSubmissions,
@@ -43,20 +50,65 @@ type AssessmentsPageProps = {
 }
 
 export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin'
-  const studentGrade = user?.display_name?.includes('Track') ? user.display_name : 'Track 1: Python & GenAI'
+  const isAdmin = user?.role === 'admin'
+  const isTeacher = user?.role === 'teacher' || isAdmin
+  const isStudent = user?.role === 'student'
+
+  const [adminCourses, setAdminCourses] = useState<AdminInstituteCourse[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>('')
 
   const [activeTab, setActiveTab] = useState<'assessments' | 'submissions'>('assessments')
   const [assessmentsList, setAssessmentsList] = useState<ScheduledAssessment[]>([])
   const [submissionsList, setSubmissionsList] = useState<StudentSubmission[]>([])
 
+  // Dynamic available courses based on user role
+  const availableCourses = React.useMemo(() => {
+    if (isAdmin) return adminCourses
+    if (user?.role === 'teacher') {
+      const taught = adminCourses.filter(c =>
+        c.subjects.some(s =>
+          s.teacher_id === user.id ||
+          (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+        )
+      )
+      return taught.length > 0 ? taught : adminCourses
+    }
+    if (isStudent && enrollments.length > 0) {
+      const activeIds = new Set(enrollments.filter(e => e.status === 'active').map(e => e.course_id))
+      const activeSlugs = new Set(enrollments.filter(e => e.status === 'active').map(e => e.course_slug || e.course?.slug || ''))
+      const enrolled = adminCourses.filter(c => activeIds.has(c.id) || activeSlugs.has(c.slug))
+      return enrolled.length > 0 ? enrolled : adminCourses
+    }
+    return adminCourses
+  }, [adminCourses, enrollments, user, isAdmin, isStudent])
+
+  const studentEnrolledCourse = availableCourses[0]?.title || 'Institute Curriculum'
+
+  const activeCourse = React.useMemo(() => {
+    return availableCourses.find(c => c.slug === selectedCourseSlug || c.id === selectedCourseSlug) || availableCourses[0] || null
+  }, [availableCourses, selectedCourseSlug])
+
+  // Subjects for the currently selected course in the modal
+  const activeCourseSubjects = React.useMemo(() => {
+    if (!activeCourse) return []
+    if (user?.role === 'teacher') {
+      const teacherSubs = activeCourse.subjects.filter(s =>
+        s.teacher_id === user.id ||
+        (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+      )
+      return teacherSubs.length > 0 ? teacherSubs : activeCourse.subjects
+    }
+    return activeCourse.subjects
+  }, [activeCourse, user])
+
   // Create Modal State (For Teachers)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createStep, setCreateStep] = useState<'details' | 'questions'>('details')
   const [creationMode, setCreationMode] = useState<'AI' | 'MANUAL' | 'PDF'>('AI')
-  const [targetGrade, setTargetGrade] = useState('Track 1: Python & GenAI')
-  const [subject, setSubject] = useState('Python Core & Advanced OOP')
-  const [topicSyllabus, setTopicSyllabus] = useState('LangChain LCEL & FastAPI Pipelines')
+  const [targetGrade, setTargetGrade] = useState('')
+  const [subject, setSubject] = useState('')
+  const [topicSyllabus, setTopicSyllabus] = useState('Core Architecture & Implementation')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [scheduleType, setScheduleType] = useState<'ALWAYS_AVAILABLE' | 'TIME_WINDOW' | 'EXACT_TIME'>('ALWAYS_AVAILABLE')
@@ -66,6 +118,16 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
   const [passingScore, setPassingScore] = useState(70)
   const [pdfFileName, setPdfFileName] = useState<string | null>(null)
   const [documentContent, setDocumentContent] = useState<string>('')
+
+  // Sync default targetGrade and subject when active course changes
+  useEffect(() => {
+    if (activeCourse) {
+      setTargetGrade(activeCourse.title)
+      if (activeCourseSubjects.length > 0 && !activeCourseSubjects.some(s => s.name === subject)) {
+        setSubject(activeCourseSubjects[0].name)
+      }
+    }
+  }, [activeCourse, activeCourseSubjects])
 
   // Question Items for Creation
   const [questionItems, setQuestionItems] = useState<QuestionItem[]>([])
@@ -104,11 +166,35 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
     refreshData()
   }, [user])
 
-  const refreshData = () => {
-    if (isTeacher) {
+  const refreshData = async () => {
+    try {
+      const [crs, enrs] = await Promise.all([
+        getAdminCourses().catch(() => []),
+        getMyEnrollments().catch(() => [])
+      ])
+      setAdminCourses(crs)
+      setEnrollments(enrs)
+
+      if (isAdmin) {
+        setAssessmentsList(getScheduledAssessments())
+      } else if (user?.role === 'teacher') {
+        const mySubNames: string[] = []
+        crs.forEach(c => {
+          c.subjects.forEach(s => {
+            if (s.teacher_id === user.id || (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())) {
+              mySubNames.push(s.name, s.code)
+            }
+          })
+        })
+        setAssessmentsList(getAssessmentsForTeacher(user.id, mySubNames))
+      } else {
+        const enrolledIdentifiers = enrs.length > 0
+          ? enrs.map(e => e.course_name || e.course_slug || e.course?.title || e.course?.slug || '')
+          : (user?.display_name ? [user.display_name] : ['all'])
+        setAssessmentsList(getAssessmentsForStudent(enrolledIdentifiers))
+      }
+    } catch {
       setAssessmentsList(getScheduledAssessments())
-    } else {
-      setAssessmentsList(getAssessmentsForStudent(studentGrade))
     }
     setSubmissionsList(getAllSubmissions())
   }
@@ -235,7 +321,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
           takingTest,
           user?.id || 'demo_student',
           user?.display_name || 'Student',
-          studentGrade,
+          studentEnrolledCourse,
           studentAnswers,
           { cheated: true, violations: newViolations, count: newCount }
         )
@@ -372,7 +458,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
       takingTest,
       user?.id || 'demo_student',
       user?.display_name || 'Student',
-      studentGrade,
+      studentEnrolledCourse,
       studentAnswers,
       { cheated: false, violations, count: violationCount }
     )
@@ -400,15 +486,15 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
         <div className="space-y-2 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
             <Shield className="w-3.5 h-3.5" />
-            {isTeacher ? 'Teacher Examination & Security Studio' : `Secure Examination Portal • Enrolled in ${studentGrade}`}
+            {isTeacher ? 'Teacher Examination & Security Studio' : `Secure Examination Portal • Enrolled in ${studentEnrolledCourse}`}
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
             {isTeacher ? 'Assessment Scheduling & AI Proctoring' : 'My Scheduled Tests & Security Hub'}
           </h1>
           <p className="text-slate-400 text-sm max-w-2xl">
             {isTeacher
-              ? 'Schedule high-precision tests for your technical tracks (Python with GenAI, Salesforce, ServiceNow, Web, DevOps) with syllabus-grounded AI generation, code evaluation, and anti-cheat telemetry.'
-              : `Access your scheduled examinations for ${studentGrade}. One attempt per assessment with active camera and screen security.`}
+              ? 'Schedule high-precision tests for your institute courses with syllabus-grounded AI generation, code evaluation, and anti-cheat telemetry.'
+              : `Access your scheduled examinations for ${studentEnrolledCourse}. One attempt per assessment with active camera and screen security.`}
           </p>
         </div>
 
@@ -464,7 +550,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-white text-base flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-400" />
-              {isTeacher ? 'Active & Scheduled Tests Across Classes' : `Examinations for ${studentGrade}`}
+              {isTeacher ? 'Active & Scheduled Tests Across Classes' : `Examinations for ${studentEnrolledCourse}`}
             </h3>
             <span className="text-xs text-slate-400 font-mono">Total: {assessmentsList.length} Tests</span>
           </div>
@@ -476,7 +562,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
                 {isTeacher
                   ? 'Click "Schedule New Test" to create an AI-powered or custom test for your students.'
-                  : `There are currently no scheduled tests for ${studentGrade}. Check back shortly!`}
+                  : `There are currently no scheduled tests for ${studentEnrolledCourse}. Check back shortly!`}
               </p>
             </div>
           ) : (
@@ -677,20 +763,36 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
             {createStep === 'details' ? (
               <div className="space-y-4">
-                {/* Track & Subject Selector */}
+                {/* Course & Subject Selector */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">Target Training Track:</label>
+                    <label className="text-xs font-bold text-slate-300">Select Course:</label>
                     <select
-                      value={targetGrade}
-                      onChange={(e) => setTargetGrade(e.target.value)}
+                      value={selectedCourseSlug || activeCourse?.slug || ''}
+                      onChange={(e) => {
+                        const slug = e.target.value
+                        setSelectedCourseSlug(slug)
+                        const crs = availableCourses.find(c => c.slug === slug || c.id === slug)
+                        if (crs) {
+                          setTargetGrade(crs.title)
+                          const allowedSubs = user?.role === 'teacher'
+                            ? crs.subjects.filter(s =>
+                                s.teacher_id === user.id ||
+                                (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+                              )
+                            : crs.subjects
+                          if (allowedSubs.length > 0) {
+                            setSubject(allowedSubs[0].name)
+                          }
+                        }
+                      }}
                       className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="Track 1: Python & GenAI">Track 1: Python with Generative AI</option>
-                      <option value="Track 2: Salesforce CRM">Track 2: Salesforce Admin & Developer</option>
-                      <option value="Track 3: ServiceNow ITSM">Track 3: ServiceNow System Admin & Developer</option>
-                      <option value="Track 4: Full Stack Web">Track 4: Full Stack Web Engineering</option>
-                      <option value="Track 5: Cloud DevOps">Track 5: Cloud Computing & DevOps</option>
+                      {availableCourses.map((c) => (
+                        <option key={c.id} value={c.slug}>
+                          {c.title}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -701,15 +803,15 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                       onChange={(e) => setSubject(e.target.value)}
                       className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="Python Core & Advanced OOP">PY-101: Python Core & Advanced OOP</option>
-                      <option value="Prompt Engineering & LangChain">GEN-201: Prompt Engineering & LangChain</option>
-                      <option value="RAG Architecture & Vector DBs">RAG-301: RAG Architecture & Vector DBs</option>
-                      <option value="Autonomous Agents & FastAPI">AI-401: Autonomous Agents & FastAPI</option>
-                      <option value="Apex Programming & SOQL">SF-DEV: Apex Programming & SOQL</option>
-                      <option value="Lightning Web Components">SF-LWC: Lightning Web Components</option>
-                      <option value="ServiceNow ITSM & Flow Designer">SN-FND: ServiceNow ITSM & Flow Designer</option>
-                      <option value="React 19 & TypeScript UI">FS-REA: React 19 & TypeScript UI</option>
-                      <option value="Docker & Kubernetes Pipelines">DO-CON: Docker & Kubernetes Pipelines</option>
+                      {activeCourseSubjects.length === 0 ? (
+                        <option value="">No subjects assigned</option>
+                      ) : (
+                        activeCourseSubjects.map((s) => (
+                          <option key={s.id || s.code} value={s.name}>
+                            {s.code}: {s.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>

@@ -106,7 +106,7 @@ def assess_state_node(state: CognitiveAgentState) -> Dict[str, Any]:
 
 def retrieve_curriculum_node(state: CognitiveAgentState) -> Dict[str, Any]:
     """Node 2: Dynamic Curriculum Grounding & Concept Retrieval for Technical Tracks"""
-    grade = state.get("grade_name", "Track 1: Python & GenAI")
+    grade = state.get("grade_name", "Python with Generative AI (GenAI)")
     subjects = state.get("subjects", ["Python Core & OOP", "Prompt Engineering & LLMs"])
 
     # Match track from grade_name or fallback to track 1
@@ -139,7 +139,7 @@ def retrieve_curriculum_node(state: CognitiveAgentState) -> Dict[str, Any]:
 async def generate_response_node(state: CognitiveAgentState) -> Dict[str, Any]:
     """Node 3: Pedagogical Synthesis with Groq LPU API"""
     student_name = state.get("student_name", "Student")
-    grade_name = state.get("grade_name", "Track 1: Python & GenAI")
+    grade_name = state.get("grade_name", "Python with Generative AI (GenAI)")
     user_query = state.get("user_query", "")
     diagnostics = state.get("concept_diagnostics", [])
     curriculum = state.get("retrieved_curriculum", [])

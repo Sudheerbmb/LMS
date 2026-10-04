@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Brain,
   Zap,
@@ -24,7 +24,9 @@ import {
 import {
   generateLensDrill,
   submitLensDrill,
-  submitLensDiagnostic
+  submitLensDiagnostic,
+  getAdminCourses,
+  type AdminInstituteCourse
 } from '../lib/api'
 import type { User, LensDrillQuestion } from '../lib/api'
 import {
@@ -130,7 +132,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
   const isStaff = isAdmin || isTeacher
 
   // ── STAFF (ADMIN / TEACHER) COHORT VIEW STATE ─────────────────────────────
-  // Admin defaults to 0 (All Tracks), Teacher defaults to 1 (Python & GenAI)
+  const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
   const [selectedClassGrade, setSelectedClassGrade] = useState<number>(isAdmin ? 0 : 1)
   const [cohortSearch, setCohortSearch] = useState('')
   const [filterBottleneck, setFilterBottleneck] = useState<string>('ALL')
@@ -152,6 +154,14 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
     }
     return getCohortForGrade(1)
   })
+
+  useEffect(() => {
+    getAdminCourses().then(res => {
+      if (res && res.length > 0) {
+        setCourses(res)
+      }
+    }).catch(() => {})
+  }, [])
 
   const refreshStaffData = (gradeNum: number) => {
     if (isAdmin) {
@@ -302,7 +312,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </p>
           </div>
 
-          {/* Technical Training Track Switcher */}
+          {/* Technical Course Switcher */}
           <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800 relative z-10">
             {isAdmin && (
               <button
@@ -314,27 +324,30 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>All Tracks</span>
+                <span>All Courses</span>
               </button>
             )}
 
-            {[
-              { id: 1, label: 'Python & GenAI' },
-              { id: 2, label: 'Salesforce Dev' },
-              { id: 3, label: 'ServiceNow CAD' },
-              { id: 4, label: 'Full Stack Web' },
-              { id: 5, label: 'Cloud & DevOps' }
-            ].map((track) => (
+            {(courses.length > 0
+              ? courses.map((c, idx) => ({ id: idx + 1, label: c.title.split('(')[0].trim() }))
+              : [
+                  { id: 1, label: 'Python & GenAI' },
+                  { id: 2, label: 'Salesforce Dev' },
+                  { id: 3, label: 'ServiceNow CAD' },
+                  { id: 4, label: 'Full Stack Web' },
+                  { id: 5, label: 'Cloud & DevOps' }
+                ]
+            ).map((crs) => (
               <button
-                key={track.id}
-                onClick={() => handleClassSwitch(track.id)}
+                key={crs.id}
+                onClick={() => handleClassSwitch(crs.id)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  selectedClassGrade === track.id
+                  selectedClassGrade === crs.id
                     ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md font-extrabold'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {track.label}
+                {crs.label}
               </button>
             ))}
           </div>
@@ -349,7 +362,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </div>
             <div className="text-3xl font-black text-amber-400 font-mono">{cohortData.length}</div>
             <div className="text-[11px] text-slate-500">
-              {selectedClassGrade === 0 ? 'Across Entire Institute' : `Enrolled in Track ${selectedClassGrade}`}
+              {selectedClassGrade === 0 ? 'Across Entire Institute' : `Enrolled in Course ${selectedClassGrade}`}
             </div>
           </div>
 

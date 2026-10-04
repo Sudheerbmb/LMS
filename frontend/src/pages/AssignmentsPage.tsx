@@ -226,7 +226,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         id: `assignment_sub_${Date.now()}`,
         timestamp: new Date().toISOString(),
         student_id: user.id,
-        grade_name: user.display_name?.includes('Track') ? user.display_name : 'Track 1: Python & GenAI',
+        grade_name: courseName || user.display_name || 'Technical Course',
         subject: subjectName,
         concept_name: activeAssignment.title,
         event_type: 'ASSIGNMENT',

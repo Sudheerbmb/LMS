@@ -98,10 +98,12 @@ import {
   uploadClassRecording,
   getTeacherCopilotAssistance,
   getStudentTutorAssistance,
-  getWsBaseUrl
+  getWsBaseUrl,
+  getAdminCourses,
+  getMyEnrollments,
 } from '../lib/api'
 
-import type { SchoolLiveClass, TeacherTimetableSlot } from '../lib/api'
+import type { SchoolLiveClass, TeacherTimetableSlot, AdminInstituteCourse, Enrollment } from '../lib/api'
 import { AiRecordingPlayerModal } from '../components/AiRecordingPlayerModal'
 
 interface PeerUser {
@@ -415,7 +417,6 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('timetable')
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
-  const [instantGrade, setInstantGrade] = useState<number>(1)
   const [instantSection, setInstantSection] = useState<string>('Batch A')
   const [instantSubjectCode, setInstantSubjectCode] = useState<string>('PY-101')
   const [instantSubject, setInstantSubject] = useState<string>('Python Core & Advanced OOP')
@@ -940,8 +941,10 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const isTeacher = user.role === 'teacher'
   const isAdmin = user.role === 'admin'
   const isHost = isTeacher || isAdmin
-  const studentTrackMatch = user.display_name?.match(/track\s*(\d+)/i) || user.email?.match(/track(\d+)/i) || user.display_name?.match(/class\s*(\d+)/i) || user.email?.match(/class(\d+)/i)
-  const studentTrack = studentTrackMatch ? parseInt(studentTrackMatch[1], 10) : 1
+
+  const [adminCourses, setAdminCourses] = useState<AdminInstituteCourse[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string>('')
 
   const [filterGrade, setFilterGrade] = useState<number | 'all'>('all')
   const [filterRecordingOnly, setFilterRecordingOnly] = useState(false)
@@ -982,9 +985,19 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
       const gradeQuery = filterGrade === 'all' ? undefined : filterGrade
 
-      const liveData = await getSchoolLiveClasses(gradeQuery !== undefined ? { grade_number: gradeQuery } : undefined)
+      const [liveData, coursesData, enrollmentsData] = await Promise.all([
+        getSchoolLiveClasses(gradeQuery !== undefined ? { grade_number: gradeQuery } : undefined).catch(() => []),
+        getAdminCourses().catch(() => []),
+        getMyEnrollments().catch(() => []),
+      ])
 
-      setClasses(liveData)
+      setClasses(liveData || [])
+      setAdminCourses(coursesData || [])
+      setEnrollments(enrollmentsData || [])
+
+      if (coursesData && coursesData.length > 0 && !selectedCourseSlug) {
+        setSelectedCourseSlug(coursesData[0].slug)
+      }
 
       if (isHost) {
 
@@ -992,7 +1005,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
           const slots = await getTeacherTimetableSlots()
 
-          setTeacherSlots(slots)
+          setTeacherSlots(slots || [])
 
         } catch (e) {
 
@@ -1034,6 +1047,30 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
       setFlushingClasses(false)
     }
   }
+
+  const enrolledCourseIds = new Set(enrollments.map(e => e.course_id))
+  const availableCourses = adminCourses.filter(c => {
+    if (isTeacher) {
+      return c.subjects?.some(s =>
+        s.teacher_id === user.id ||
+        (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+      )
+    }
+    if (isStudent) {
+      return enrolledCourseIds.has(c.id)
+    }
+    return true
+  })
+
+  const activeSelectedCourse = availableCourses.find(c => c.slug === selectedCourseSlug || c.id === selectedCourseSlug) || availableCourses[0]
+  const availableSubjectsForCourse = activeSelectedCourse ? (
+    isTeacher
+      ? activeSelectedCourse.subjects.filter(s =>
+          s.teacher_id === user.id ||
+          (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+        )
+      : activeSelectedCourse.subjects
+  ) : []
 
   // Timetable-Synchronized Auto-End Countdown Computation
   const scheduledDurationSeconds = activeCallRoom
@@ -3876,10 +3913,34 @@ const handleTriggerTeacherCopilot = async (
         return isToday && endMin >= currentMinutes
       })
 
+      const enrolledCourseIds = new Set(enrollments.map(e => e.course_id))
+      const availableCourses = adminCourses.filter(c => {
+        if (isTeacher) {
+          return c.subjects.some(s =>
+            s.teacher_id === user.id ||
+            (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+          )
+        }
+        if (isStudent) {
+          return enrolledCourseIds.has(c.id)
+        }
+        return true
+      })
+
+      const activeCourse = availableCourses.find(c => c.slug === selectedCourseSlug || c.id === selectedCourseSlug) || availableCourses[0]
+      const availableSubjects = activeCourse ? (
+        isTeacher
+          ? activeCourse.subjects.filter(s =>
+              s.teacher_id === user.id ||
+              (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+            )
+          : activeCourse.subjects
+      ) : []
+
       let grade_number = 1
-      let section_name = 'Batch A'
-      let subject_code = 'PY-101'
-      let subject_name = 'Python Core & Advanced OOP'
+      let section_name = 'Batch-01'
+      let subject_code = availableSubjects[0]?.code || 'PY-101'
+      let subject_name = availableSubjects[0]?.name || 'Python Core & Advanced OOP'
       let period_number: number | undefined = undefined
       let room_number = 'Virtual Zoom Room'
 
@@ -3892,14 +3953,16 @@ const handleTriggerTeacherCopilot = async (
         period_number = selectedSlot.period_number
         room_number = selectedSlot.room_or_venue || 'Virtual Zoom Room'
       } else {
-        grade_number = instantGrade
-        section_name = instantSection
-        subject_name = instantSubject
-        subject_code = instantSubjectCode || 'TECH'
+        const cIdx = adminCourses.findIndex(c => c.id === activeCourse?.id || c.slug === activeCourse?.slug)
+        grade_number = cIdx >= 0 ? cIdx + 1 : 1
+        section_name = instantSection || 'Batch-01'
+        subject_code = instantSubjectCode || availableSubjects[0]?.code || 'TECH'
+        subject_name = instantSubject || (availableSubjects.find(s => s.code === subject_code)?.name || 'Technical Session')
         room_number = 'Virtual Zoom Room'
       }
 
-      const title = customTitle.trim() || `${subject_name} (Track ${grade_number} • ${section_name})`
+      const courseTitle = activeCourse?.title || 'Technical Course'
+      const title = customTitle.trim() || `${subject_name} (${courseTitle} • ${section_name})`
 
       const created = await createSchoolLiveClass({
         title,
@@ -6454,12 +6517,12 @@ const handleTriggerTeacherCopilot = async (
 
       </div>
 
-      {/* Technical Track Filter Tabs & Recording Switcher */}
+      {/* Dynamic Course Filter Tabs & Recording Switcher */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {isStudent && (
+        {isStudent && availableCourses.length > 0 && (
           <span className="px-3 py-2 rounded-xl text-xs font-black bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            Enrolled: Track {studentTrack}
+            Enrolled: {availableCourses[0].title}
           </span>
         )}
         <button
@@ -6470,7 +6533,7 @@ const handleTriggerTeacherCopilot = async (
               : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          All Tracks ({classes.length})
+          All Courses ({classes.length})
         </button>
         <button
           onClick={() => setFilterRecordingOnly(prev => !prev)}
@@ -6483,23 +6546,17 @@ const handleTriggerTeacherCopilot = async (
           <Video className="w-3.5 h-3.5 text-amber-400" />
           <span>Watch Recordings ({classes.filter(c => !!c.recording_url).length})</span>
         </button>
-        {[
-          { id: 1, label: 'Python & GenAI' },
-          { id: 2, label: 'Salesforce CRM' },
-          { id: 3, label: 'ServiceNow ITSM' },
-          { id: 4, label: 'Full Stack Web' },
-          { id: 5, label: 'Cloud DevOps' },
-        ].map(track => (
+        {availableCourses.map((crs, idx) => (
           <button
-            key={track.id}
-            onClick={() => { setFilterGrade(track.id); setFilterRecordingOnly(false); }}
+            key={crs.id || idx}
+            onClick={() => { setFilterGrade(idx + 1); setFilterRecordingOnly(false); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              filterGrade === track.id && !filterRecordingOnly
+              filterGrade === idx + 1 && !filterRecordingOnly
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            {track.label}
+            {crs.title.length > 28 ? crs.title.substring(0, 26) + '...' : crs.title}
           </button>
         ))}
       </div>
@@ -6532,14 +6589,8 @@ const handleTriggerTeacherCopilot = async (
             const isLive = cls.status === 'live'
             const isEnded = cls.status === 'ended'
             const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name}`
-            const cleanTitle = (cls.title || '')
-              .replace(/Grade (\d+)-([A-Z])/gi, 'Track $1 • Batch $2')
-              .replace(/Grade (\d+)/gi, 'Track $1')
-              .replace(/Mathematics/gi, 'Python & GenAI Core')
-              .replace(/Science/gi, 'Salesforce CRM & Apex')
-            const cleanSubject = (cls.subject_name || '')
-              .replace(/Mathematics/gi, 'Python & GenAI Core')
-              .replace(/Science/gi, 'Salesforce CRM')
+            const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
+            const cleanSubject = cls.subject_name || 'Technical Module'
 
             return (
               <div
@@ -6553,7 +6604,7 @@ const handleTriggerTeacherCopilot = async (
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                      Track {cls.grade_number} • {cleanBatch}
+                      {cls.subject_code ? `${cls.subject_code} • ${cleanBatch}` : cleanBatch}
                     </span>
 
                     <div className="flex items-center gap-2">
@@ -6786,7 +6837,7 @@ const handleTriggerTeacherCopilot = async (
                       >
                         {upcomingSlots.map((s, idx) => (
                           <option key={idx} value={idx}>
-                            Track {s.grade_number} • Batch {s.section_name} — {s.subject_name} ({s.start_time} - {s.end_time}, Period {s.period_number})
+                            {s.grade_name || 'Course'} • Batch {s.section_name} — {s.subject_name} ({s.start_time} - {s.end_time}, Period {s.period_number})
                           </option>
                         ))}
                       </select>
@@ -6798,18 +6849,34 @@ const handleTriggerTeacherCopilot = async (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                        Select Training Track
+                        Select Course
                       </label>
                       <select
-                        value={instantGrade}
-                        onChange={e => setInstantGrade(Number(e.target.value))}
+                        value={selectedCourseSlug || availableCourses[0]?.slug || ''}
+                        onChange={e => {
+                          const slug = e.target.value
+                          setSelectedCourseSlug(slug)
+                          const crs = availableCourses.find(c => c.slug === slug || c.id === slug)
+                          if (crs) {
+                            const allowedSubs = isTeacher
+                              ? crs.subjects.filter(s =>
+                                  s.teacher_id === user.id ||
+                                  (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+                                )
+                              : crs.subjects
+                            if (allowedSubs.length > 0) {
+                              setInstantSubjectCode(allowedSubs[0].code)
+                              setInstantSubject(allowedSubs[0].name)
+                            }
+                          }
+                        }}
                         className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                       >
-                        <option value={1}>Track 1: Python with Generative AI (GenAI)</option>
-                        <option value={2}>Track 2: Salesforce Administration & Developer</option>
-                        <option value={3}>Track 3: ServiceNow System Admin & Developer</option>
-                        <option value={4}>Track 4: Full Stack Web Engineering</option>
-                        <option value={5}>Track 5: Cloud Computing & DevOps</option>
+                        {availableCourses.map((c) => (
+                          <option key={c.id} value={c.slug}>
+                            {c.title}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -6821,8 +6888,8 @@ const handleTriggerTeacherCopilot = async (
                         onChange={e => setInstantSection(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                       >
-                        <option value="Batch A">Batch A (Morning Session)</option>
-                        <option value="Batch B">Batch B (Evening Session)</option>
+                        <option value="Batch-01">Batch-01 (Morning Session)</option>
+                        <option value="Batch-02">Batch-02 (Evening Session)</option>
                         <option value="Weekend Batch">Weekend Intensive</option>
                       </select>
                     </div>
@@ -6833,42 +6900,20 @@ const handleTriggerTeacherCopilot = async (
                       Technical Subject Module
                     </label>
                     <select
-                      value={instantSubjectCode}
+                      value={instantSubjectCode || availableSubjectsForCourse[0]?.code || ''}
                       onChange={e => {
                         const code = e.target.value
                         setInstantSubjectCode(code)
-                        const found = [
-                          { code: 'PY-101', name: 'Python Core & Advanced OOP' },
-                          { code: 'GEN-201', name: 'Prompt Engineering, LLMs & LangChain' },
-                          { code: 'RAG-301', name: 'RAG Architecture & Vector DBs' },
-                          { code: 'AI-401', name: 'Autonomous Agents & FastAPI Deployment' },
-                          { code: 'SF-ADM', name: 'Salesforce Administrator Essentials' },
-                          { code: 'SF-DEV', name: 'Apex Programming & SOQL Queries' },
-                          { code: 'SF-LWC', name: 'Lightning Web Components (LWC)' },
-                          { code: 'SN-FND', name: 'ServiceNow Platform & ITSM Core' },
-                          { code: 'SN-DEV', name: 'Flow Designer & Client/Server Scripting' },
-                          { code: 'FS-REA', name: 'React 19, TypeScript & Modern UI' },
-                          { code: 'FS-NOD', name: 'Node.js, PostgreSQL & API Microservices' },
-                          { code: 'DO-CON', name: 'Docker Containerization & Kubernetes' },
-                          { code: 'DO-CICD', name: 'CI/CD Pipelines & Cloud Architecture' },
-                        ].find(s => s.code === code)
+                        const found = availableSubjectsForCourse.find(s => s.code === code)
                         if (found) setInstantSubject(found.name)
                       }}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="PY-101">PY-101: Python Core & Advanced OOP</option>
-                      <option value="GEN-201">GEN-201: Prompt Engineering, LLMs & LangChain</option>
-                      <option value="RAG-301">RAG-301: RAG Architecture & Vector DBs</option>
-                      <option value="AI-401">AI-401: Autonomous Agents & FastAPI Deployment</option>
-                      <option value="SF-ADM">SF-ADM: Salesforce Administrator Essentials</option>
-                      <option value="SF-DEV">SF-DEV: Apex Programming & SOQL Queries</option>
-                      <option value="SF-LWC">SF-LWC: Lightning Web Components (LWC)</option>
-                      <option value="SN-FND">SN-FND: ServiceNow Platform & ITSM Core</option>
-                      <option value="SN-DEV">SN-DEV: Flow Designer & Client/Server Scripting</option>
-                      <option value="FS-REA">FS-REA: React 19, TypeScript & Modern UI</option>
-                      <option value="FS-NOD">FS-NOD: Node.js, PostgreSQL & API Microservices</option>
-                      <option value="DO-CON">DO-CON: Docker Containerization & Kubernetes</option>
-                      <option value="DO-CICD">DO-CICD: CI/CD Pipelines & Cloud Architecture</option>
+                      {availableSubjectsForCourse.map((s) => (
+                        <option key={s.id || s.code} value={s.code}>
+                          {s.code}: {s.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

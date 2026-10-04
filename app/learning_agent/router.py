@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v1/lens", tags=["LENS-Omega & SN1 Adaptive Engin
 # ── Request / Response Schemas ───────────────────────────────────────────────
 
 class GenerateDiagnosticRequest(BaseModel):
-    grade_name: str = Field(default="Track 1: Python & GenAI")
+    grade_name: str = Field(default="Python with Generative AI (GenAI)")
     subjects: List[str] = Field(default=["Python Core & OOP", "Prompt Engineering & LLMs", "RAG & Vector DBs", "Autonomous AI Agents"])
     num_questions: int = Field(default=6)
 
@@ -43,7 +43,7 @@ class SubmitDiagnosticRequest(BaseModel):
 
 
 class DrillGenerateRequest(BaseModel):
-    grade_name: str = "Track 1: Python & GenAI"
+    grade_name: str = "Python with Generative AI (GenAI)"
     subject: str = "Python Core & OOP"
     concept_id: str
     concept_name: str
@@ -64,7 +64,7 @@ class DrillSubmitRequest(BaseModel):
 
 class SN1ChatRequest(BaseModel):
     query: str
-    grade_name: Optional[str] = "Track 1: Python & GenAI"
+    grade_name: Optional[str] = "Python with Generative AI (GenAI)"
     subjects: Optional[List[str]] = None
     state_vector: Optional[Dict[str, Any]] = None
 
@@ -342,7 +342,7 @@ async def sn1_chat(
 
     graph_res = await execute_sn1_langgraph(
         student_name=user_name,
-        grade_name=req.grade_name or "Track 1: Python & GenAI",
+        grade_name=req.grade_name or "Python with Generative AI (GenAI)",
         subjects=subjects,
         state_vector=state_vec,
         user_query=req.query

@@ -232,7 +232,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
       const res = await createSchoolLiveClass({
-        title: `${slot.subject_name} Live Session (Track ${slot.grade_number} • Batch ${slot.section_name})`,
+        title: `${slot.subject_name} Live Session (${slot.grade_name || 'Course'} • Batch ${slot.section_name})`,
         starts_at: now.toISOString(),
         ends_at: end.toISOString(),
         grade_number: slot.grade_number,
@@ -243,7 +243,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         room_number: slot.room_or_venue,
         status: 'live'
       })
-      showToast(`Launching Live Session for Track ${slot.grade_number} • Batch ${slot.section_name}...`, 'success')
+      showToast(`Launching Live Session for ${slot.subject_name} (Batch ${slot.section_name})...`, 'success')
       const zoomUrl = res.zoom_start_url || res.zoom_join_url || res.meeting_url
       if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
         window.open(zoomUrl, '_blank')
@@ -474,7 +474,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   CLASS LIVE NOW
                 </span>
                 <span className="text-xs text-slate-400">
-                  Track {activeLiveClass.grade_number} • Batch {activeLiveClass.section_name} &bull; Period {activeLiveClass.period_number || 1}
+                  {activeLiveClass.grade_name || 'Course'} • Batch {activeLiveClass.section_name} &bull; Period {activeLiveClass.period_number || 1}
                 </span>
               </div>
               <h3 className="text-lg font-bold text-white mt-1">
@@ -803,7 +803,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                         {slot.subject_name}
                       </h3>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Track {slot.grade_number} • Batch {slot.section_name} &bull; {slot.subject_code}
+                        {slot.grade_name || 'Course'} • Batch {slot.section_name} &bull; {slot.subject_code}
                       </p>
                     </div>
 
@@ -979,7 +979,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
-                          Track {cls.grade_number} • Batch {cls.section_name}
+                          {cls.grade_name || 'Course'} • Batch {cls.section_name}
                         </span>
                         {cls.status === 'live' ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
@@ -1060,7 +1060,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[11px] font-bold">
-                        Track {cls.grade_number} • Batch {cls.section_name}
+                        {cls.grade_name || 'Course'} • Batch {cls.section_name}
                       </span>
                       <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Ready to Watch
@@ -1406,7 +1406,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             <div className="bg-[#06080F] p-3 rounded-2xl border border-slate-800 space-y-1 text-xs">
               <p className="text-white font-bold">{leaveSlot.subject_name}</p>
               <p className="text-slate-400">
-                Period {leaveSlot.period_number} &bull; Track {leaveSlot.grade_number} • Batch {leaveSlot.section_name} ({leaveSlot.day_of_week})
+                Period {leaveSlot.period_number} &bull; {leaveSlot.grade_name || 'Course'} • Batch {leaveSlot.section_name} ({leaveSlot.day_of_week})
               </p>
             </div>
 

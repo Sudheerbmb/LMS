@@ -26,7 +26,7 @@ export interface ScheduledAssessment {
   id: string
   title: string
   description: string
-  target_grade: string // e.g. "Track 1: Python & GenAI", "Track 2: Salesforce"
+  target_grade: string // e.g. "Python with Generative AI (GenAI)", "Salesforce Developer & Admin"
   subject: string // e.g. "Python Core & Advanced OOP", "Apex Programming"
   topic_syllabus: string
   teacher_id: string
@@ -72,13 +72,14 @@ const STORAGE_KEY = 'acharya_tech_scheduled_assessments_v4'
 const SUBMISSIONS_KEY = 'acharya_tech_assessment_submissions_v4'
 
 // Initial Seed Data with Verified Technical Curriculum Topics
+// Initial Seed Data with Verified Technical Curriculum Topics
 const SEED_ASSESSMENTS: ScheduledAssessment[] = [
   {
-    id: 'asmt_track1_py_genai',
+    id: 'asmt_py_genai_01',
     title: 'Python & Generative AI: LangChain, Pydantic & FastAPI Deployment Benchmark',
     description: 'Timed technical evaluation testing async coroutines, Pydantic V2 schema validation, LangChain LCEL chaining, and FastAPI streaming endpoints.',
-    target_grade: 'Track 1: Python & GenAI',
-    subject: 'Python Core & Advanced OOP',
+    target_grade: 'Python with Generative AI (GenAI)',
+    subject: 'PY-101: Python Core & Advanced OOP',
     topic_syllabus: 'LangChain LCEL, Pydantic V2 & Multi-Agent Graphs',
     teacher_id: 'teacher_sarah',
     teacher_name: 'Dr. Sarah Connor',
@@ -141,11 +142,11 @@ const SEED_ASSESSMENTS: ScheduledAssessment[] = [
     ]
   },
   {
-    id: 'asmt_track2_salesforce_apex',
+    id: 'asmt_salesforce_apex_01',
     title: 'Salesforce Administrator & Apex Developer Certification Benchmark',
     description: 'Comprehensive test evaluating Apex trigger best practices, SOQL governor limit mitigation, and Lightning Web Component lifecycle hooks.',
-    target_grade: 'Track 2: Salesforce CRM',
-    subject: 'Apex Programming & SOQL Queries',
+    target_grade: 'Salesforce Developer & Admin',
+    subject: 'SF-DEV: Apex Programming & SOQL',
     topic_syllabus: 'Triggers, SOQL Governor Limits & Lightning Web Components',
     teacher_id: 'teacher_sarah',
     teacher_name: 'Dr. Sarah Connor',
@@ -230,17 +231,33 @@ export function deleteScheduledAssessment(id: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
 }
 
-export function getAssessmentsForStudent(studentGrade: string): ScheduledAssessment[] {
+export function getAssessmentsForStudent(enrolledCourseIdentifiers: string | string[]): ScheduledAssessment[] {
   const all = getScheduledAssessments()
-  const gradeNum = studentGrade.match(/\d+/)?.[0] || '4'
+  const idList = Array.isArray(enrolledCourseIdentifiers)
+    ? enrolledCourseIdentifiers.map(s => s.toLowerCase().trim())
+    : [enrolledCourseIdentifiers.toLowerCase().trim()]
+
   return all.filter((a) => {
-    const aGradeNum = a.target_grade.match(/\d+/)?.[0] || '4'
-    return aGradeNum === gradeNum && a.status === 'PUBLISHED'
+    if (a.status !== 'PUBLISHED') return false
+    if (idList.length === 0 || idList.includes('all')) return true
+    
+    const target = (a.target_grade || '').toLowerCase()
+    return idList.some(id => 
+      target.includes(id) || 
+      id.includes(target) || 
+      (id.match(/\d+/) && target.includes(id.match(/\d+/)![0]))
+    )
   })
 }
 
-export function getAssessmentsForTeacher(_teacherId?: string): ScheduledAssessment[] {
-  return getScheduledAssessments()
+export function getAssessmentsForTeacher(_teacherId?: string, assignedSubjects?: string[]): ScheduledAssessment[] {
+  const all = getScheduledAssessments()
+  if (!assignedSubjects || assignedSubjects.length === 0) return all
+  const subCodes = assignedSubjects.map(s => s.toLowerCase().trim())
+  return all.filter(a => {
+    const subj = (a.subject || '').toLowerCase()
+    return subCodes.some(c => subj.includes(c) || c.includes(subj))
+  })
 }
 
 export function isAssessmentCompletedByStudent(assessmentId: string, studentId: string): StudentSubmission | null {
