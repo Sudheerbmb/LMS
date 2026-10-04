@@ -78,6 +78,7 @@ class CourseRead(BaseModel):
     id: UUID
     organization_id: UUID
     slug: str
+    title: str | None = None
     status: str
     current_version: int
     level: str

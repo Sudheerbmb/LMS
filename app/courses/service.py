@@ -107,7 +107,8 @@ async def list_courses(
 
     total = await session.scalar(select(func.count()).select_from(q.subquery()))
     rows = await session.scalars(
-        q.order_by(Course.created_at.desc())
+        q.options(selectinload(Course.versions))
+        .order_by(Course.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
     )

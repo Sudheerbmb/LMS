@@ -1140,22 +1140,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             {enrollments.length === 0 ? (
               <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-3">
                 <BookOpen className="w-8 h-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400">You are not enrolled in any course subjects yet.</p>
+                <p className="text-xs text-slate-400">You are not enrolled in any course tracks yet.</p>
                 <div className="space-y-2 pt-2">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Courses to Enroll:</p>
                   <div className="flex flex-col gap-2">
-                    {availableCourses.slice(0, 3).map(c => (
-                      <div key={c.id} className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
-                        <span className="text-xs font-bold text-white">{c.title}</span>
-                        <button
-                          onClick={() => handleEnrollCourse(c.id)}
-                          disabled={actionLoading === `enroll-${c.id}`}
-                          className="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
-                        >
-                          {actionLoading === `enroll-${c.id}` ? 'Enrolling...' : 'Enroll Now'}
-                        </button>
-                      </div>
-                    ))}
+                    {availableCourses.slice(0, 3).map(c => {
+                      const displayTitle = c.title || c.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                      return (
+                        <div key={c.id} className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="min-w-0 text-left">
+                            <span className="text-xs font-bold text-white block truncate">{displayTitle}</span>
+                            <span className="text-[10px] text-slate-400 capitalize">{c.level || 'Professional'} Training Track</span>
+                          </div>
+                          <button
+                            onClick={() => handleEnrollCourse(c.id)}
+                            disabled={actionLoading === `enroll-${c.id}`}
+                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow-sm transition-all"
+                          >
+                            {actionLoading === `enroll-${c.id}` ? 'Enrolling...' : 'Enroll Now'}
+                          </button>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -1166,9 +1172,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                     key={en.id}
                     className="p-4 bg-[#06080F]/70 border border-amber-500/15 hover:border-amber-500/40 rounded-2xl flex items-center justify-between gap-3 transition-colors group"
                   >
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0 space-y-1 text-left">
                       <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-yellow-300 transition-colors truncate">
-                        {en.course?.title || 'Academic Course'}
+                        {en.course?.title || (en.course as any)?.slug?.replace(/-/g, ' ') || 'Technical Track'}
                       </h4>
                       <p className="text-[11px] text-slate-400">
                         Status: <span className="capitalize text-emerald-400 font-semibold">{en.status}</span>
@@ -1177,7 +1183,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
                     <button
                       onClick={() => setCurrentTab('courses')}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1"
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
                     >
                       <span>Study</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1196,54 +1202,68 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   <Calendar className="w-5 h-5 text-amber-400" />
                   Today's Classroom Timetable
                 </h2>
-                <p className="text-xs text-slate-400">Periods and venue schedule for your class</p>
+                <p className="text-xs text-slate-400">Periods and venue schedule for your track</p>
               </div>
               <button
                 onClick={() => setCurrentTab('timetable')}
-                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Full Timetable</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {studentTimetable.length === 0 ? (
-              <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
-                <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400">Check full timetable grid for schedule breakdown.</p>
-                <button
-                  onClick={() => setCurrentTab('timetable')}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all"
-                >
-                  View Timetable Grid
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-                {studentTimetable.slice(0, 6).map((slot, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 bg-[#06080F]/70 border border-amber-500/15 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-purple-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 border border-purple-500/30">
-                        P{slot.period_number}
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold text-white">{slot.subject_name || slot.subject_code || 'Academic Lecture'}</p>
-                        <p className="text-[11px] text-slate-400">
-                          {slot.room_or_venue || 'Classroom Hall'} &bull; {slot.day_of_week}
-                        </p>
+            {(() => {
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+              const todayName = dayNames[currentTime.getDay()]
+              const todaySlots = studentTimetable.filter(s => s.day_of_week === todayName)
+              const slotsToRender = (todaySlots.length > 0 ? todaySlots : studentTimetable)
+                .filter(s => s.period_number > 0 || (s.subject_name && !s.subject_name.toLowerCase().includes('assembly')))
+                .sort((a, b) => a.period_number - b.period_number)
+
+              if (slotsToRender.length === 0) {
+                return (
+                  <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
+                    <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400">No active classes scheduled today. Check full weekly grid.</p>
+                    <button
+                      onClick={() => setCurrentTab('timetable')}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer"
+                    >
+                      View Timetable Grid
+                    </button>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                  {slotsToRender.slice(0, 6).map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-[#06080F]/70 border border-amber-500/15 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-700 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-500/30">
+                          P{slot.period_number}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{slot.subject_name || slot.subject_code || 'Technical Masterclass'}</p>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {slot.room_or_venue || 'Cloud Sandbox'} &bull; {slot.day_of_week}
+                            {slot.teacher_name && <span className="text-amber-400/90"> &bull; {slot.teacher_name}</span>}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] font-mono text-yellow-300 font-semibold shrink-0">
+                        {slot.start_time} - {slot.end_time}
                       </div>
                     </div>
-
-                    <div className="text-[11px] font-mono text-yellow-300 font-semibold shrink-0">
-                      {slot.start_time} - {slot.end_time}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

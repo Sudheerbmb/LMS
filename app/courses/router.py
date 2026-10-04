@@ -94,8 +94,13 @@ async def list_all(
             category_id=category_id, search=search, page=page, page_size=page_size,
         )
         pages = max(1, (total + page_size - 1) // page_size)
+        items = []
+        for c in courses:
+            d = CourseRead.model_validate(c).model_dump()
+            d["title"] = c.versions[0].title if c.versions else c.slug.replace("-", " ").title()
+            items.append(d)
         return {
-            "items": [CourseRead.model_validate(c).model_dump() for c in courses],
+            "items": items,
             "total": total,
             "page": page,
             "page_size": page_size,

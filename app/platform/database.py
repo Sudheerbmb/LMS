@@ -385,11 +385,42 @@ async def _bootstrap_defaults() -> None:
         # 5. Seed Training Institute Technical Courses & Subjects
         try:
             from app.admin import seed_tech_courses_internal
+            from app.courses.models import Course
+            from app.enrollment.models import Enrollment
+
             await seed_tech_courses_internal(session)
+            await session.commit()
+
+            # Auto-enroll default candidate accounts into their specialized technical tracks
+            candidate_track_map = {
+                "priya.s@student.edu": "python-genai",
+                "rahul.k@student.edu": "salesforce-developer",
+                "vikram.m@student.edu": "servicenow-csa-cad",
+                "alex.r@student.edu": "full-stack-web",
+                "student@example.com": "full-stack-web",
+                "ananya.r@student.edu": "cloud-devops-aws",
+                "sneha.p@student.edu": "full-stack-web",
+            }
+            for s_email, c_slug in candidate_track_map.items():
+                stu_user = await session.scalar(select(User).where(User.email == s_email.lower()))
+                target_course = await session.scalar(select(Course).where(Course.slug == c_slug))
+                if stu_user and target_course:
+                    existing_en = await session.scalar(
+                        select(Enrollment).where(
+                            Enrollment.user_id == stu_user.id,
+                            Enrollment.course_id == target_course.id,
+                        )
+                    )
+                    if not existing_en:
+                        session.add(Enrollment(
+                            user_id=stu_user.id,
+                            course_id=target_course.id,
+                            status="active",
+                        ))
             await session.commit()
         except Exception as err:
             await session.rollback()
-            print(f"[Bootstrap] seed tech courses error: {err}")
+            print(f"[Bootstrap] seed tech courses / enrollments error: {err}")
 
         # 6. Synchronize Timetable Engine & Generate Schedule
         try:
