@@ -353,29 +353,15 @@ async def get_school_live_classes(
     """
     query = select(LiveClass).order_by(LiveClass.starts_at.desc())
 
-    target_grade = grade_number
-    if user.role == "student" and not target_grade:
-        m = re.search(r"track\s*(\d+)", user.display_name or "", re.IGNORECASE) or re.search(r"track(\d+)", user.email or "", re.IGNORECASE) or re.search(r"class\s*(\d+)", user.display_name or "", re.IGNORECASE) or re.search(r"class(\d+)", user.email or "", re.IGNORECASE)
-        if m:
-            target_grade = int(m.group(1))
-        else:
-            target_grade = 1
-
-    if user.role == "student":
-        if grade_number is not None:
-            query = query.where(LiveClass.grade_number == grade_number)
-        else:
-            query = query.where(LiveClass.grade_number == target_grade)
+    if grade_number is not None:
+        query = query.where(LiveClass.grade_number == grade_number)
     elif user.role == "teacher":
-        if grade_number is not None:
-            query = query.where(LiveClass.grade_number == grade_number)
-        else:
-            query = query.where(
-                or_(
-                    LiveClass.teacher_id == user.id,
-                    LiveClass.grade_number.isnot(None),
-                )
+        query = query.where(
+            or_(
+                LiveClass.teacher_id == user.id,
+                LiveClass.grade_number.isnot(None),
             )
+        )
 
     if status_filter:
         query = query.where(LiveClass.status == status_filter)

@@ -940,11 +940,10 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const isTeacher = user.role === 'teacher'
   const isAdmin = user.role === 'admin'
   const isHost = isTeacher || isAdmin
+  const studentTrackMatch = user.display_name?.match(/track\s*(\d+)/i) || user.email?.match(/track(\d+)/i) || user.display_name?.match(/class\s*(\d+)/i) || user.email?.match(/class(\d+)/i)
+  const studentTrack = studentTrackMatch ? parseInt(studentTrackMatch[1], 10) : 1
 
-  const studentGradeMatch = user.display_name?.match(/class\s*(\d+)/i) || user.email?.match(/class(\d+)/i)
-  const studentGrade = studentGradeMatch ? parseInt(studentGradeMatch[1], 10) : 10
-
-  const [filterGrade, setFilterGrade] = useState<number | 'all'>(isStudent ? studentGrade : 'all')
+  const [filterGrade, setFilterGrade] = useState<number | 'all'>('all')
   const [filterRecordingOnly, setFilterRecordingOnly] = useState(false)
 
   // Helper to send WebSocket message safely
@@ -3742,11 +3741,6 @@ const handleTriggerTeacherCopilot = async (
   // Meeting Handlers
 
   const handleJoinClass = async (liveClass: SchoolLiveClass) => {
-    if (isStudent && liveClass.grade_number && liveClass.grade_number !== studentGrade) {
-      alert(`Access Restricted: This live masterclass is reserved for Track ${liveClass.grade_number}. You are in Track ${studentGrade}.`)
-      return
-    }
-
     // Direct 100% Zoom Meeting Launch (Host start_url for teachers, join_url for students)
     const zoomUrl = (isHost && liveClass.zoom_start_url)
       ? liveClass.zoom_start_url
@@ -6460,74 +6454,55 @@ const handleTriggerTeacherCopilot = async (
 
       </div>
 
-      {/* Student Enrolled Class Banner or Teacher Grade Selector */}
-      {isStudent ? (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs">
-              {studentGrade}
-            </div>
-            <div>
-              <p className="text-xs font-extrabold text-white">Enrolled Technical Track: Track {studentGrade}</p>
-              <p className="text-[11px] text-amber-300/80">Displaying authorized live lectures and official recordings for Track {studentGrade}.</p>
-            </div>
-          </div>
+      {/* Technical Track Filter Tabs & Recording Switcher */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        {isStudent && (
+          <span className="px-3 py-2 rounded-xl text-xs font-black bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            Enrolled: Track {studentTrack}
+          </span>
+        )}
+        <button
+          onClick={() => { setFilterGrade('all'); setFilterRecordingOnly(false); }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            filterGrade === 'all' && !filterRecordingOnly
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          All Tracks ({classes.length})
+        </button>
+        <button
+          onClick={() => setFilterRecordingOnly(prev => !prev)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+            filterRecordingOnly
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+              : 'bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30'
+          }`}
+        >
+          <Video className="w-3.5 h-3.5 text-amber-400" />
+          <span>Watch Recordings ({classes.filter(c => !!c.recording_url).length})</span>
+        </button>
+        {[
+          { id: 1, label: 'Python & GenAI' },
+          { id: 2, label: 'Salesforce CRM' },
+          { id: 3, label: 'ServiceNow ITSM' },
+          { id: 4, label: 'Full Stack Web' },
+          { id: 5, label: 'Cloud DevOps' },
+        ].map(track => (
           <button
-            onClick={() => setFilterRecordingOnly(prev => !prev)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-              filterRecordingOnly
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'bg-slate-900 text-amber-300 border border-amber-500/30'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5 text-amber-300" />
-            <span>Track {studentGrade} Recordings ({classes.filter(c => !!c.recording_url).length})</span>
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <button
-            onClick={() => { setFilterGrade('all'); setFilterRecordingOnly(false); }}
+            key={track.id}
+            onClick={() => { setFilterGrade(track.id); setFilterRecordingOnly(false); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              filterGrade === 'all' && !filterRecordingOnly
+              filterGrade === track.id && !filterRecordingOnly
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            All Tracks
+            {track.label}
           </button>
-          <button
-            onClick={() => setFilterRecordingOnly(prev => !prev)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-              filterRecordingOnly
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
-                : 'bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5 text-amber-400" />
-            <span>Watch Recordings ({classes.filter(c => !!c.recording_url).length})</span>
-          </button>
-          {[
-            { id: 1, label: 'Python & GenAI' },
-            { id: 2, label: 'Salesforce CRM' },
-            { id: 3, label: 'ServiceNow ITSM' },
-            { id: 4, label: 'Full Stack Web' },
-            { id: 5, label: 'Cloud DevOps' },
-          ].map(track => (
-            <button
-              key={track.id}
-              onClick={() => { setFilterGrade(track.id); setFilterRecordingOnly(false); }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                filterGrade === track.id && !filterRecordingOnly
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              {track.label}
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Live & Scheduled Classes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
