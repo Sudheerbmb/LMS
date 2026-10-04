@@ -89,8 +89,10 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
     setPassed(null)
     try {
       const res = await submitCodingSolution(selectedEx.id, { code })
-      setOutput(res.output || 'Code executed successfully with status 0.')
-      setPassed(res.passed !== false)
+      const resData = (res.result || {}) as Record<string, any>
+      const outText = resData.output || (res as any).output || `Status: ${res.status}`
+      setOutput(outText)
+      setPassed(res.status === 'passed' || resData.passed === true)
     } catch (err: any) {
       setOutput(err.message || 'SyntaxError / Execution exception')
       setPassed(false)

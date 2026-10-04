@@ -34,7 +34,12 @@ class ExerciseRead(BaseModel):
 
 
 class CodeSubmissionCreate(BaseModel):
-    source_code: str = Field(min_length=1, max_length=100000)
+    source_code: str = Field(default="", max_length=100000)
+    code: str | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.source_code and self.code:
+            self.source_code = self.code
 
 
 class CodeSubmissionRead(BaseModel):

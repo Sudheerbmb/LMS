@@ -1,19 +1,13 @@
 export const getApiBaseUrl = (): string => {
-
   if (import.meta.env.VITE_API_URL && typeof import.meta.env.VITE_API_URL === 'string') {
-
     return import.meta.env.VITE_API_URL
-
   }
 
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-
-    return 'https://omni-lms.onrender.com'
-
+    return 'https://lms-rpj8.onrender.com'
   }
 
   return 'http://127.0.0.1:8000'
-
 }
 
 export const getWsBaseUrl = (): string => {
@@ -148,7 +142,7 @@ export type Enrollment = { id: string; user_id: string; course_id: string; statu
 
 export type CodingExercise = { id: string; title: string; prompt: string; starter_code: string; language: string }
 
-export type CodingSubmission = { id: string; exercise_id: string; code: string; status: string; output?: string; passed?: boolean }
+export type CodingSubmission = { id: string; exercise_id: string; code?: string; status: string; output?: string; passed?: boolean; result?: { output?: string; passed?: boolean; duration_ms?: number } }
 
 export type ClassroomSession = { id: string; course_id: string; title: string; start_time: string; end_time: string; meeting_url?: string }
 
@@ -303,14 +297,15 @@ export const verifyCertificate = (certificateNumber: string) =>
 // Coding Exercises
 
 export const createCodingExercise = (courseId: string, payload: { title: string; prompt: string; starter_code: string; language: string }) =>
-
   request<CodingExercise>(`/api/v1/coding/courses/${courseId}/exercises`, { method: 'POST', body: JSON.stringify(payload) })
 
 export const getCodingExercises = (courseId: string) => request<CodingExercise[]>(`/api/v1/coding/courses/${courseId}/exercises`)
 
-export const submitCodingSolution = (exerciseId: string, payload: { code: string }) =>
-
-  request<CodingSubmission>(`/api/v1/coding/exercises/${exerciseId}/submissions`, { method: 'POST', body: JSON.stringify(payload) })
+export const submitCodingSolution = (exerciseId: string, payload: { code?: string; source_code?: string }) =>
+  request<CodingSubmission>(`/api/v1/coding/exercises/${exerciseId}/submissions`, {
+    method: 'POST',
+    body: JSON.stringify({ source_code: payload.source_code || payload.code || '', code: payload.code || payload.source_code || '' })
+  })
 
 // Classroom & Communication
 
