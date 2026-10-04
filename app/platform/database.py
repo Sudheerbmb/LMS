@@ -155,129 +155,106 @@ def _patch_missing_columns(connection: Connection) -> None:
 
 async def purge_legacy_school_data(session: AsyncSession) -> None:
     """Safely cleans up any old school dummy accounts, Class 1-10 grades, and obsolete feedback."""
-    try:
+    statements = [
         # 1. Delete legacy teacher feedback
-        await session.execute(
-            text("""
-                DELETE FROM teacher_feedback 
-                WHERE section_id IN (
-                    SELECT s.id FROM school_sections s 
-                    JOIN school_grades g ON s.grade_id = g.id 
-                    WHERE g.name LIKE 'Class %'
-                ) 
-                OR comments LIKE '%trigonometry%' 
-                OR comments LIKE '%homework%' 
-                OR comments LIKE '%physics%'
-                OR comments LIKE '%math%'
-            """)
-        )
-        
+        """
+        DELETE FROM teacher_feedback 
+        WHERE section_id IN (
+            SELECT s.id FROM school_sections s 
+            JOIN school_grades g ON s.grade_id = g.id 
+            WHERE g.name LIKE 'Class %'
+        ) 
+        OR comments LIKE '%trigonometry%' 
+        OR comments LIKE '%homework%' 
+        OR comments LIKE '%physics%'
+        OR comments LIKE '%math%'
+        """,
         # 2. Delete legacy timetable slots for Class 1-10
-        await session.execute(
-            text("""
-                DELETE FROM timetable_slots 
-                WHERE section_id IN (
-                    SELECT s.id FROM school_sections s 
-                    JOIN school_grades g ON s.grade_id = g.id 
-                    WHERE g.name LIKE 'Class %'
-                )
-            """)
+        """
+        DELETE FROM timetable_slots 
+        WHERE section_id IN (
+            SELECT s.id FROM school_sections s 
+            JOIN school_grades g ON s.grade_id = g.id 
+            WHERE g.name LIKE 'Class %'
         )
-
+        """,
         # 3. Delete legacy school sections & grades
-        await session.execute(
-            text("""
-                DELETE FROM school_sections 
-                WHERE grade_id IN (
-                    SELECT id FROM school_grades WHERE name LIKE 'Class %'
-                )
-            """)
+        """
+        DELETE FROM school_sections 
+        WHERE grade_id IN (
+            SELECT id FROM school_grades WHERE name LIKE 'Class %'
         )
-        await session.execute(
-            text("""
-                DELETE FROM grade_curricula 
-                WHERE grade_id IN (
-                    SELECT id FROM school_grades WHERE name LIKE 'Class %'
-                )
-            """)
+        """,
+        """
+        DELETE FROM grade_curricula 
+        WHERE grade_id IN (
+            SELECT id FROM school_grades WHERE name LIKE 'Class %'
         )
-        await session.execute(
-            text("""
-                DELETE FROM school_grades WHERE name LIKE 'Class %'
-            """)
-        )
-
+        """,
+        """
+        DELETE FROM school_grades WHERE name LIKE 'Class %'
+        """,
         # 4. Delete obsolete school subjects
-        await session.execute(
-            text("""
-                DELETE FROM school_subjects 
-                WHERE code IN ('MATH-01', 'ENG-01', 'SCI-01', 'SOC-01', 'HIN-01', 'SAN-01', 'PE-01', 'ART-01')
-                   OR name IN ('Mathematics', 'English', 'Science', 'Social Studies', 'Hindi', 'Sanskrit', 'Physical Education', 'Art & Craft')
-            """)
-        )
-
+        """
+        DELETE FROM school_subjects 
+        WHERE code IN ('MATH-01', 'ENG-01', 'SCI-01', 'SOC-01', 'HIN-01', 'SAN-01', 'PE-01', 'ART-01')
+           OR name IN ('Mathematics', 'English', 'Science', 'Social Studies', 'Hindi', 'Sanskrit', 'Physical Education', 'Art & Craft')
+        """,
         # 5. Remove student enrollments, attendances, teacher skills for school users
-        await session.execute(
-            text("""
-                DELETE FROM enrollments 
-                WHERE user_id IN (
-                    SELECT id FROM users 
-                    WHERE email LIKE '%@school.edu' 
-                       OR display_name LIKE '%Class %'
-                       OR display_name LIKE '%Class-%'
-                )
-            """)
+        """
+        DELETE FROM enrollments 
+        WHERE user_id IN (
+            SELECT id FROM users 
+            WHERE email LIKE '%@school.edu' 
+               OR display_name LIKE '%Class %'
+               OR display_name LIKE '%Class-%'
         )
-        await session.execute(
-            text("""
-                DELETE FROM class_attendance 
-                WHERE student_email LIKE '%@school.edu'
-            """)
+        """,
+        """
+        DELETE FROM class_attendances 
+        WHERE student_email LIKE '%@school.edu'
+        """,
+        """
+        DELETE FROM teacher_subject_skills 
+        WHERE teacher_id IN (
+            SELECT tp.id FROM teacher_profiles tp
+            JOIN users u ON tp.user_id = u.id
+            WHERE u.email LIKE '%@school.edu'
+               OR u.display_name LIKE '%Class %'
         )
-        await session.execute(
-            text("""
-                DELETE FROM teacher_subject_skills 
-                WHERE teacher_id IN (
-                    SELECT tp.id FROM teacher_profiles tp
-                    JOIN users u ON tp.user_id = u.id
-                    WHERE u.email LIKE '%@school.edu'
-                       OR u.display_name LIKE '%Class %'
-                )
-            """)
+        """,
+        """
+        DELETE FROM teacher_profiles 
+        WHERE user_id IN (
+            SELECT id FROM users 
+            WHERE email LIKE '%@school.edu'
+               OR (role = 'teacher' AND email NOT IN (
+                    'sarah.connor@institute.edu',
+                    'alan.turing@institute.edu',
+                    'marc.b@institute.edu',
+                    'fred.l@institute.edu',
+                    'dan.a@institute.edu',
+                    'linus.t@institute.edu',
+                    'teacher@example.com'
+               ))
         )
-        await session.execute(
-            text("""
-                DELETE FROM teacher_profiles 
-                WHERE user_id IN (
-                    SELECT id FROM users 
-                    WHERE email LIKE '%@school.edu'
-                       OR (role = 'teacher' AND email NOT IN (
-                            'sarah.connor@institute.edu',
-                            'alan.turing@institute.edu',
-                            'marc.b@institute.edu',
-                            'fred.l@institute.edu',
-                            'dan.a@institute.edu',
-                            'linus.t@institute.edu',
-                            'teacher@example.com'
-                       ))
-                )
-            """)
-        )
-
+        """,
         # 6. Delete all users with email @school.edu or display_name with Class
-        await session.execute(
-            text("""
-                DELETE FROM users 
-                WHERE email LIKE '%@school.edu' 
-                   OR display_name LIKE '%Class %'
-                   OR display_name LIKE '%(Class%'
-            """)
-        )
+        """
+        DELETE FROM users 
+        WHERE email LIKE '%@school.edu' 
+           OR display_name LIKE '%Class %'
+           OR display_name LIKE '%(Class%'
+        """
+    ]
 
-        await session.commit()
-    except Exception as e:
-        await session.rollback()
-        print(f"[Purge Legacy School Data] notice: {e}")
+    for stmt in statements:
+        try:
+            await session.execute(text(stmt))
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            print(f"[Purge Legacy School Data] step note: {e}")
 
 
 async def _bootstrap_defaults() -> None:

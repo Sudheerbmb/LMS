@@ -218,12 +218,20 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
     teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
     teacher_profiles = (await session.scalars(select(TeacherProfile))).all()
     profile_by_user_id = {p.user_id: p for p in teacher_profiles}
+    existing_emp_ids = {p.employee_id for p in teacher_profiles}
 
     for idx, t in enumerate(teachers, start=1):
         if t.id not in profile_by_user_id:
+            emp_id = f"T{idx:03d}"
+            counter = idx
+            while emp_id in existing_emp_ids:
+                counter += 1
+                emp_id = f"T{counter:03d}"
+            existing_emp_ids.add(emp_id)
+
             p = TeacherProfile(
                 user_id=t.id,
-                employee_id=f"T{idx:03d}",
+                employee_id=emp_id,
                 qualification="Senior Technical Faculty Specialist",
                 max_daily_periods=5,
                 rating_avg=4.9,
