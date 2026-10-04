@@ -23,7 +23,9 @@ import {
   Clock, 
   Users, 
   Code2, 
-  Calendar 
+  Calendar,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react'
 
 type CoursesPageProps = {
@@ -107,7 +109,9 @@ const DEFAULT_RESOURCES: Record<string, SharedResource[]> = {
 }
 
 export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab }) => {
-  const isTeacher = user.role === 'teacher' || user.role === 'admin'
+  const isTeacher = user.role === 'teacher'
+  const isAdmin = user.role === 'admin'
+  const isStudent = user.role === 'student'
 
   const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -117,6 +121,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
 
   // Roadmap & Syllabus Detail Modal State
   const [activeRoadmapCourse, setActiveRoadmapCourse] = useState<AdminInstituteCourse | null>(null)
+  const [activeSubjectFilter, setActiveSubjectFilter] = useState<string | null>(null)
   const [roadmapTab, setRoadmapTab] = useState<'syllabus' | 'resources'>('syllabus')
   const [localSyllabus, setLocalSyllabus] = useState<Record<string, DayTopic[]>>(() => {
     const saved = localStorage.getItem('acharya_tech_syllabus_store')
@@ -220,8 +225,44 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
     setTopicLabTask('')
   }
 
-  // Filtered Courses
-  const filteredCourses = courses.filter((c) => {
+  const enrolledCourseIds = new Set(enrollments.map((e) => e.course_id))
+
+  // 1. TEACHER: Extract ONLY the subjects dealt by this teacher across all courses
+  const teacherDealtSubjects = courses.flatMap((course) =>
+    course.subjects
+      .filter(
+        (sub) =>
+          sub.teacher_id === user.id ||
+          (sub.teacher_name && user.display_name && sub.teacher_name.toLowerCase() === user.display_name.toLowerCase())
+      )
+      .map((sub) => ({
+        ...sub,
+        course_id: course.id,
+        course_title: course.title,
+        course_slug: course.slug,
+        course_level: course.level,
+        course_description: course.description,
+        full_course_ref: course,
+      }))
+  )
+
+  const filteredTeacherSubjects = teacherDealtSubjects.filter((ts) => {
+    const matchesSearch =
+      ts.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ts.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ts.course_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ts.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesLevel =
+      selectedLevel === 'ALL' || ts.course_level.toLowerCase() === selectedLevel.toLowerCase()
+
+    return matchesSearch && matchesLevel
+  })
+
+  // 2. STUDENT: Show ONLY courses where student is enrolled by Admin
+  const studentEnrolledCourses = courses.filter((c) => enrolledCourseIds.has(c.id))
+
+  const filteredStudentCourses = studentEnrolledCourses.filter((c) => {
     const matchesSearch =
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -233,14 +274,31 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
     return matchesSearch && matchesLevel
   })
 
-  const enrolledCourseIds = new Set(enrollments.map((e) => e.course_id))
+  // 3. ADMIN: Show all courses and subjects with arrangement tools
+  const filteredAdminCourses = courses.filter((c) => {
+    const matchesSearch =
+      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.subjects.some((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.code.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const pageTitle =
-    user.role === 'admin'
-      ? 'Courses & Subject Modules Directory'
-      : user.role === 'teacher'
-      ? 'Courses Handled & Curriculum'
-      : 'Enrolled Courses & Roadmaps'
+    const matchesLevel =
+      selectedLevel === 'ALL' || c.level.toLowerCase() === selectedLevel.toLowerCase()
+
+    return matchesSearch && matchesLevel
+  })
+
+  // Page Header Text
+  const pageTitle = isTeacher
+    ? 'My Assigned Subjects & Teaching Curriculum'
+    : isStudent
+    ? 'My Enrolled Technical Courses & Subjects'
+    : 'Institute Course Catalog & Subject Architecture'
+
+  const pageSubtitle = isTeacher
+    ? 'Subjects and technical classes assigned to you by the institute administrator. View day-wise syllabus, practical labs, and share resources with your enrolled batches.'
+    : isStudent
+    ? 'Technical curriculum and subjects assigned to your enrollment by the administrator. Track day-wise chapters, hands-on lab sprints, and study materials.'
+    : 'Master technical curriculum directory. Arrange courses with respective subjects, assign faculty mentors, and manage candidate enrollments.'
 
   return (
     <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
@@ -249,37 +307,46 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <BookOpen className="w-5 h-5" />
+              {isTeacher ? <Layers className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
             </span>
             <h1 className="text-2xl font-black text-white tracking-tight">{pageTitle}</h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Simplified curriculum hub. Day-wise technical syllabus, multi-subject modules, and direct live classroom access.
+          <p className="text-xs sm:text-sm text-slate-400 max-w-3xl">
+            {pageSubtitle}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {isTeacher && (
+          {isAdmin && (
+            <button
+              onClick={() => setCurrentTab?.('admin')}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Arrange Courses & Assign Teachers</span>
+            </button>
+          )}
+
+          {isTeacher && teacherDealtSubjects.length > 0 && (
             <button
               onClick={() => {
-                if (courses.length > 0) {
-                  setResourceCourseId(courses[0].id)
-                  setResourceSubjectCode(courses[0].subjects[0]?.code || '')
-                }
+                const firstSub = teacherDealtSubjects[0]
+                setResourceCourseId(firstSub.course_slug || firstSub.course_id)
+                setResourceSubjectCode(firstSub.code)
                 setShowShareModal(true)
               }}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Share2 className="w-4 h-4" />
-              <span>Share Resources</span>
+              <span>Share Subject Resource</span>
             </button>
           )}
 
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 font-semibold text-xs flex items-center gap-1.5 transition-all"
-            title="Refresh Courses"
+            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Refresh Curriculum"
           >
             <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -294,7 +361,11 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tracks, subjects (e.g. Python, Apex, Docker)..."
+            placeholder={
+              isTeacher
+                ? "Search assigned subjects (e.g. PY-101, Apex, React)..."
+                : "Search courses & modules..."
+            }
             className="w-full bg-[#111726] text-white text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-800 focus:outline-none focus:border-amber-500/50"
           />
         </div>
@@ -317,28 +388,254 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       </div>
 
-      {/* ── Courses Card Grid ── */}
+      {/* ── MAIN CONTENT AREA ── */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-3" />
-          <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase">Loading Technical Tracks...</p>
+          <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase">Loading Technical Curriculum...</p>
         </div>
-      ) : filteredCourses.length === 0 ? (
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-12 text-center max-w-xl mx-auto">
-          <BookOpen className="w-12 h-12 text-amber-500/40 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">No Matching Courses Found</h3>
-          <p className="text-xs text-slate-400 mb-4">Try clearing your search terms or filter criteria.</p>
-          <button
-            onClick={() => { setSearchQuery(''); setSelectedLevel('ALL'); }}
-            className="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold"
-          >
-            Clear Filters
-          </button>
-        </div>
+      ) : isTeacher ? (
+        /* ═════════════════════════════════════════════════════════════════════════
+           1. TEACHER VIEW: STRICTLY ONLY SUBJECTS DEALT BY THIS TEACHER
+           ═════════════════════════════════════════════════════════════════════════ */
+        filteredTeacherSubjects.length === 0 ? (
+          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+            <Layers className="w-12 h-12 text-amber-500/40 mx-auto" />
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">No Subjects Assigned Yet</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                You currently have no teaching subjects allocated to your faculty profile. The institute administrator arranges courses with respective subjects and assigns teachers. Please contact the administrator.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>My Dealt Subject Classes ({filteredTeacherSubjects.length})</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTeacherSubjects.map((ts) => {
+                const subTopics = (localSyllabus[ts.course_slug] || []).filter(
+                  (top) => !top.subject_code || top.subject_code === ts.code
+                )
+                const subResources = (localResources[ts.course_slug] || []).filter(
+                  (res) => !res.subject_code || res.subject_code === ts.code
+                )
+
+                return (
+                  <div
+                    key={ts.id}
+                    className="bg-[#0B0F19] rounded-2xl border border-amber-500/15 hover:border-amber-500/35 transition-all p-5 flex flex-col justify-between shadow-xl group hover:-translate-y-1 duration-200"
+                  >
+                    <div className="space-y-3">
+                      {/* Badge Header: Subject Code & Course Track */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase border"
+                          style={{
+                            backgroundColor: `${ts.color || '#3b82f6'}20`,
+                            borderColor: `${ts.color || '#3b82f6'}50`,
+                            color: ts.color || '#3b82f6',
+                          }}
+                        >
+                          {ts.code}
+                        </span>
+
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800/90 text-amber-300 border border-slate-700/60 truncate max-w-[180px]">
+                          {ts.course_title}
+                        </span>
+                      </div>
+
+                      {/* Subject Name */}
+                      <h3 className="text-base font-extrabold text-white group-hover:text-amber-300 transition-colors leading-snug">
+                        {ts.name}
+                      </h3>
+
+                      {/* Subject Description */}
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {ts.description || 'Comprehensive modular curriculum covering hands-on coding, live architecture labs, and doubt resolution.'}
+                      </p>
+
+                      {/* Subject Quick Meta */}
+                      <div className="p-3 bg-[#111726] rounded-xl border border-slate-800 space-y-1.5 text-[11px]">
+                        <div className="flex items-center justify-between text-slate-400">
+                          <span>Faculty Instructor:</span>
+                          <span className="font-bold text-amber-400">{user.display_name}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-400">
+                          <span>Day Topics & Labs:</span>
+                          <span className="font-semibold text-slate-200">{subTopics.length} Chapters</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-400">
+                          <span>Shared Resources:</span>
+                          <span className="font-semibold text-slate-200">{subResources.length} Uploaded</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="pt-4 border-t border-slate-800/80 mt-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setActiveRoadmapCourse(ts.full_course_ref)
+                            setActiveSubjectFilter(ts.code)
+                            setRoadmapTab('syllabus')
+                          }}
+                          className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Syllabus & Labs</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setResourceCourseId(ts.course_slug || ts.course_id)
+                            setResourceSubjectCode(ts.code)
+                            setShowShareModal(true)
+                          }}
+                          className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:text-amber-300 transition-all cursor-pointer"
+                          title="Share Resource for this subject"
+                        >
+                          <Share2 className="w-4 h-4 text-amber-400" />
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentTab?.('classroom')}
+                          className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:text-white transition-all cursor-pointer"
+                          title="Launch Classroom Session"
+                        >
+                          <Video className="w-4 h-4 text-amber-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      ) : isStudent ? (
+        /* ═════════════════════════════════════════════════════════════════════════
+           2. STUDENT VIEW: SHOW ONLY COURSES ENROLLED BY ADMIN
+           ═════════════════════════════════════════════════════════════════════════ */
+        filteredStudentCourses.length === 0 ? (
+          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+            <BookOpen className="w-12 h-12 text-amber-500/40 mx-auto" />
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">No Course Enrolled Yet</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Students are enrolled in courses directly by the institute administrator only. Once the administrator assigns your course, all respective subject classes, syllabus roadmaps, and classroom schedules will appear here automatically.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredStudentCourses.map((course) => {
+              const levelColor =
+                course.level === 'beginner'
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : course.level === 'intermediate'
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+
+              return (
+                <div
+                  key={course.id}
+                  className="bg-[#0B0F19] rounded-2xl border border-amber-500/15 hover:border-amber-500/35 transition-all p-5 flex flex-col justify-between shadow-xl group hover:-translate-y-1 duration-200"
+                >
+                  <div>
+                    {/* Card Header: Level & Enrolled Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg border ${levelColor}`}>
+                        {course.level}
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Enrolled by Admin</span>
+                      </span>
+                    </div>
+
+                    {/* Course Title & Description */}
+                    <h3 className="text-base font-extrabold text-white mb-2 group-hover:text-amber-300 transition-colors leading-snug">
+                      {course.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                      {course.description || 'Comprehensive industry-aligned curriculum covering core fundamentals and advanced production architecture.'}
+                    </p>
+
+                    {/* Assigned Subjects in this Course */}
+                    <div className="space-y-1.5 mb-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 flex items-center gap-1">
+                        <Layers className="w-3 h-3" />
+                        <span>Assigned Subjects in this Track ({course.subjects.length})</span>
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {course.subjects.map((sub) => (
+                          <span
+                            key={sub.id}
+                            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-[#111726] text-slate-300 border border-slate-800 flex items-center gap-1"
+                            title={`${sub.code}: ${sub.name} (Faculty: ${sub.teacher_name || 'Assigned Mentor'})`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sub.color || '#F59E0B' }} />
+                            <span className="font-bold text-amber-400">{sub.code}</span>
+                            <span className="text-slate-400 truncate max-w-[120px]">{sub.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="pt-4 border-t border-slate-800/80 space-y-3">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-amber-400" />
+                        {course.subjects.length} Subject Classes
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        {course.subjects.length * 15} Training Hours
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setActiveRoadmapCourse(course)
+                          setActiveSubjectFilter(null)
+                          setRoadmapTab('syllabus')
+                        }}
+                        className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02] cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Syllabus & Roadmap</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentTab?.('classroom')}
+                        className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:text-white transition-all cursor-pointer"
+                        title="Launch Classroom Session"
+                      >
+                        <Video className="w-4 h-4 text-amber-400" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
       ) : (
+        /* ═════════════════════════════════════════════════════════════════════════
+           3. ADMIN VIEW: FULL COURSE & SUBJECT DIRECTORY WITH ARRANGE ACCESS
+           ═════════════════════════════════════════════════════════════════════════ */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => {
-            const isEnrolled = enrolledCourseIds.has(course.id)
+          {filteredAdminCourses.map((course) => {
             const levelColor =
               course.level === 'beginner'
                 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
@@ -352,16 +649,14 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                 className="bg-[#0B0F19] rounded-2xl border border-amber-500/15 hover:border-amber-500/35 transition-all p-5 flex flex-col justify-between shadow-xl group hover:-translate-y-1 duration-200"
               >
                 <div>
-                  {/* Card Header: Level & Status */}
+                  {/* Card Header */}
                   <div className="flex items-center justify-between mb-3">
                     <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg border ${levelColor}`}>
                       {course.level}
                     </span>
-                    {user.role === 'student' && (
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${isEnrolled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}`}>
-                        {isEnrolled ? '✓ Enrolled' : 'Available'}
-                      </span>
-                    )}
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {course.enrolled_count} Enrolled
+                    </span>
                   </div>
 
                   {/* Course Title & Description */}
@@ -372,66 +667,54 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     {course.description || 'Comprehensive industry-aligned curriculum covering core fundamentals and advanced production architecture.'}
                   </p>
 
-                  {/* Parallel Subjects Chips */}
-                  <div className="space-y-1.5 mb-4">
+                  {/* Parallel Subjects with Assigned Faculty */}
+                  <div className="space-y-2 mb-4">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 flex items-center gap-1">
                       <Layers className="w-3 h-3" />
-                      <span>Concurrent Subjects ({course.subjects.length})</span>
+                      <span>Subjects & Assigned Faculty ({course.subjects.length})</span>
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                       {course.subjects.map((sub) => (
-                        <span
+                        <div
                           key={sub.id}
-                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-[#111726] text-slate-300 border border-slate-800 flex items-center gap-1"
-                          title={`${sub.code}: ${sub.name}`}
+                          className="px-2.5 py-1.5 rounded-lg text-[11px] bg-[#111726] border border-slate-800 flex items-center justify-between gap-2"
                         >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sub.color || '#F59E0B' }} />
-                          <span className="font-bold text-amber-400">{sub.code}</span>
-                          <span className="text-slate-400 truncate max-w-[120px]">{sub.name}</span>
-                        </span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sub.color || '#F59E0B' }} />
+                            <span className="font-mono font-bold text-amber-300 shrink-0">{sub.code}</span>
+                            <span className="text-slate-300 truncate">{sub.name}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-semibold shrink-0">
+                            {sub.teacher_name || 'Unassigned'}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Card Footer: Key Stats & Action Buttons */}
-                <div className="pt-4 border-t border-slate-800/80 space-y-3">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-amber-400" />
-                      {course.enrolled_count} Candidates
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      {course.subjects.length * 15} Hours
-                    </span>
-                  </div>
-
+                {/* Card Footer */}
+                <div className="pt-4 border-t border-slate-800/80 space-y-2">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
                         setActiveRoadmapCourse(course)
+                        setActiveSubjectFilter(null)
                         setRoadmapTab('syllabus')
                       }}
-                      className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02]"
+                      className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02] cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       <span>Syllabus & Roadmap</span>
                     </button>
 
                     <button
-                      onClick={() => setCurrentTab?.('classroom')}
-                      className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:text-white transition-all"
-                      title="Launch Classroom Session"
+                      onClick={() => setCurrentTab?.('admin')}
+                      className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
+                      title="Edit in Admin Panel"
                     >
-                      <Video className="w-4 h-4 text-amber-400" />
+                      <span>Arrange</span>
                     </button>
-
-                    {user.role === 'student' && !isEnrolled && (
-                      <span className="py-2.5 px-3 rounded-xl bg-slate-800/80 text-slate-400 text-[11px] font-semibold border border-slate-700/60 flex items-center justify-center">
-                        Admin Assigned
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -440,7 +723,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       )}
 
-      {/* ── Curriculum & Roadmap Drawer Modal ── */}
+      {/* ── Curriculum & Roadmap Modal ── */}
       {activeRoadmapCourse && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
           <div className="bg-[#0B0F19] border border-amber-500/30 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
@@ -452,14 +735,22 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     {activeRoadmapCourse.level}
                   </span>
                   <span className="text-xs text-slate-400 font-bold">Track: /{activeRoadmapCourse.slug}</span>
+                  {activeSubjectFilter && (
+                    <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      Subject: {activeSubjectFilter}
+                    </span>
+                  )}
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white">{activeRoadmapCourse.title}</h2>
                 <p className="text-xs text-slate-400 mt-1">{activeRoadmapCourse.description}</p>
               </div>
 
               <button
-                onClick={() => setActiveRoadmapCourse(null)}
-                className="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                onClick={() => {
+                  setActiveRoadmapCourse(null)
+                  setActiveSubjectFilter(null)
+                }}
+                className="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -470,7 +761,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setRoadmapTab('syllabus')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     roadmapTab === 'syllabus'
                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                       : 'text-slate-400 hover:text-slate-200'
@@ -482,21 +773,24 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
 
                 <button
                   onClick={() => setRoadmapTab('resources')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     roadmapTab === 'resources'
                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Shared Resources & Code ({(localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length})</span>
+                  <span>Shared Resources ({(localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length})</span>
                 </button>
               </div>
 
               {isTeacher && roadmapTab === 'syllabus' && (
                 <button
-                  onClick={() => setShowAddTopicModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1"
+                  onClick={() => {
+                    setTopicSubjectCode(activeSubjectFilter || activeRoadmapCourse.subjects[0]?.code || '')
+                    setShowAddTopicModal(true)
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Day Topic</span>
@@ -508,12 +802,21 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               {roadmapTab === 'syllabus' ? (
                 <div className="space-y-3">
-                  {(localSyllabus[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">
-                      <p className="text-xs">No day-wise roadmap topics added yet for this course.</p>
-                    </div>
-                  ) : (
-                    (localSyllabus[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).map((day) => (
+                  {(() => {
+                    const allTopics = localSyllabus[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []
+                    const filteredTopics = activeSubjectFilter
+                      ? allTopics.filter((t) => !t.subject_code || t.subject_code === activeSubjectFilter)
+                      : allTopics
+
+                    if (filteredTopics.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-slate-400">
+                          <p className="text-xs">No day-wise roadmap topics added yet for this subject.</p>
+                        </div>
+                      )
+                    }
+
+                    return filteredTopics.map((day) => (
                       <div
                         key={day.day_number}
                         className="p-4 rounded-xl bg-[#111726] border border-slate-800 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
@@ -526,7 +829,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-extrabold text-white">{day.title}</span>
                               {day.subject_code && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-amber-300 border border-slate-700">
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-amber-300 border border-slate-700 font-mono">
                                   {day.subject_code}
                                 </span>
                               )}
@@ -548,16 +851,25 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                         )}
                       </div>
                     ))
-                  )}
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">
-                      <p className="text-xs">No shared resources uploaded yet for this course track.</p>
-                    </div>
-                  ) : (
-                    (localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).map((res) => (
+                  {(() => {
+                    const allRes = localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []
+                    const filteredRes = activeSubjectFilter
+                      ? allRes.filter((r) => !r.subject_code || r.subject_code === activeSubjectFilter)
+                      : allRes
+
+                    if (filteredRes.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-slate-400">
+                          <p className="text-xs">No shared resources uploaded yet for this subject.</p>
+                        </div>
+                      )
+                    }
+
+                    return filteredRes.map((res) => (
                       <div
                         key={res.id}
                         className="p-4 rounded-xl bg-[#111726] border border-slate-800 flex items-center justify-between gap-3"
@@ -570,6 +882,11 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                             <p className="text-xs font-bold text-white truncate">{res.title}</p>
                             <p className="text-[10px] text-slate-400">
                               Shared by <span className="text-amber-400">{res.shared_by}</span> • {res.shared_at}
+                              {res.subject_code && (
+                                <span className="ml-2 font-mono text-amber-300 font-bold px-1 rounded bg-slate-900 border border-slate-800">
+                                  {res.subject_code}
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -585,7 +902,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                         </a>
                       </div>
                     ))
-                  )}
+                  })()}
                 </div>
               )}
             </div>
@@ -593,16 +910,16 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       )}
 
-      {/* ── Share Resource Modal (For Teachers / Admin) ── */}
+      {/* ── Share Resource Modal ── */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0B0F19] border border-amber-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-amber-400" />
-                Share Learning Resource
+                Share Subject Resource
               </h3>
-              <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -621,6 +938,17 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Subject Code</label>
+                <input
+                  type="text"
+                  value={resourceSubjectCode}
+                  onChange={(e) => setResourceSubjectCode(e.target.value)}
+                  placeholder="e.g. PY-101"
+                  className="w-full bg-[#111726] border border-slate-800 text-white rounded-xl p-2.5 focus:outline-none focus:border-amber-500/50 font-mono"
+                />
               </div>
 
               <div>
@@ -665,7 +993,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-all"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-all cursor-pointer"
                 >
                   Share With Students
                 </button>
@@ -675,7 +1003,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       )}
 
-      {/* ── Add Day Topic Modal (For Teachers / Admin) ── */}
+      {/* ── Add Day Topic Modal ── */}
       {showAddTopicModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0B0F19] border border-amber-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
@@ -684,7 +1012,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                 <Plus className="w-4 h-4 text-amber-400" />
                 Add Syllabus Day Topic
               </h3>
-              <button onClick={() => setShowAddTopicModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddTopicModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -709,7 +1037,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                   value={topicSubjectCode}
                   onChange={(e) => setTopicSubjectCode(e.target.value)}
                   placeholder="e.g. PY-101"
-                  className="w-full bg-[#111726] border border-slate-800 text-white rounded-xl p-2.5 focus:outline-none focus:border-amber-500/50"
+                  className="w-full bg-[#111726] border border-slate-800 text-white rounded-xl p-2.5 focus:outline-none focus:border-amber-500/50 font-mono"
                 />
               </div>
 
@@ -738,7 +1066,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-all"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-all cursor-pointer"
                 >
                   Save Day Topic
                 </button>

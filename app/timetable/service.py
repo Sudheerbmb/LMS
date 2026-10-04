@@ -983,41 +983,111 @@ async def get_school_courses_and_syllabus(
             teacher_classes_map[s.teacher_id].add(pair)
 
     courses_result: List[Dict[str, Any]] = []
-    from app.courses.models import Course
+    from app.courses.models import Course, CourseSubject
     from app.enrollment.models import Enrollment
 
-    # 1. TEACHER VIEW
+    # 1. TEACHER VIEW: strictly return only the subjects dealt by this teacher
     if user_role == "teacher" or (not user_role and user_email and ("teacher" in user_email or "@institute.edu" in user_email and "student" not in user_email)):
-        # Locate teacher profile
-        target_teacher = None
-        if teacher_id:
-            target_teacher = next((t for t in teachers if t.id == teacher_id), None)
-        if not target_teacher and user_id:
-            target_teacher = next((t for t in teachers if t.user_id == user_id), None)
-        if not target_teacher and user_email:
-            target_teacher = next((t for t in teachers if (user_map.get(t.user_id) and user_map[t.user_id].email.lower() == user_email.lower())), None)
-        if not target_teacher and teachers:
-            target_teacher = teachers[0]
+        target_teacher_user = None
+        if user_id:
+            target_teacher_user = await session.get(User, user_id)
+        elif user_email:
+            target_teacher_user = await session.scalar(select(User).where(User.email == user_email))
+        elif teacher_id:
+            t_prof = await session.get(TeacherProfile, teacher_id)
+            if t_prof:
+                target_teacher_user = await session.get(User, t_prof.user_id)
 
-        if target_teacher:
-            pairs = teacher_classes_map.get(target_teacher.id, set())
-            if not pairs:
-                for sk in target_teacher.skills:
-                    if sk.subject:
-                        for gr in grades:
-                            pairs.add((gr.id, sk.subject.id))
+        target_teacher_profile = None
+        if target_teacher_user:
+            target_teacher_profile = await session.scalar(
+                select(TeacherProfile)
+                .options(selectinload(TeacherProfile.skills).selectinload(TeacherSubjectSkill.subject))
+                .where(TeacherProfile.user_id == target_teacher_user.id)
+            )
+
+        if not target_teacher_user and teachers:
+            target_teacher_profile = teachers[0]
+            target_teacher_user = user_map.get(target_teacher_profile.user_id)
+
+        if target_teacher_user:
+            # Find all CourseSubject records where teacher_id == target_teacher_user.id
+            assigned_course_subjects = (
+                await session.scalars(
+                    select(CourseSubject)
+                    .options(selectinload(CourseSubject.course).selectinload(Course.versions))
+                    .where(CourseSubject.teacher_id == target_teacher_user.id)
+                )
+            ).all()
+
+            skill_subject_ids = set()
+            if target_teacher_profile and target_teacher_profile.skills:
+                skill_subject_ids = {sk.subject_id for sk in target_teacher_profile.skills if sk.subject_id}
 
             subjects_all = (await session.scalars(select(Subject))).all()
+            sub_by_code = {s.code: s for s in subjects_all}
             sub_by_id = {s.id: s for s in subjects_all}
 
-            for gid, sid in sorted(pairs, key=lambda x: (grade_by_id.get(x[0]).grade_number if grade_by_id.get(x[0]) else 99)):
+            slot_pairs = set()
+            if target_teacher_profile:
+                slot_pairs = teacher_classes_map.get(target_teacher_profile.id, set())
+
+            seen_codes = set()
+
+            # Priority 1: Direct CourseSubject assignments
+            for cs in assigned_course_subjects:
+                course = cs.course
+                course_title = (
+                    course.versions[0].title if (course and course.versions)
+                    else (course.slug.replace("-", " ").title() if course else "Technical Track")
+                )
+                matching_sub = sub_by_code.get(cs.code)
+                matching_grade = next(
+                    (g for g in grades if course and (course.slug in g.name.lower() or (course.versions and course.versions[0].title.lower() in g.name.lower()))),
+                    grades[0] if grades else None
+                )
+
+                if matching_sub and matching_grade:
+                    title, academic_year, chapters = curriculum_content(matching_grade, matching_sub)
+                    curr_item = next((c for c in matching_grade.curriculum if c.subject_id == matching_sub.id), None)
+                    periods = curr_item.periods_per_week if curr_item else 4
+                else:
+                    title = f"{course_title} — {cs.name}"
+                    academic_year = "2026-2027"
+                    from app.timetable.curriculum_data import get_chapters_for_subject_and_grade
+                    chapters = get_chapters_for_subject_and_grade(cs.code, 1)
+                    periods = 4
+
+                seen_codes.add(cs.code)
+                courses_result.append({
+                    "id": str(cs.id),
+                    "title": title,
+                    "subject_code": cs.code,
+                    "subject_name": cs.name,
+                    "category": cs.course.slug if cs.course else "tech",
+                    "color": cs.color or "#3b82f6",
+                    "grade_number": matching_grade.grade_number if matching_grade else 1,
+                    "grade_name": course_title,
+                    "academic_year": academic_year,
+                    "periods_per_week": periods,
+                    "instructor_name": target_teacher_user.display_name,
+                    "instructor_email": target_teacher_user.email,
+                    "instructor_id": str(target_teacher_profile.id) if target_teacher_profile else str(target_teacher_user.id),
+                    "total_chapters": len(chapters),
+                    "estimated_weeks": sum(ch.get("duration_weeks", 2) for ch in chapters),
+                    "chapters": chapters,
+                })
+
+            # Priority 2: Timetable slots assigned to this teacher
+            for gid, sid in sorted(slot_pairs, key=lambda x: (grade_by_id.get(x[0]).grade_number if grade_by_id.get(x[0]) else 99)):
                 gr = grade_by_id.get(gid)
                 sb = sub_by_id.get(sid)
-                if gr and sb:
+                if gr and sb and sb.code not in seen_codes:
+                    seen_codes.add(sb.code)
                     title, academic_year, chapters = curriculum_content(gr, sb)
                     curr_item = next((c for c in gr.curriculum if c.subject_id == sb.id), None)
                     periods = curr_item.periods_per_week if curr_item else 4
-                    t_info = teacher_info.get(target_teacher.id, {})
+                    t_info = teacher_info.get(target_teacher_profile.id if target_teacher_profile else None, {})
 
                     courses_result.append({
                         "id": f"{gr.grade_number}_{sb.code}",
@@ -1030,16 +1100,47 @@ async def get_school_courses_and_syllabus(
                         "grade_name": gr.name,
                         "academic_year": academic_year,
                         "periods_per_week": periods,
-                        "instructor_name": t_info.get("display_name", "Assigned Faculty Mentor"),
-                        "instructor_email": t_info.get("email", ""),
-                        "instructor_id": str(target_teacher.id),
+                        "instructor_name": t_info.get("display_name", target_teacher_user.display_name),
+                        "instructor_email": t_info.get("email", target_teacher_user.email),
+                        "instructor_id": str(target_teacher_profile.id) if target_teacher_profile else str(target_teacher_user.id),
                         "total_chapters": len(chapters),
                         "estimated_weeks": sum(ch.get("duration_weeks", 2) for ch in chapters),
                         "chapters": chapters,
                     })
+
+            # Priority 3: Skill subject matches if no explicit assignment yet
+            if not courses_result and skill_subject_ids:
+                for sid in skill_subject_ids:
+                    sb = sub_by_id.get(sid)
+                    if sb and sb.code not in seen_codes:
+                        seen_codes.add(sb.code)
+                        gr = next((g for g in grades if any(c.subject_id == sb.id for c in g.curriculum)), grades[0] if grades else None)
+                        if gr:
+                            title, academic_year, chapters = curriculum_content(gr, sb)
+                            curr_item = next((c for c in gr.curriculum if c.subject_id == sb.id), None)
+                            periods = curr_item.periods_per_week if curr_item else 4
+                            courses_result.append({
+                                "id": f"{gr.grade_number}_{sb.code}",
+                                "title": title,
+                                "subject_code": sb.code,
+                                "subject_name": sb.name,
+                                "category": sb.category,
+                                "color": sb.color,
+                                "grade_number": gr.grade_number,
+                                "grade_name": gr.name,
+                                "academic_year": academic_year,
+                                "periods_per_week": periods,
+                                "instructor_name": target_teacher_user.display_name,
+                                "instructor_email": target_teacher_user.email,
+                                "instructor_id": str(target_teacher_profile.id) if target_teacher_profile else str(target_teacher_user.id),
+                                "total_chapters": len(chapters),
+                                "estimated_weeks": sum(ch.get("duration_weeks", 2) for ch in chapters),
+                                "chapters": chapters,
+                            })
+
         return courses_result
 
-    # 2. STUDENT VIEW: Filter strictly to enrolled technical courses
+    # 2. STUDENT VIEW: Filter strictly to enrolled technical courses assigned by Admin
     if user_role == "student" or (not user_role and user_email and "student" in user_email):
         target_user = None
         if user_id:
@@ -1047,30 +1148,38 @@ async def get_school_courses_and_syllabus(
         elif user_email:
             target_user = await session.scalar(select(User).where(User.email == user_email))
 
-        student_grades = []
-        if target_user:
-            enrollments = (
-                await session.scalars(
-                    select(Enrollment).where(
-                        Enrollment.user_id == target_user.id,
-                        Enrollment.status == "active",
-                    )
-                )
-            ).all()
-            if enrollments:
-                enrolled_c_ids = [e.course_id for e in enrollments]
-                enrolled_courses = (
-                    await session.scalars(
-                        select(Course).options(selectinload(Course.versions)).where(Course.id.in_(enrolled_c_ids))
-                    )
-                ).all()
-                enrolled_titles = {
-                    (c.versions[0].title if c.versions else c.slug).lower() for c in enrolled_courses
-                }
-                student_grades = [g for g in grades if any(et in g.name.lower() for et in enrolled_titles)]
+        if not target_user:
+            return []
 
-        if not student_grades:
-            student_grades = grades  # fallback to all catalog tracks
+        enrollments = (
+            await session.scalars(
+                select(Enrollment).where(
+                    Enrollment.user_id == target_user.id,
+                    Enrollment.status == "active",
+                )
+            )
+        ).all()
+
+        if not enrollments:
+            # Student is enrolled by Admin only. Return empty list if no active enrollment exists.
+            return []
+
+        enrolled_c_ids = [e.course_id for e in enrollments]
+        enrolled_courses = (
+            await session.scalars(
+                select(Course).options(selectinload(Course.versions)).where(Course.id.in_(enrolled_c_ids))
+            )
+        ).all()
+        enrolled_titles = {
+            (c.versions[0].title if c.versions else c.slug).lower() for c in enrolled_courses
+        }
+        enrolled_slugs = {c.slug.lower() for c in enrolled_courses}
+
+        student_grades = [
+            g for g in grades
+            if any(et in g.name.lower() for et in enrolled_titles)
+            or any(es in g.name.lower() for es in enrolled_slugs)
+        ]
 
         for gr in student_grades:
             for curr in gr.curriculum:

@@ -7,7 +7,6 @@ import type {
   TeacherTimetableSlot,
   Enrollment,
   Announcement,
-  Course,
   TimetableSlot,
   SchoolCourse
 } from '../lib/api'
@@ -20,12 +19,10 @@ import {
   getTeacherTimetableSlots,
   createSchoolLiveClass,
   getMyEnrollments,
-  enrollInCourse,
   getAnnouncements,
   createAnnouncement,
   generateTimetable,
   getTimetableGrid,
-  getCourses,
   getSchoolCourses,
   recordTeacherLeave
 } from '../lib/api'
@@ -72,7 +69,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
   const [teacherCurriculumCourses, setTeacherCurriculumCourses] = useState<SchoolCourse[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [availableCourses, setAvailableCourses] = useState<Course[]>([])
   const [studentTimetable, setStudentTimetable] = useState<TimetableSlot[]>([])
   const [currentTime, setCurrentTime] = useState(() => new Date())
 
@@ -133,13 +129,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         setTeacherSlots(slotsRes || [])
         setTeacherCurriculumCourses(curriculumRes || [])
       } else if (user.role === 'student') {
-        const [enrolledRes, coursesRes, gridRes] = await Promise.all([
+        const [enrolledRes, gridRes] = await Promise.all([
           getMyEnrollments().catch(() => []),
-          getCourses().catch(() => ({ items: [], total: 0 })),
           getTimetableGrid().catch(() => [])
         ])
         setEnrollments(enrolledRes || [])
-        setAvailableCourses((coursesRes as any)?.items || [])
         setStudentTimetable(gridRes || [])
       }
     } catch (err: any) {
@@ -284,21 +278,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     }
   }
 
-  // ── STUDENT WORKING FUNCTIONS ────────────────────────────────────────────────
-  const handleEnrollCourse = async (courseId: string) => {
-    setActionLoading(`enroll-${courseId}`)
-    try {
-      await enrollInCourse(courseId)
-      showToast('Successfully enrolled in subject! Start learning today.', 'success')
-      const updated = await getMyEnrollments().catch(() => [])
-      setEnrollments(updated)
-      setStatsData(prev => ({ ...prev, courses_enrolled: (prev.courses_enrolled || 0) + 1 }))
-    } catch (err: any) {
-      showToast(err.message || 'Course enrollment could not be completed.', 'error')
-    } finally {
-      setActionLoading(null)
-    }
-  }
 
   const [selectedScheduleDay, setSelectedScheduleDay] = useState<string>('')
 
@@ -1145,29 +1124,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-3">
                 <BookOpen className="w-8 h-8 text-slate-600 mx-auto" />
                 <p className="text-xs text-slate-400">You are not enrolled in any course tracks yet.</p>
-                <div className="space-y-2 pt-2">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Courses to Enroll:</p>
-                  <div className="flex flex-col gap-2">
-                    {availableCourses.slice(0, 3).map(c => {
-                      const displayTitle = c.title || c.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                      return (
-                        <div key={c.id} className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
-                          <div className="min-w-0 text-left">
-                            <span className="text-xs font-bold text-white block truncate">{displayTitle}</span>
-                            <span className="text-[10px] text-slate-400 capitalize">{c.level || 'Professional'} Training Track</span>
-                          </div>
-                          <button
-                            onClick={() => handleEnrollCourse(c.id)}
-                            disabled={actionLoading === `enroll-${c.id}`}
-                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow-sm transition-all"
-                          >
-                            {actionLoading === `enroll-${c.id}` ? 'Enrolling...' : 'Enroll Now'}
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
+                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                  Course enrollments are assigned directly by the institute administrator. Once your enrollment is activated by the admin, your respective subjects and syllabus materials will appear here automatically.
+                </p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
