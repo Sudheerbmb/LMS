@@ -34,7 +34,7 @@ class Course(UUIDMixin, TimestampMixin, Base):
         Uuid(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     slug: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
-    status: Mapped[str] = mapped_column(String(32), default="published", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False)
     current_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     # Metadata

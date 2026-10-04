@@ -35,7 +35,7 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
         timezone=data.timezone,
         locale=data.locale,
         role=data.role,
-        status="active",
+        status="pending",
         email_verify_token=hash_token(raw_token),
         email_verify_expires=expires,
     )
