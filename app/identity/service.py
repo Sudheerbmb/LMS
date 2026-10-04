@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.enrollment.models import Enrollment
 from app.identity.models import RefreshToken, User
 from app.identity.schemas import ChangePasswordRequest, PasswordResetConfirm, ProfileUpdate, UserCreate
 from app.identity.security import generate_token, hash_password, hash_token, verify_password
@@ -34,14 +35,22 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
         timezone=data.timezone,
         locale=data.locale,
         role=data.role,
-        status="pending",
+        status="active",
         email_verify_token=hash_token(raw_token),
         email_verify_expires=expires,
     )
     session.add(user)
+    await session.flush()
+
+    # Link candidate to selected courses in database
+    if data.course_ids:
+        for cid in data.course_ids:
+            session.add(Enrollment(user_id=user.id, course_id=cid, status="active"))
+    elif data.course_id:
+        session.add(Enrollment(user_id=user.id, course_id=data.course_id, status="active"))
+
     await session.commit()
     await session.refresh(user)
-    # TODO: send verification email with raw_token
     return user
 
 

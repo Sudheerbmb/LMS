@@ -128,7 +128,7 @@ Return ONLY a JSON object with key "questions" containing ${numQuestions} questi
 }
 
 Guidelines:
-- Questions must strictly reflect real ${gradeName} standard curriculum (e.g. Class 4 for elementary, Class 10 for secondary).
+- Questions must strictly reflect real industry curriculum standards for ${gradeName} (e.g. Python Async, LangChain, Salesforce Apex, Cloud DevOps).
 - Exactly 4 realistic options per question with 1 unambiguous correct answer (index 0 to 3).
 - Distribute cognitive levels: 40% FOUNDATION, 40% APPLICATION, 20% REASONING / TRANSFER.
 - Set difficulty between 0.20 (easy) and 0.85 (challenging).`

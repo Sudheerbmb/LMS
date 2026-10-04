@@ -195,7 +195,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         phone_number: formPhone.trim() || undefined,
         password: formPassword,
         role: userModalRole,
-        course_ids: userModalRole === 'student' ? formSelectedCourses : [],
+        course_ids: formSelectedCourses,
       })
       setShowAddUserModal(false)
       await loadAllData()
@@ -216,7 +216,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         display_name: formName.trim(),
         phone_number: formPhone.trim() || undefined,
         password: formPassword.trim() ? formPassword.trim() : undefined,
-        course_ids: editingUser.role === 'student' ? formSelectedCourses : undefined,
+        course_ids: formSelectedCourses,
       })
       setShowEditUserModal(false)
       setEditingUser(null)
@@ -1146,31 +1146,31 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 />
               </div>
 
-              {/* Multi-course selection for students */}
-              {userModalRole === 'student' && (
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-2">Enroll in Course Track(s)</label>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
-                    {courses.map((c) => (
-                      <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
-                        <input
-                          type="checkbox"
-                          checked={formSelectedCourses.includes(c.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormSelectedCourses((prev) => [...prev, c.id])
-                            } else {
-                              setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
-                            }
-                          }}
-                          className="rounded border-slate-700 bg-slate-900 text-amber-500"
-                        />
-                        <span>{c.title}</span>
-                      </label>
-                    ))}
-                  </div>
+              {/* Multi-course selection for students and teachers */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  {userModalRole === 'student' ? 'Enroll in Course Track(s)' : 'Assign to Technical Track(s)'}
+                </label>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
+                  {courses.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={formSelectedCourses.includes(c.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormSelectedCourses((prev) => [...prev, c.id])
+                          } else {
+                            setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
+                          }
+                        }}
+                        className="rounded border-slate-700 bg-slate-900 text-amber-500"
+                      />
+                      <span>{c.title}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
+              </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button

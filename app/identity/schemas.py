@@ -14,6 +14,8 @@ class UserCreate(BaseModel):
     timezone: str = "UTC"
     locale: str = "en"
     role: str = "student"
+    course_id: UUID | None = None
+    course_ids: list[UUID] | None = None
 
 
 class LoginRequest(BaseModel):

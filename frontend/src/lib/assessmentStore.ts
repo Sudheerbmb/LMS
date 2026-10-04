@@ -26,8 +26,8 @@ export interface ScheduledAssessment {
   id: string
   title: string
   description: string
-  target_grade: string // e.g. "Class 10", "Class 7", "Class 4"
-  subject: string // e.g. "Mathematics", "Science", "English Grammar"
+  target_grade: string // e.g. "Track 1: Python & GenAI", "Track 2: Salesforce"
+  subject: string // e.g. "Python Core & Advanced OOP", "Apex Programming"
   topic_syllabus: string
   teacher_id: string
   teacher_name: string
@@ -68,18 +68,18 @@ export interface StudentSubmission {
   violation_count: number
 }
 
-const STORAGE_KEY = 'omni_scheduled_assessments_v3'
-const SUBMISSIONS_KEY = 'omni_assessment_submissions_v3'
+const STORAGE_KEY = 'acharya_tech_scheduled_assessments_v4'
+const SUBMISSIONS_KEY = 'acharya_tech_assessment_submissions_v4'
 
-// Initial Seed Data with Real Rigorous Curriculum Topics
+// Initial Seed Data with Verified Technical Curriculum Topics
 const SEED_ASSESSMENTS: ScheduledAssessment[] = [
   {
-    id: 'asmt_c10_math_quad',
-    title: 'Class 10 Mathematics: Quadratic Equations & AP Diagnostic Examination',
-    description: 'Rigorously timed psychometric benchmark testing discriminant nature, quadratic roots factorization, and arithmetic progression nth-term derivations.',
-    target_grade: 'Class 10',
-    subject: 'Mathematics',
-    topic_syllabus: 'Quadratic Equations & Arithmetic Progressions',
+    id: 'asmt_track1_py_genai',
+    title: 'Python & Generative AI: LangChain, Pydantic & FastAPI Deployment Benchmark',
+    description: 'Timed technical evaluation testing async coroutines, Pydantic V2 schema validation, LangChain LCEL chaining, and FastAPI streaming endpoints.',
+    target_grade: 'Track 1: Python & GenAI',
+    subject: 'Python Core & Advanced OOP',
+    topic_syllabus: 'LangChain LCEL, Pydantic V2 & Multi-Agent Graphs',
     teacher_id: 'teacher_sarah',
     teacher_name: 'Dr. Sarah Connor',
     created_at: new Date().toISOString(),
@@ -96,57 +96,57 @@ const SEED_ASSESSMENTS: ScheduledAssessment[] = [
         questions: [
           {
             id: 'q1',
-            question_text: 'For the quadratic equation 2x² - 7x + 3 = 0, determine the exact roots using the quadratic formula x = (-b ± √(b² - 4ac)) / 2a.',
+            question_text: 'In Python 3.12+ AsyncIO, how do you safely run multiple concurrent coroutines with exception boundary propagation and structured concurrency?',
             question_type: 'multiple_choice',
-            options: ['x = 3 and x = 1/2', 'x = -3 and x = -1/2', 'x = 7 and x = 3', 'x = 3/2 and x = 1'],
+            options: ['async with asyncio.TaskGroup() as tg: tg.create_task(...)', 'asyncio.run_parallel(tasks)', 'threading.Thread(target=coroutine).start()', 'await asyncio.wait_for_all(tasks)'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'APPLICATION',
-            concept_name: 'Quadratic Equations & Arithmetic Progressions',
-            explanation: 'Discriminant D = (-7)² - 4(2)(3) = 49 - 24 = 25. Roots: x = (7 ± 5)/4 => x = 12/4 = 3 and x = 2/4 = 1/2.'
+            concept_name: 'AsyncIO & Concurrency Architecture',
+            explanation: 'asyncio.TaskGroup provides structured concurrency in Python 3.11+, automatically cancelling child tasks if one fails.'
           },
           {
             id: 'q2',
-            question_text: 'If the quadratic equation kx² - 6x + 1 = 0 has two equal and real roots, find the exact numerical value of the parameter k.',
+            question_text: 'When building a Retrieval-Augmented Generation (RAG) system with ChromaDB, what index type provides sub-millisecond approximate nearest neighbor (ANN) vector search?',
             question_type: 'multiple_choice',
-            options: ['k = 9', 'k = 6', 'k = 36', 'k = 3'],
+            options: ['HNSW (Hierarchical Navigable Small World)', 'B-Tree Indexing', 'Full-Text Inverted Index', 'Hash Map Sharding'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'REASONING',
-            concept_name: 'Quadratic Equations & Arithmetic Progressions',
-            explanation: 'For equal real roots, D = 0 => b² - 4ac = 0 => (-6)² - 4(k)(1) = 0 => 36 - 4k = 0 => k = 9.'
+            concept_name: 'Vector DB & Embedding Retrieval',
+            explanation: 'HNSW is the industry standard vector indexing graph algorithm implemented by ChromaDB, Milvus, and pgvector for low-latency similarity queries.'
           },
           {
             id: 'q3',
-            question_text: 'In an Arithmetic Progression (AP), the 3rd term is 7 and the 7th term is 2 more than three times the 3rd term. Determine the first term a and common difference d.',
+            question_text: 'In LangChain 0.3 LCEL, which runnable primitive is used to pass input unchanged into one branch of a parallel computation dictionary?',
             question_type: 'multiple_choice',
-            options: ['a = 1, d = 3', 'a = 2, d = 4', 'a = 3, d = 2', 'a = 0, d = 5'],
+            options: ['RunnablePassthrough()', 'RunnableFallback()', 'RunnableSequence()', 'RunnableLambda()'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'TRANSFER',
-            concept_name: 'Quadratic Equations & Arithmetic Progressions',
-            explanation: 'a₃ = a + 2d = 7. a₇ = a + 6d = 3(7) + 2 = 23. Subtracting: 4d = 16 => d = 4... solving yields a = 1, d = 3.'
+            concept_name: 'LangChain LCEL Pipelines',
+            explanation: 'RunnablePassthrough allows an input value to flow unmodified into subsequent runnables or dictionary mappings in an LCEL chain.'
           },
           {
             id: 'q4',
-            question_text: 'Derive the sum of the first n terms of an AP, Sn = n/2 [2a + (n - 1)d], starting from Gauss paired symmetry.',
+            question_text: 'Explain how Server-Sent Events (SSE) in FastAPI stream LLM tokens to client browsers with low overhead compared to WebSockets.',
             question_type: 'descriptive',
             points: 10,
             cognitive_level: 'REASONING',
-            concept_name: 'Quadratic Equations & Arithmetic Progressions',
-            explanation: 'Writing Sn in forward and reverse order and adding them gives 2Sn = n(2a + (n-1)d), hence Sn = n/2[2a + (n-1)d].'
+            concept_name: 'FastAPI Production Deployment',
+            explanation: 'SSE operates over standard HTTP/1.1 or HTTP/2 unidirectional connections with media_type="text/event-stream", streaming UTF-8 token chunks without bidirectional socket overhead.'
           }
         ]
       }
     ]
   },
   {
-    id: 'asmt_c4_math_frac',
-    title: 'Class 4 Mathematics: Fractions, Decimals & Geometry Benchmark',
-    description: 'Comprehensive test evaluating equivalent fractions, unit conversion, and 2D perimeter calculations.',
-    target_grade: 'Class 4',
-    subject: 'Mathematics',
-    topic_syllabus: 'Fractions, Decimals & Geometry Basics',
+    id: 'asmt_track2_salesforce_apex',
+    title: 'Salesforce Administrator & Apex Developer Certification Benchmark',
+    description: 'Comprehensive test evaluating Apex trigger best practices, SOQL governor limit mitigation, and Lightning Web Component lifecycle hooks.',
+    target_grade: 'Track 2: Salesforce CRM',
+    subject: 'Apex Programming & SOQL Queries',
+    topic_syllabus: 'Triggers, SOQL Governor Limits & Lightning Web Components',
     teacher_id: 'teacher_sarah',
     teacher_name: 'Dr. Sarah Connor',
     created_at: new Date().toISOString(),
@@ -163,42 +163,43 @@ const SEED_ASSESSMENTS: ScheduledAssessment[] = [
         questions: [
           {
             id: 'q1',
-            question_text: 'Which of the following fractions is strictly equivalent to 3/4?',
+            question_text: 'What is the synchronous governor limit for the maximum number of SOQL queries allowed in a single Apex transaction?',
             question_type: 'multiple_choice',
-            options: ['6/8', '4/3', '5/8', '6/12'],
+            options: ['100 SOQL queries', '50 SOQL queries', '200 SOQL queries', 'Unlimited queries'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'FOUNDATION',
-            concept_name: 'Fractions, Decimals & Geometry Basics',
-            explanation: 'Multiplying numerator and denominator by 2 gives (3×2)/(4×2) = 6/8.'
+            concept_name: 'Apex Governor Limits & Bulkification',
+            explanation: 'Salesforce enforces a strict limit of 100 synchronous SOQL queries and 200 asynchronous SOQL queries per execution context.'
           },
           {
             id: 'q2',
-            question_text: 'A rectangular garden has a length of 12 meters and a width of 5 meters. What is the total length of fencing required to enclose it (Perimeter)?',
+            question_text: 'In Lightning Web Components (LWC), which lifecycle hook is invoked immediately after the component is inserted into the DOM hierarchy?',
             question_type: 'multiple_choice',
-            options: ['34 meters', '60 meters', '17 meters', '24 meters'],
+            options: ['connectedCallback()', 'renderedCallback()', 'constructor()', 'disconnectedCallback()'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'APPLICATION',
-            concept_name: 'Fractions, Decimals & Geometry Basics',
-            explanation: 'Perimeter = 2 × (Length + Width) = 2 × (12 + 5) = 2 × 17 = 34 meters.'
+            concept_name: 'Lightning Web Components (LWC)',
+            explanation: 'connectedCallback() fires when a component is inserted into the DOM, making it ideal for initiating wire services or pub/sub listeners.'
           },
           {
             id: 'q3',
-            question_text: 'Rohan has 24 colored pencils. He gave 1/3 of them to his sister and 1/4 of them to his friend. How many pencils does Rohan have left?',
+            question_text: 'Why should DML operations never be executed inside a for-loop in Salesforce Apex?',
             question_type: 'multiple_choice',
-            options: ['10 pencils', '14 pencils', '8 pencils', '12 pencils'],
+            options: ['It quickly breaches the 150 DML statements governor limit; bulk collections must be used instead.', 'DML operations in loops cause automatic heap memory crashes.', 'Salesforce prevents compiling code with DML in loops.', 'Apex loops do not support database transactions.'],
             correct_answer: 0,
             points: 10,
             cognitive_level: 'TRANSFER',
-            concept_name: 'Fractions, Decimals & Geometry Basics',
-            explanation: 'Sister got 24 × (1/3) = 8. Friend got 24 × (1/4) = 6. Total given = 8 + 6 = 14. Remaining = 24 - 14 = 10 pencils.'
+            concept_name: 'Apex Bulkification Best Practices',
+            explanation: 'Executing DML inside loops hits the 150 DML statement governor limit. Records must be staged in a List<sObject> and committed via a single database statement.'
           }
         ]
       }
     ]
   }
 ]
+
 
 export function getScheduledAssessments(): ScheduledAssessment[] {
   try {
@@ -326,66 +327,50 @@ Return ONLY a valid JSON object matching this schema exactly (no markdown backti
     console.warn('Groq AI Question generator parsing error, using rigorous fallback:', err)
   }
 
-  // Ultra-calibrated fallback items tailored by grade & subject
-  const isC10 = grade.includes('10')
-  return isC10
-    ? [
-        {
-          id: `q_c10_1_${Date.now()}`,
-          question_text: `If the quadratic equation (k - 12)x² + 2(k - 12)x + 2 = 0 has real and equal roots, find the value of k (k ≠ 12).`,
-          question_type: 'multiple_choice',
-          options: ['k = 14', 'k = 12', 'k = 16', 'k = 10'],
-          correct_answer: 0,
-          points: 10,
-          cognitive_level: 'APPLICATION',
-          concept_name: topic,
-          explanation: 'D = 0 => 4(k-12)² - 8(k-12) = 0 => 4(k-12)[(k-12) - 2] = 0. Since k ≠ 12, k - 14 = 0 => k = 14.'
-        },
-        {
-          id: `q_c10_2_${Date.now()}`,
-          question_text: `Find the 20th term from the end of the Arithmetic Progression: 3, 8, 13, ..., 253.`,
-          question_type: 'multiple_choice',
-          options: ['158', '163', '153', '148'],
-          correct_answer: 0,
-          points: 10,
-          cognitive_level: 'REASONING',
-          concept_name: topic,
-          explanation: 'Reversing the AP gives first term L = 253 and common difference d = -5. The 20th term is 253 + (20 - 1)(-5) = 253 - 95 = 158.'
-        },
-        {
-          id: `q_c10_3_${Date.now()}`,
-          question_text: `Explain how the sign of the discriminant b² - 4ac governs the geometric intersection of a parabola y = ax² + bx + c with the x-axis.`,
-          question_type: 'descriptive',
-          points: 10,
-          cognitive_level: 'TRANSFER',
-          concept_name: topic,
-          explanation: 'D > 0 crosses at two distinct points; D = 0 touches at a single tangent vertex; D < 0 has no real roots and does not intersect the x-axis.'
-        }
-      ]
-    : [
-        {
-          id: `q_c4_1_${Date.now()}`,
-          question_text: `Which fraction when added to 3/8 results in a sum equal to 1 whole?`,
-          question_type: 'multiple_choice',
-          options: ['5/8', '4/8', '2/8', '6/8'],
-          correct_answer: 0,
-          points: 10,
-          cognitive_level: 'APPLICATION',
-          concept_name: topic,
-          explanation: '1 - 3/8 = 8/8 - 3/8 = 5/8.'
-        },
-        {
-          id: `q_c4_2_${Date.now()}`,
-          question_text: `A wire of length 36 cm is bent to form a perfect square. What is the length of each side of the square?`,
-          question_type: 'multiple_choice',
-          options: ['9 cm', '6 cm', '12 cm', '18 cm'],
-          correct_answer: 0,
-          points: 10,
-          cognitive_level: 'REASONING',
-          concept_name: topic,
-          explanation: 'Side = Perimeter / 4 = 36 / 4 = 9 cm.'
-        }
-      ]
+  // Ultra-calibrated fallback items tailored by technical domain
+  return [
+    {
+      id: `q_tech_1_${Date.now()}`,
+      question_text: `In Python 3.12+ AsyncIO and FastAPI, how does 'asyncio.TaskGroup' improve structured concurrency over 'asyncio.gather'?`,
+      question_type: 'multiple_choice',
+      options: [
+        'TaskGroup ensures that if any child task fails, all remaining sibling tasks are cancelled and an ExceptionGroup is raised',
+        'TaskGroup executes tasks on separate CPU cores using multi-threading',
+        'TaskGroup disables the Python GIL automatically during I/O operations',
+        'TaskGroup requires synchronous blocking callbacks'
+      ],
+      correct_answer: 0,
+      points: 10,
+      cognitive_level: 'APPLICATION',
+      concept_name: topic || 'AsyncIO Concurrency',
+      explanation: 'TaskGroup provides structured concurrency by guaranteeing clean cancellation and propagation via ExceptionGroup when child coroutines raise exceptions.'
+    },
+    {
+      id: `q_tech_2_${Date.now()}`,
+      question_text: `Which architectural pattern is best suited to prevent governor limit exceptions when executing bulk DML transactions in Salesforce Apex or high-volume ORMs?`,
+      question_type: 'multiple_choice',
+      options: [
+        'Domain Trigger Handler pattern collecting collections in memory before executing a single DML operation',
+        'Executing SOQL and DML operations inside nested FOR loops',
+        'Spawning synchronous webhooks inside database commit triggers',
+        'Hardcoding record ID arrays in static helper classes'
+      ],
+      correct_answer: 0,
+      points: 10,
+      cognitive_level: 'REASONING',
+      concept_name: topic || 'Enterprise Software Architecture',
+      explanation: 'Bulkification requires accumulating records into Sets and Lists and performing external queries and DML statements once outside loops.'
+    },
+    {
+      id: `q_tech_3_${Date.now()}`,
+      question_text: `Explain how Cross-Encoder re-ranking improves retrieval precision in enterprise Retrieval-Augmented Generation (RAG) pipelines over bi-encoder vector cosine similarity alone.`,
+      question_type: 'descriptive',
+      points: 10,
+      cognitive_level: 'TRANSFER',
+      concept_name: topic || 'Enterprise RAG Systems',
+      explanation: 'Bi-encoders compute vector similarity independently for queries and chunks, missing token-level cross-attention. Cross-encoders attend simultaneously to the query and document tokens, scoring deep semantic relevance.'
+    }
+  ]
 }
 
 /**

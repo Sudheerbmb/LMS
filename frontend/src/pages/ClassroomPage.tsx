@@ -6435,26 +6435,26 @@ const handleTriggerTeacherCopilot = async (
         </div>
 
         <div className="flex items-center gap-3">
-          {isHost && (
-            <>
-              <button
-                onClick={handleFlushAllClasses}
-                disabled={flushingClasses}
-                className="px-4 py-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-                title="Flush all live and ended class sessions to test fresh"
-              >
-                <Trash2 className="w-4 h-4 text-rose-400" />
-                <span>{flushingClasses ? 'Flushing...' : 'Flush Live Classes'}</span>
-              </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={handleFlushAllClasses}
+              disabled={flushingClasses}
+              className="px-4 py-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+              title="Flush all live and ended class sessions to test fresh"
+            >
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span>{flushingClasses ? 'Flushing...' : 'Flush Live Classes'}</span>
+            </button>
+          )}
 
-              <button
-                onClick={() => setShowScheduleModal(true)}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                Schedule / Launch Class
-              </button>
-            </>
+          {isHost && (
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              Schedule / Launch Class
+            </button>
           )}
         </div>
 

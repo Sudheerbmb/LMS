@@ -19,8 +19,8 @@ type CrewCurriculumModalProps = {
 export const CrewCurriculumModal: React.FC<CrewCurriculumModalProps> = ({
   isOpen,
   onClose,
-  initialTopic = 'Calculus & Optimization',
-  initialGrade = 'Class 10'
+  initialTopic = 'AsyncIO & LangChain Agent Orchestration',
+  initialGrade = 'Track 1: Python & GenAI'
 }) => {
   const [topic, setTopic] = useState(initialTopic)
   const [gradeLevel, setGradeLevel] = useState(initialGrade)
@@ -141,27 +141,33 @@ export const CrewCurriculumModal: React.FC<CrewCurriculumModalProps> = ({
         {/* Input Form */}
         <form onSubmit={handleRunCrew} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="sm:col-span-2">
-            <label className="text-slate-400 font-bold">Academic Topic / Domain:</label>
+            <label className="text-slate-400 font-bold">Technical Domain / Topic:</label>
             <input
               type="text"
               required
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. Quadratic Equations, Quantum Basics, Thermodynamics"
+              placeholder="e.g. LangChain LCEL Pipelines, Salesforce Apex Triggers, Kubernetes CI/CD"
               className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
             />
           </div>
 
           <div>
-            <label className="text-slate-400 font-bold">Target Grade:</label>
+            <label className="text-slate-400 font-bold">Target Cohort / Track:</label>
             <select
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
               className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
             >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
-                <option key={g} value={`Class ${g}`}>
-                  Class {g}
+              {[
+                'Track 1: Python & GenAI',
+                'Track 2: Salesforce Developer',
+                'Track 3: ServiceNow CAD',
+                'Track 4: Full Stack Web',
+                'Track 5: Cloud DevOps'
+              ].map((g) => (
+                <option key={g} value={g}>
+                  {g}
                 </option>
               ))}
             </select>

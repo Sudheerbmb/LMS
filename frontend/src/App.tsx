@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react'
 import type { 
   User, 
   Notification, 
-  DashboardSummary 
+  DashboardSummary,
+  AdminInstituteCourse
 } from './lib/api'
 import { 
   getCurrentUser, 
   getDashboardSummary, 
   getNotifications, 
   login as loginApi, 
-  register as registerApi 
+  register as registerApi,
+  getAdminCourses
 } from './lib/api'
-import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { DashboardPage } from './pages/DashboardPage'
 import { CoursesPage } from './pages/CoursesPage'
@@ -22,6 +23,14 @@ import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
 import { CertificatesPage } from './pages/CertificatesPage'
+
+const STANDARD_TRACKS = [
+  { id: 'python-genai', title: 'Python with Generative AI (GenAI)' },
+  { id: 'salesforce-developer', title: 'Salesforce Administration & Development' },
+  { id: 'servicenow-csa-cad', title: 'ServiceNow Administration & Development (CSA / CAD)' },
+  { id: 'full-stack-web', title: 'Full Stack Web Engineering (React & FastAPI)' },
+  { id: 'cloud-devops-aws', title: 'Cloud Computing & DevOps Engineering (AWS & Kubernetes)' },
+]
 
 export function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('lms_access_token'))
@@ -38,6 +47,8 @@ export function App() {
   const [authName, setAuthName] = useState('')
   const [authPhone, setAuthPhone] = useState('')
   const [authRole, setAuthRole] = useState<'student' | 'teacher'>('student')
+  const [authCourseId, setAuthCourseId] = useState<string>('')
+  const [availableCourses, setAvailableCourses] = useState<AdminInstituteCourse[]>([])
   const [authError, setAuthError] = useState('')
   const [submittingAuth, setSubmittingAuth] = useState(false)
 
@@ -46,12 +57,21 @@ export function App() {
       loadInitialData()
     } else {
       setLoading(false)
+      // Preload courses for registration dropdown
+      getAdminCourses()
+        .then((res) => {
+          if (res && res.length > 0) {
+            setAvailableCourses(res)
+            setAuthCourseId(res[0].id)
+          }
+        })
+        .catch(() => {})
     }
   }, [token])
 
-  // Safeguard: Ensure Admin is redirected if on removed tabs (Assessments / Assignments)
+  // Safeguard: Ensure Admin is redirected if on student/teacher specific tabs
   useEffect(() => {
-    if (user?.role === 'admin' && (currentTab === 'assessments' || currentTab === 'assignments')) {
+    if (user?.role === 'admin' && (currentTab === 'assessments' || currentTab === 'assignments' || currentTab === 'certificates' || currentTab === 'coding')) {
       setCurrentTab('overview')
     }
   }, [user?.role, currentTab])
@@ -88,9 +108,11 @@ export function App() {
           password: authPassword,
           display_name: authName,
           phone_number: authPhone,
-          role: authRole
+          role: authRole,
+          course_id: authCourseId || undefined,
+          course_ids: authCourseId ? [authCourseId] : undefined,
         })
-        alert('Registration complete! Please log in.')
+        alert('Registration complete! Your account is active. Please log in.')
         setAuthMode('login')
       }
     } catch (err: any) {
@@ -111,7 +133,7 @@ export function App() {
     return (
       <div style={{ minHeight: '100vh', background: '#080A12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#8B5CF6', borderRightColor: '#22D3EE', animation: 'spin 0.75s linear infinite', margin: '0 auto 16px', boxShadow: '0 0 20px rgba(139,92,246,0.3)' }} />
+          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#F59E0B', borderRightColor: '#EA580C', animation: 'spin 0.75s linear infinite', margin: '0 auto 16px', boxShadow: '0 0 20px rgba(245,158,11,0.3)' }} />
           <p style={{ fontSize: 11, color: '#A7B0C0', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading Acharya Institute LMS...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -119,13 +141,11 @@ export function App() {
     )
   }
 
-
   if (!user || !token) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", background: '#080A12', color: '#F8FAFC' }}>
-
         {/* Left branding panel */}
-        <div style={{ width: 420, background: '#06080F', borderRight: '1px solid rgba(245,158,11,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 3rem', color: '#F8FAFC', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: 440, background: '#06080F', borderRight: '1px solid rgba(245,158,11,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 3rem', color: '#F8FAFC', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
           {/* Subtle Ambient Glow */}
           <div style={{ position: 'absolute', top: -100, left: -100, width: 320, height: 320, background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: -100, right: -100, width: 320, height: 320, background: 'radial-gradient(circle, rgba(234,88,12,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -134,7 +154,7 @@ export function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '2.5rem', position: 'relative', zIndex: 1 }}>
             <img
               src="/acharya_logo.png"
-              alt="Acharya Institute LMS Logo"
+              alt="Acharya LMS Logo"
               style={{
                 width: 52,
                 height: 52,
@@ -164,7 +184,7 @@ export function App() {
               { label: 'HD Zoom Live Video Sessions', desc: 'Synchronized live streams, cloud recording playback, and AI dialogue transcripts' },
               { label: 'Flexible Batch Enrollment', desc: 'Enroll students and assign specialized faculty per subject module' },
               { label: 'Integrated Coding & Labs', desc: 'Live code executions, interactive assessments, and automated grading' },
-            ].map(f => (
+            ].map((f) => (
               <div key={f.label} style={{ paddingLeft: 14, borderLeft: '2px solid rgba(245,158,11,0.6)' }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: '#F8FAFC' }}>{f.label}</div>
                 <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{f.desc}</div>
@@ -175,15 +195,14 @@ export function App() {
 
         {/* Right: form panel */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2.5rem', overflowY: 'auto', background: '#06080F' }}>
-          <div style={{ width: '100%', maxWidth: 420 }}>
-
+          <div style={{ width: '100%', maxWidth: 440 }}>
             {/* Heading */}
-            <div style={{ marginBottom: 28 }}>
+            <div style={{ marginBottom: 24 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.02em' }}>
                 {authMode === 'login' ? 'Sign in to Acharya Institute' : 'Create an Account'}
               </h1>
               <p style={{ fontSize: 13, color: '#CBD5E1' }}>
-                {authMode === 'login' ? 'Enter your credentials to access your institute portal.' : 'Fill in your details to register.'}
+                {authMode === 'login' ? 'Enter your credentials to access your institute portal.' : 'Fill in your details and select your technical course track.'}
               </p>
             </div>
 
@@ -201,13 +220,14 @@ export function App() {
                   Instant Demo Access — Click to autofill
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-
                   {/* Admin */}
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 600, color: '#FBBF24', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Administrator</p>
-                    <button type="button"
+                    <button
+                      type="button"
                       onClick={() => { setAuthEmail('admin@example.com'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
-                      style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, color: '#FDE68A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, color: '#FDE68A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
                       System Administrator
                     </button>
                   </div>
@@ -220,9 +240,12 @@ export function App() {
                         ['sarah.connor@school.edu', 'Dr. Sarah — Python & Backend'],
                         ['alan.turing@school.edu', 'Prof. Turing — Web & Data'],
                       ].map(([email, label]) => (
-                        <button key={email} type="button"
+                        <button
+                          key={email}
+                          type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Teacher123!'); setAuthError(''); }}
-                          style={{ padding: '6px 12px', background: 'rgba(234,88,12,0.14)', border: '1px solid rgba(234,88,12,0.35)', borderRadius: 8, color: '#FDBA74', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          style={{ padding: '6px 12px', background: 'rgba(234,88,12,0.14)', border: '1px solid rgba(234,88,12,0.35)', borderRadius: 8, color: '#FDBA74', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                        >
                           {label}
                         </button>
                       ))}
@@ -238,15 +261,17 @@ export function App() {
                         ['student.class1@school.edu', 'Aarav — Data Science'],
                         ['student.class6@school.edu', 'Sanya — DevOps & Cloud'],
                       ].map(([email, label]) => (
-                        <button key={email} type="button"
+                        <button
+                          key={email}
+                          type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Student123!'); setAuthError(''); }}
-                          style={{ padding: '6px 12px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, color: '#FEF08A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          style={{ padding: '6px 12px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, color: '#FEF08A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                        >
                           {label}
                         </button>
                       ))}
                     </div>
                   </div>
-
                 </div>
               </div>
             )}
@@ -256,99 +281,149 @@ export function App() {
               {authMode === 'register' && (
                 <>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Full Name</label>
-                    <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)} placeholder="e.g. Priya Sharma"
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }} />
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="e.g. Priya Sharma"
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                    />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Phone Number</label>
-                    <input type="tel" value={authPhone} onChange={e => setAuthPhone(e.target.value)} placeholder="+91 98765 43210"
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }} />
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={authPhone}
+                      onChange={(e) => setAuthPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                    />
                   </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Account Role</label>
-                    <select value={authRole} onChange={e => setAuthRole(e.target.value as 'student' | 'teacher')}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}>
-                      <option value="student">Student</option>
-                      <option value="teacher">Teacher / Instructor</option>
-                    </select>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Account Role *</label>
+                      <select
+                        value={authRole}
+                        onChange={(e) => setAuthRole(e.target.value as 'student' | 'teacher')}
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                      >
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher / Instructor</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Target Track *</label>
+                      <select
+                        value={authCourseId}
+                        onChange={(e) => setAuthCourseId(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                      >
+                        {availableCourses.length > 0 ? (
+                          availableCourses.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.title}
+                            </option>
+                          ))
+                        ) : (
+                          STANDARD_TRACKS.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.title}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
                   </div>
                 </>
               )}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Email Address</label>
-                <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="you@institute.com"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="you@institute.com"
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                />
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Password</label>
-                <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Enter your password"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                />
               </div>
-              <button type="submit" disabled={submittingAuth}
-                style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)', color: '#111827', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: submittingAuth ? 'not-allowed' : 'pointer', opacity: submittingAuth ? 0.7 : 1, marginTop: 6, boxShadow: '0 4px 18px rgba(245,158,11,0.35)', letterSpacing: '-0.01em' }}>
-                {submittingAuth ? 'Signing in...' : authMode === 'login' ? 'Sign In to Institute' : 'Create Account'}
+              <button
+                type="submit"
+                disabled={submittingAuth}
+                style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)', color: '#111827', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: submittingAuth ? 'not-allowed' : 'pointer', opacity: submittingAuth ? 0.7 : 1, marginTop: 6, boxShadow: '0 4px 18px rgba(245,158,11,0.35)', letterSpacing: '-0.01em' }}
+              >
+                {submittingAuth ? 'Processing...' : authMode === 'login' ? 'Sign In to Institute' : 'Register Account & Enroll'}
               </button>
             </form>
 
             <p style={{ marginTop: 20, textAlign: 'center' as const, fontSize: 12, color: '#94A3B8' }}>
               {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-              <button onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
-                style={{ background: 'none', border: 'none', color: '#F59E0B', fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0 }}>
-                {authMode === 'login' ? 'Register' : 'Sign In'}
+              <button
+                onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
+                style={{ background: 'none', border: 'none', color: '#F59E0B', fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0 }}
+              >
+                {authMode === 'login' ? 'Register Now' : 'Sign In'}
               </button>
             </p>
-
           </div>
         </div>
       </div>
     )
   }
 
-
   return (
     <div
       data-role={user.role}
+      className="min-h-screen w-full flex flex-col select-none"
       style={{
-        minHeight: '100vh',
         background: 'var(--bg)',
         color: 'var(--text)',
-        display: 'flex',
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
-      <Sidebar
+      {/* ── Top Navigation Bar across all roles ── */}
+      <Header
+        user={user}
+        notifications={notifications}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        userRole={user.role}
+        onRefreshNotifications={async () => {
+          const notifs = await getNotifications().catch(() => [])
+          setNotifications(notifs || [])
+        }}
         onLogout={handleLogout}
       />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Header
-          user={user}
-          notifications={notifications}
-          onRefreshNotifications={async () => {
-            const notifs = await getNotifications().catch(() => [])
-            setNotifications(notifs || [])
-          }}
-        />
-
-        <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
-          {currentTab === 'overview' && (
-            <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
-          )}
-          {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
-          {currentTab === 'classroom' && <ClassroomPage user={user} />}
-          {currentTab === 'timetable' && <TimetablePage user={user} />}
-          {currentTab === 'coding' && <CodingPage user={user} />}
-          {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
-          {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
-          {currentTab === 'certificates' && user.role !== 'admin' && <CertificatesPage user={user} />}
-          {currentTab === 'admin' && <AdminPage user={user} />}
-        </main>
-      </div>
+      {/* ── Full-Width Page Workspace (No Sidebar) ── */}
+      <main className="flex-1 w-full overflow-y-auto" style={{ background: 'var(--bg)' }}>
+        {currentTab === 'overview' && (
+          <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
+        )}
+        {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
+        {currentTab === 'classroom' && <ClassroomPage user={user} />}
+        {currentTab === 'timetable' && <TimetablePage user={user} />}
+        {currentTab === 'coding' && <CodingPage user={user} />}
+        {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
+        {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
+        {currentTab === 'certificates' && user.role === 'student' && <CertificatesPage user={user} />}
+        {currentTab === 'admin' && user.role === 'admin' && <AdminPage user={user} />}
+      </main>
     </div>
   )
 }
+
 export default App

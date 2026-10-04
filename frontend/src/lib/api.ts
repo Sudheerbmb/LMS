@@ -184,7 +184,7 @@ export const submitAdaptiveFeedback = (stateId: string, payload: { action: strin
 
 // Identity & Auth
 
-export const register = (payload: { email: string; phone_number: string; display_name: string; password: string; role: 'student' | 'teacher' }) =>
+export const register = (payload: { email: string; phone_number?: string; display_name: string; password: string; role: 'student' | 'teacher'; course_id?: string; course_ids?: string[] }) =>
 
   request<User>('/api/v1/identity/register', { method: 'POST', body: JSON.stringify(payload) })
 

@@ -18,8 +18,8 @@ type AutoGenVivaModalProps = {
 export const AutoGenVivaModal: React.FC<AutoGenVivaModalProps> = ({
   isOpen,
   onClose,
-  initialSubject = 'Mathematics',
-  initialTopic = 'Quadratic Models & Asymptotic Stability'
+  initialSubject = 'Python & Software Architecture',
+  initialTopic = 'AsyncIO Event Loops & Distributed Systems'
 }) => {
   const [subject] = useState(initialSubject)
   const [topic] = useState(initialTopic)

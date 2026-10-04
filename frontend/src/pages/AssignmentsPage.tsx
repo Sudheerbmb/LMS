@@ -172,20 +172,20 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
     // Closed-loop LENS-Ω evidence ingestion
     try {
       const { ingestLearningEvidenceEvent } = await import('../lib/evidenceEngine')
-      const courseName = courses.find((c) => c.id === selectedCourse)?.title || 'Mathematics'
-      const subjectName = courseName.toLowerCase().includes('science')
-        ? 'Science (EVS)'
-        : courseName.toLowerCase().includes('english')
-        ? 'English Grammar'
-        : courseName.toLowerCase().includes('social')
-        ? 'Social Studies'
-        : 'Mathematics'
+      const courseName = courses.find((c) => c.id === selectedCourse)?.title || 'Python with Generative AI'
+      const subjectName = courseName.toLowerCase().includes('salesforce')
+        ? 'Apex Programming & SOQL'
+        : courseName.toLowerCase().includes('servicenow')
+        ? 'ServiceNow Platform & ITSM Core'
+        : courseName.toLowerCase().includes('web')
+        ? 'React 19 & TypeScript'
+        : 'Python Core & Advanced OOP'
 
       ingestLearningEvidenceEvent({
         id: `assignment_sub_${Date.now()}`,
         timestamp: new Date().toISOString(),
         student_id: user.id,
-        grade_name: user.display_name?.includes('Class') ? user.display_name : 'Class 4',
+        grade_name: user.display_name?.includes('Track') ? user.display_name : 'Track 1: Python & GenAI',
         subject: subjectName,
         concept_name: activeAssignment.title,
         event_type: 'ASSIGNMENT',

@@ -47,53 +47,25 @@ export function loadStudentState(studentId: string, gradeNumber: number, student
   }
 
   // Generate initial state if not found
-  const isElementary = gradeNumber <= 5
-  const gradeName = `Class ${gradeNumber}`
-  const subjectsConfig: Record<string, string[]> = isElementary
-    ? {
-        'Mathematics': [
-          'Multi-digit Arithmetic & Place Values',
-          'Fractions, Decimals & Geometry Basics',
-          'Applied Word Problems & Measurement',
-        ],
-        'Science (EVS)': [
-          'Plant Nutrition & Photosynthesis',
-          'States of Matter & Water Cycle',
-          'Animal Habitats & Adaptations',
-        ],
-        'English Grammar': [
-          'Parts of Speech (Nouns, Verbs, Adjectives)',
-          'Tenses & Subject-Verb Agreement',
-          'Reading Comprehension & Vocabulary',
-        ],
-        'Social Studies': [
-          'Maps, Cardinal Directions & Solar System',
-          'Community Governance & Heritage',
-          'Physical Geography & Natural Resources',
-        ],
-      }
-    : {
-        'Mathematics': [
-          'Quadratic Equations & Arithmetic Progressions',
-          'Trigonometric Ratios & Heights',
-          'Coordinate Geometry & Triangles',
-        ],
-        'Physics & Chemistry': [
-          'Chemical Reactions & Stoichiometry',
-          'Acids, Bases & Salts',
-          'Light: Reflection, Refraction & Optics',
-        ],
-        'Life Sciences': [
-          'Life Processes & Cellular Respiration',
-          'Control & Coordination',
-          'Heredity & Genetics',
-        ],
-        'Social Science': [
-          'Nationalism in India & Democratic Politics',
-          'Resources, Development & Agriculture',
-          'Money, Credit & Globalization',
-        ],
-      }
+  const trackName = `Track ${gradeNumber || 1}: Professional Curriculum`
+  const subjectsConfig: Record<string, string[]> = {
+    'Python & GenAI Core': [
+      'Type Hinting, Pydantic V2 & Data Validation Schemas',
+      'AsyncIO, Event Loops & Concurrent Coroutines',
+      'Prompt Engineering, LLMs & LangChain Pipelines',
+      'RAG Architectures & Vector DB Hybrid Search',
+    ],
+    'Enterprise Backend & Cloud': [
+      'FastAPI REST Architecture & Async SQLAlchemy',
+      'Docker Containerization & Kubernetes Deployments',
+      'AWS Infrastructure & GitHub Actions CI/CD',
+    ],
+    'Salesforce & Platform Eng': [
+      'Apex Triggers, SOQL & Domain Handler Patterns',
+      'Lightning Web Components & Reactive State',
+      'ServiceNow GlideRecord, Script Includes & ACLs',
+    ],
+  }
 
   const subjectsState: Record<string, SubjectBenchmarkState> = {}
 
@@ -136,7 +108,7 @@ export function loadStudentState(studentId: string, gradeNumber: number, student
   return {
     student_id: studentId,
     student_name: studentName,
-    grade_name: gradeName,
+    grade_name: trackName,
     subjects: subjectsState,
     overall_competency: 0.00,
     overall_mastery: 0.00,

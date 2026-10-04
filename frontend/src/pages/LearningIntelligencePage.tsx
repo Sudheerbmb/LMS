@@ -50,55 +50,27 @@ import type { CohortStudentProfile } from '../lib/evidenceEngine'
 
 // ── Initial Grade Configurations ─────────────────────────────────────────────
 
-function initializeCurriculumStructure(gradeNumber: number, studentId: string, studentName: string): FullStudentNeuralState {
-  const isElementary = gradeNumber <= 5
-  const gradeName = `Class ${gradeNumber}`
+function initializeCurriculumStructure(trackNumber: number, studentId: string, studentName: string): FullStudentNeuralState {
+  const trackName = `Track ${trackNumber || 1}: Professional Curriculum`
 
-  const subjectsConfig: Record<string, string[]> = isElementary
-    ? {
-        'Mathematics': [
-          'Multi-digit Arithmetic & Place Values',
-          'Fractions, Decimals & Geometry Basics',
-          'Applied Word Problems & Measurement',
-        ],
-        'Science (EVS)': [
-          'Plant Nutrition & Photosynthesis',
-          'States of Matter & Water Cycle',
-          'Animal Habitats & Adaptations',
-        ],
-        'English Grammar': [
-          'Parts of Speech (Nouns, Verbs, Adjectives)',
-          'Tenses & Subject-Verb Agreement',
-          'Reading Comprehension & Vocabulary',
-        ],
-        'Social Studies': [
-          'Maps, Cardinal Directions & Solar System',
-          'Community Governance & Heritage',
-          'Physical Geography & Natural Resources',
-        ],
-      }
-    : {
-        'Mathematics': [
-          'Quadratic Equations & Arithmetic Progressions',
-          'Trigonometric Ratios & Heights',
-          'Coordinate Geometry & Triangles',
-        ],
-        'Physics & Chemistry': [
-          'Chemical Reactions & Stoichiometry',
-          'Acids, Bases & Salts',
-          'Light: Reflection, Refraction & Optics',
-        ],
-        'Life Sciences': [
-          'Life Processes & Cellular Respiration',
-          'Control & Coordination',
-          'Heredity & Genetics',
-        ],
-        'Social Science': [
-          'Nationalism in India & Democratic Politics',
-          'Resources, Development & Agriculture',
-          'Money, Credit & Globalization',
-        ],
-      }
+  const subjectsConfig: Record<string, string[]> = {
+    'Python & GenAI Core': [
+      'Type Hinting, Pydantic V2 & Data Validation Schemas',
+      'AsyncIO, Event Loops & Concurrent Coroutines',
+      'Prompt Engineering, LLMs & LangChain Pipelines',
+      'RAG Architectures & Vector DB Hybrid Search',
+    ],
+    'Enterprise Backend & Cloud': [
+      'FastAPI REST Architecture & Async SQLAlchemy',
+      'Docker Containerization & Kubernetes Deployments',
+      'AWS Infrastructure & GitHub Actions CI/CD',
+    ],
+    'Salesforce & Platform Eng': [
+      'Apex Triggers, SOQL & Domain Handler Patterns',
+      'Lightning Web Components & Reactive State',
+      'ServiceNow GlideRecord, Script Includes & ACLs',
+    ],
+  }
 
   const subjectsState: Record<string, SubjectBenchmarkState> = {}
 
@@ -141,7 +113,7 @@ function initializeCurriculumStructure(gradeNumber: number, studentId: string, s
   return {
     student_id: studentId,
     student_name: studentName,
-    grade_name: gradeName,
+    grade_name: trackName,
     subjects: subjectsState,
     overall_competency: 0.00,
     overall_mastery: 0.00,
@@ -317,16 +289,16 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
               <Brain className="w-3.5 h-3.5" />
               {isAdmin
-                ? 'School Administrator • Whole-School Cognitive Intelligence'
-                : 'Teacher Cognitive Intelligence • Multi-Class Student Radar'}
+                ? 'Institutional Administrator • Enterprise Cognitive Intelligence'
+                : 'Faculty Cognitive Intelligence • Technical Cohort Radar'}
             </div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-              {isAdmin ? 'School-Wide Cognitive Health & Learning Curve Radar' : 'Class Cognitive Health & Telemetry'}
+              {isAdmin ? 'Institute-Wide Learning Curves & Skill Mastery Radar' : 'Cohort Skill Mastery & Telemetry'}
             </h1>
             <p className="text-slate-400 text-sm max-w-2xl">
               {isAdmin
-                ? 'Comprehensive learning curves and psychometric state vectors for all students across the entire institution (Class 1 to Class 12). Inspect bottlenecks, monitor cognitive baselines, and administratively edit student risk evaluations.'
-                : 'Real-time psychometric state vectors across your assigned classes (Class 10, Class 7, Class 4). Monitor Bayesian mastery, isolate error misconceptions, and deploy class-wide unblocking interventions.'}
+                ? 'Comprehensive learning curves and skill state vectors for all candidates across technical tracks. Inspect code delivery bottlenecks, monitor skill baselines, and review candidate performance metrics.'
+                : 'Real-time skill state vectors across your assigned training tracks (Python with GenAI, Salesforce, ServiceNow, Web, DevOps). Monitor concept mastery and deploy targeted sprint unblocking sessions.'}
             </p>
           </div>
 

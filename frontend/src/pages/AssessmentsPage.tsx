@@ -44,7 +44,7 @@ type AssessmentsPageProps = {
 
 export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
   const isTeacher = user?.role === 'teacher' || user?.role === 'admin'
-  const studentGrade = user?.display_name?.includes('Class') ? user.display_name : 'Class 4'
+  const studentGrade = user?.display_name?.includes('Track') ? user.display_name : 'Track 1: Python & GenAI'
 
   const [activeTab, setActiveTab] = useState<'assessments' | 'submissions'>('assessments')
   const [assessmentsList, setAssessmentsList] = useState<ScheduledAssessment[]>([])
@@ -54,9 +54,9 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createStep, setCreateStep] = useState<'details' | 'questions'>('details')
   const [creationMode, setCreationMode] = useState<'AI' | 'MANUAL' | 'PDF'>('AI')
-  const [targetGrade, setTargetGrade] = useState('Class 10')
-  const [subject, setSubject] = useState('Mathematics')
-  const [topicSyllabus, setTopicSyllabus] = useState('Quadratic Equations & AP')
+  const [targetGrade, setTargetGrade] = useState('Track 1: Python & GenAI')
+  const [subject, setSubject] = useState('Python Core & Advanced OOP')
+  const [topicSyllabus, setTopicSyllabus] = useState('LangChain LCEL & FastAPI Pipelines')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [scheduleType, setScheduleType] = useState<'ALWAYS_AVAILABLE' | 'TIME_WINDOW' | 'EXACT_TIME'>('ALWAYS_AVAILABLE')
@@ -407,7 +407,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
           </h1>
           <p className="text-slate-400 text-sm max-w-2xl">
             {isTeacher
-              ? 'Schedule high-precision tests for your classes (Class 10, Class 7, Class 4) with syllabus-grounded AI generation, PDF document parsing, and anti-cheat telemetry.'
+              ? 'Schedule high-precision tests for your technical tracks (Python with GenAI, Salesforce, ServiceNow, Web, DevOps) with syllabus-grounded AI generation, code evaluation, and anti-cheat telemetry.'
               : `Access your scheduled examinations for ${studentGrade}. One attempt per assessment with active camera and screen security.`}
           </p>
         </div>
@@ -677,35 +677,39 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
             {createStep === 'details' ? (
               <div className="space-y-4">
-                {/* Class & Subject Selector */}
+                {/* Track & Subject Selector */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">Target Grade / Class:</label>
+                    <label className="text-xs font-bold text-slate-300">Target Training Track:</label>
                     <select
                       value={targetGrade}
                       onChange={(e) => setTargetGrade(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="Class 10">Class 10 (Secondary Board)</option>
-                      <option value="Class 7">Class 7 (Middle School)</option>
-                      <option value="Class 4">Class 4 (Elementary School)</option>
-                      <option value="Class 6">Class 6</option>
-                      <option value="Class 8">Class 8</option>
-                      <option value="Class 9">Class 9</option>
+                      <option value="Track 1: Python & GenAI">Track 1: Python with Generative AI</option>
+                      <option value="Track 2: Salesforce CRM">Track 2: Salesforce Admin & Developer</option>
+                      <option value="Track 3: ServiceNow ITSM">Track 3: ServiceNow System Admin & Developer</option>
+                      <option value="Track 4: Full Stack Web">Track 4: Full Stack Web Engineering</option>
+                      <option value="Track 5: Cloud DevOps">Track 5: Cloud Computing & DevOps</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">Subject:</label>
+                    <label className="text-xs font-bold text-slate-300">Technical Module / Subject:</label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                     >
-                      <option value="Mathematics">Mathematics</option>
-                      <option value="Science (EVS)">Science / EVS / Physics & Chem</option>
-                      <option value="English Grammar">English Grammar & Language</option>
-                      <option value="Social Studies">Social Studies / Social Science</option>
+                      <option value="Python Core & Advanced OOP">PY-101: Python Core & Advanced OOP</option>
+                      <option value="Prompt Engineering & LangChain">GEN-201: Prompt Engineering & LangChain</option>
+                      <option value="RAG Architecture & Vector DBs">RAG-301: RAG Architecture & Vector DBs</option>
+                      <option value="Autonomous Agents & FastAPI">AI-401: Autonomous Agents & FastAPI</option>
+                      <option value="Apex Programming & SOQL">SF-DEV: Apex Programming & SOQL</option>
+                      <option value="Lightning Web Components">SF-LWC: Lightning Web Components</option>
+                      <option value="ServiceNow ITSM & Flow Designer">SN-FND: ServiceNow ITSM & Flow Designer</option>
+                      <option value="React 19 & TypeScript UI">FS-REA: React 19 & TypeScript UI</option>
+                      <option value="Docker & Kubernetes Pipelines">DO-CON: Docker & Kubernetes Pipelines</option>
                     </select>
                   </div>
                 </div>
