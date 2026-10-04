@@ -36,8 +36,8 @@ export async function fetchMcpTools(): Promise<McpToolDefinition[]> {
         inputSchema: {
           type: 'object',
           properties: {
-            grade: { type: 'string', description: 'Grade, e.g. Class 6-A' },
-            subject: { type: 'string', description: 'Subject' },
+            grade: { type: 'string', description: 'Training Track / Batch, e.g. Python GenAI Track (Batch-01)' },
+            subject: { type: 'string', description: 'Subject / Module' },
             start_time: { type: 'string', description: 'Time' }
           },
           required: ['grade']

@@ -24,6 +24,7 @@ import {
   flushAllNotifications,
   updateAdminCourseSubject,
   syncCoursesToTimetable,
+  purgeLegacyData,
 } from '../lib/api'
 import {
   Users,
@@ -382,6 +383,20 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     }
   }
 
+  const handlePurgeLegacyData = async () => {
+    if (!window.confirm('Purge all legacy school accounts, Class 1-10 grades, and obsolete dummy reviews from the database? This action cannot be undone.')) return
+    try {
+      setLoading(true)
+      const res = await purgeLegacyData()
+      alert(res.message || 'Legacy school data successfully purged!')
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Purge failed: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // ── Filtered Lists ─────────────────────────────────────────────────────────
   const teachersList = users.filter((u) => u.role === 'teacher')
   const studentsList = users.filter((u) => u.role === 'student')
@@ -451,6 +466,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Seed Standard Tech Tracks</span>
+          </button>
+          <button
+            onClick={handlePurgeLegacyData}
+            title="Purge all legacy school accounts and old data"
+            className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Purge School Data</span>
           </button>
           <button
             onClick={loadAllData}

@@ -16,21 +16,21 @@ SERVER_VERSION = "1.0.0"
 MCP_TOOLS: List[Dict[str, Any]] = [
     {
         "name": "lms_start_live_class",
-        "description": "Create and immediately launch an active live WebRTC classroom session for a specific grade and subject.",
+        "description": "Create and immediately launch an active live WebRTC classroom session for a specific technical track and subject module.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "grade": {
                     "type": "string",
-                    "description": "Target class/grade, e.g. 'Class 6', 'Class 10-A', '6th A'."
+                    "description": "Target track/batch, e.g. 'Python GenAI Track (Batch-01)', 'Full Stack Web (Batch-02)'."
                 },
                 "subject": {
                     "type": "string",
-                    "description": "Academic subject, e.g. 'Mathematics', 'Physics', 'Computer Science'."
+                    "description": "Technical subject module, e.g. 'Python Core & GenAI Architecture', 'React 19 & TypeScript'."
                 },
                 "start_time": {
                     "type": "string",
-                    "description": "Start time string (e.g. '16:45', '4:45 PM') or ISO timestamp."
+                    "description": "Start time string (e.g. '09:30 AM', '02:00 PM') or ISO timestamp."
                 },
                 "duration_minutes": {
                     "type": "integer",
@@ -52,7 +52,7 @@ MCP_TOOLS: List[Dict[str, Any]] = [
                 },
                 "grade_number": {
                     "type": "integer",
-                    "description": "Grade number (e.g. 10, 7, 4)."
+                    "description": "Track index number (e.g. 1, 2, 3, 4, 5)."
                 }
             }
         }
@@ -159,9 +159,9 @@ MCP_TOOLS: List[Dict[str, Any]] = [
 # Registered Resources Manifest
 MCP_RESOURCES: List[Dict[str, Any]] = [
     {
-        "uri": "omni://curriculum/cbse-standard-k12",
-        "name": "CBSE Standard K-12 Curriculum Graph",
-        "description": "Unified syllabus topics, Bloom taxonomy hierarchy, and concept dependency DAG.",
+        "uri": "omni://curriculum/technical-tracks-industry",
+        "name": "Acharya Technical Industry Curriculum Graph",
+        "description": "Unified syllabus topics, Bloom taxonomy hierarchy, and concept dependency DAG for technical tracks.",
         "mimeType": "application/json"
     },
     {
@@ -179,8 +179,8 @@ async def execute_mcp_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, An
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if name == "lms_start_live_class":
-        grade = arguments.get("grade", "Class 6")
-        subject = arguments.get("subject", "General Academic Lecture")
+        grade = arguments.get("grade", "Python GenAI Track (Batch-01)")
+        subject = arguments.get("subject", "Python Core & GenAI Architecture")
         start_time = arguments.get("start_time", "Now")
         meeting_id = f"room_{grade.lower().replace(' ', '_')}_{int(datetime.datetime.now().timestamp())}"
         

@@ -1339,6 +1339,12 @@ export const submitLensDrill = (payload: {
     body: JSON.stringify(payload),
   })
 
+export const purgeLegacyData = () =>
+  request<{ status: string; message: string }>('/api/v1/admin/purge-legacy-data', {
+    method: 'POST',
+  })
+
+
 
 
 

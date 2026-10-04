@@ -162,12 +162,12 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
       const params = reasonRes.action_params || {}
 
       if (actionType === 'START_LIVE_CLASS') {
-        const gradeStr = params.grade || 'Class 6-A'
-        const timeStr = params.start_time || '4:45 PM'
+        const gradeStr = params.grade || 'Python GenAI Track (Batch-01)'
+        const timeStr = params.start_time || '09:30 AM'
         try {
           await createSchoolLiveClass({
-            title: `${gradeStr} Interactive Live Lecture (${timeStr})`,
-            subject_name: params.subject || 'Mathematics',
+            title: `${gradeStr} Interactive Live Masterclass (${timeStr})`,
+            subject_name: params.subject || 'Python Core & GenAI Architecture',
             starts_at: new Date().toISOString(),
             ends_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
             status: 'live'

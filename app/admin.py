@@ -86,7 +86,17 @@ async def list_users(
     _admin: User = Depends(require_permission("admin:users")),
     session: AsyncSession = Depends(get_session),
 ) -> list[dict]:
-    users = (await session.scalars(select(User).order_by(User.created_at.desc()))).all()
+    users = (
+        await session.scalars(
+            select(User)
+            .where(
+                ~User.email.like("%@school.edu"),
+                ~User.display_name.like("%Class %"),
+                ~User.display_name.like("%(Class%"),
+            )
+            .order_by(User.created_at.desc())
+        )
+    ).all()
     
     # Load all enrollments to populate enrolled_courses for students
     enrollments = (await session.scalars(select(Enrollment))).all()
@@ -723,5 +733,19 @@ async def unenroll_student(
         await session.delete(existing)
         await session.commit()
     return {"user_id": str(user_id), "course_id": str(course_id), "status": "un-enrolled"}
+
+
+@router.post("/purge-legacy-data")
+async def purge_legacy_data_endpoint(
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    from app.platform.database import purge_legacy_school_data
+    from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+    await purge_legacy_school_data(session)
+    await sync_courses_to_timetable_curriculum(session)
+    await generate_school_timetable(session)
+    return {"status": "success", "message": "Legacy school data purged and technical institute curriculum synchronized"}
+
 
 

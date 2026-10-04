@@ -45,12 +45,16 @@ async def summary(
     )
     assessments = await session.scalar(select(func.count(Assessment.id))) or 0
     coding_exercises = await session.scalar(select(func.count(CodingExercise.id))) or 0
-    events = await session.scalar(select(func.count(OutboxEvent.id))) or 0
-    users_total = await session.scalar(select(func.count(User.id))) or 0
-    students_total = await session.scalar(select(func.count(User.id)).where(User.role == "student")) or 0
-    teachers_total = await session.scalar(select(func.count(User.id)).where(User.role == "teacher")) or 0
-    pending_users = await session.scalar(select(func.count(User.id)).where(User.status != "active")) or 0
-    active_users = await session.scalar(select(func.count(User.id)).where(User.status == "active")) or 0
+    non_legacy_filter = [
+        ~User.email.like("%@school.edu"),
+        ~User.display_name.like("%Class %"),
+        ~User.display_name.like("%(Class%"),
+    ]
+    users_total = await session.scalar(select(func.count(User.id)).where(*non_legacy_filter)) or 0
+    students_total = await session.scalar(select(func.count(User.id)).where(User.role == "student", *non_legacy_filter)) or 0
+    teachers_total = await session.scalar(select(func.count(User.id)).where(User.role == "teacher", *non_legacy_filter)) or 0
+    pending_users = await session.scalar(select(func.count(User.id)).where(User.status != "active", *non_legacy_filter)) or 0
+    active_users = await session.scalar(select(func.count(User.id)).where(User.status == "active", *non_legacy_filter)) or 0
     courses_total = await session.scalar(select(func.count(Course.id))) or 0
     published_courses = await session.scalar(select(func.count(Course.id)).where(Course.status == "published")) or 0
     enrollments_total = await session.scalar(select(func.count(Enrollment.id))) or 0

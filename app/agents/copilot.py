@@ -78,11 +78,11 @@ async def reason_copilot_intent(req: CopilotReasonRequest) -> CopilotReasonRespo
         "You are Acharya-Copilot, the fully autonomous, context-aware AI agent governing the Acharya-LMS enterprise platform.\n"
         "You have full page context awareness and enforce strict Role-Based Access Control (RBAC).\n\n"
         "CURRENT PLATFORM CONTEXT:\n"
-        f"- Active User: {name} (Role: {role.upper()}, Enrolled Grade: Class {grade})\n"
+        f"- Active User: {name} (Role: {role.upper()}, Enrolled Track: Track {grade})\n"
         f"- Currently Active Page/Tab: '{current_tab}'\n\n"
         "STRICT ACTION CLASSIFICATION RULES:\n"
         "1. If user asks to start/launch/create/host a live class or lecture:\n"
-        "   - If role is 'FACULTY' or 'TEACHER' or 'ADMIN': MUST return action_type 'START_LIVE_CLASS' with params: {\"grade\": \"Class 6-A\", \"subject\": \"Mathematics\", \"start_time\": \"4:45 PM\", \"target_tab\": \"classroom\"}.\n"
+        "   - If role is 'FACULTY' or 'TEACHER' or 'ADMIN': MUST return action_type 'START_LIVE_CLASS' with params: {\"grade\": \"Python GenAI Track (Batch-01)\", \"subject\": \"Python Core & GenAI Architecture\", \"start_time\": \"09:30 AM\", \"target_tab\": \"classroom\"}.\n"
         "   - If role is 'STUDENT': MUST return action_type 'RESTRICTED_ACTION' with target_tab: 'classroom'.\n"
         "2. If user asks for study plan, what to study, or cognitive bottleneck: return action_type 'ANALYZE_COGNITIVE_RISK' with params: {\"target_tab\": \"learning-intelligence\"}.\n"
         "3. If user asks for CrewAI or course design studio: return action_type 'OPEN_CREWAI_STUDIO'.\n"
@@ -137,24 +137,24 @@ async def reason_copilot_intent(req: CopilotReasonRequest) -> CopilotReasonRespo
             return CopilotReasonResponse(
                 action_type="RESTRICTED_ACTION",
                 action_params={"target_tab": "classroom"},
-                agent_reply=f"As a student, you cannot initiate or host live classes. I have routed you to the Class {grade} Live Classrooms lobby so you can join lectures hosted by your teachers.",
+                agent_reply=f"As a student, you cannot initiate or host live classes. I have routed you to the Live Classrooms lobby so you can join lectures hosted by your faculty.",
                 reasoning_steps=[
                     f"Analyzed intent: '{query}' on active page '{current_tab}'",
                     "Security Guard: Verified STUDENT role (hosting prohibited)",
-                    f"Redirecting student to authorized Class {grade} live room"
+                    f"Redirecting student to authorized live session room"
                 ]
             )
         else:
-            grade_match = re.search(r"(?:for\s+|class\s+|grade\s+)(\d+(?:[a-zA-Z\s\-]+)?)", query, re.IGNORECASE)
-            grade_str = f"Class {grade_match.group(1).strip()}" if grade_match else "Class 6-A"
+            grade_match = re.search(r"(?:for\s+|batch\s+|track\s+)(\d+(?:[a-zA-Z\s\-]+)?)", query, re.IGNORECASE)
+            grade_str = f"Batch {grade_match.group(1).strip()}" if grade_match else "Python GenAI Track (Batch-01)"
             time_match = re.search(r"at\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)", query, re.IGNORECASE)
-            time_str = time_match.group(1) if time_match else "4:45 PM"
+            time_str = time_match.group(1) if time_match else "09:30 AM"
 
             return CopilotReasonResponse(
                 action_type="START_LIVE_CLASS",
                 action_params={
                     "grade": grade_str,
-                    "subject": "Mathematics",
+                    "subject": "Python Core & GenAI Architecture",
                     "start_time": time_str,
                     "target_tab": "classroom"
                 },
