@@ -117,6 +117,11 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("courses", "rating_avg", "REAL DEFAULT 0.0", cols)
         _add_column("courses", "rating_count", "INTEGER DEFAULT 0", cols)
         _add_column("courses", "enrolled_count", "INTEGER DEFAULT 0", cols)
+        if is_postgres:
+            try:
+                connection.execute(text("ALTER TABLE courses ALTER COLUMN organization_id DROP NOT NULL"))
+            except Exception as e:
+                print(f"[Schema Patch] Failed to alter courses.organization_id nullable: {e}")
 
     # 3. Live Classes Table
     if "live_classes" in tables:

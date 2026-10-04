@@ -530,9 +530,18 @@ async def create_admin_course(
     slug = data.slug or re.sub(r"[^a-z0-9]+", "-", data.title.lower()).strip("-")
     existing = await session.scalar(select(Course).where(Course.slug == slug))
     if existing:
-        slug = f"{slug}-{int(func.random() * 1000)}"
+        import uuid as _uuid_lib
+        slug = f"{slug}-{_uuid_lib.uuid4().hex[:6]}"
+    from app.tenancy.models import Organization
+    default_org = await session.scalar(select(Organization).limit(1))
+    if not default_org:
+        default_org = Organization(name="Omni Training Institute", slug="omni-institute", status="active", is_public=True)
+        session.add(default_org)
+        await session.flush()
+    org_id = default_org.id
 
     course = Course(
+        organization_id=org_id,
         slug=slug,
         status="published",
         level=data.level,
