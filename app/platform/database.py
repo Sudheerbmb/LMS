@@ -120,8 +120,11 @@ def _patch_missing_columns(connection: Connection) -> None:
         if is_postgres:
             try:
                 connection.execute(text("ALTER TABLE courses ALTER COLUMN organization_id DROP NOT NULL"))
+                connection.execute(text("ALTER TABLE school_grades ALTER COLUMN name TYPE VARCHAR(160)"))
+                connection.execute(text("ALTER TABLE school_sections ALTER COLUMN name TYPE VARCHAR(32)"))
+                connection.execute(text("ALTER TABLE school_subjects ALTER COLUMN name TYPE VARCHAR(128)"))
             except Exception as e:
-                print(f"[Schema Patch] Failed to alter courses.organization_id nullable: {e}")
+                print(f"[Schema Patch] Column adjustments note: {e}")
 
     # 3. Live Classes Table
     if "live_classes" in tables:
@@ -129,7 +132,7 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("live_classes", "organization_id", uuid_type, cols)
         _add_column("live_classes", "course_id", uuid_type, cols)
         _add_column("live_classes", "grade_number", "INTEGER", cols)
-        _add_column("live_classes", "section_name", "VARCHAR(16)", cols)
+        _add_column("live_classes", "section_name", "VARCHAR(32)", cols)
         _add_column("live_classes", "subject_code", "VARCHAR(16)", cols)
         _add_column("live_classes", "subject_name", "VARCHAR(128)", cols)
         _add_column("live_classes", "period_number", "INTEGER", cols)
@@ -151,7 +154,7 @@ def _patch_missing_columns(connection: Connection) -> None:
 
 
 async def _bootstrap_defaults() -> None:
-    """Bootstrap all default demo accounts, school hierarchy, teachers, students, and timetable schedule."""
+    """Bootstrap all default demo accounts, tech tracks, faculty, students, and timetable schedule."""
     from app.identity.models import User
     from app.identity.security import hash_password
     from app.tenancy.models import Organization
@@ -160,16 +163,21 @@ async def _bootstrap_defaults() -> None:
 
     student_seeds = [
         {"email": "student@example.com", "name": "Alex Rivera", "role": "student"},
-        {"email": "student.class1@school.edu", "name": "Aarav Patel (Class 1-A)", "role": "student"},
-        {"email": "student.class2@school.edu", "name": "Diya Sharma (Class 2-A)", "role": "student"},
-        {"email": "student.class3@school.edu", "name": "Ishaan Verma (Class 3-A)", "role": "student"},
-        {"email": "student.class4@school.edu", "name": "Ananya Iyer (Class 4-A)", "role": "student"},
-        {"email": "student.class5@school.edu", "name": "Rohan Gupta (Class 5-A)", "role": "student"},
-        {"email": "student.class6@school.edu", "name": "Sanya Reddy (Class 6-A)", "role": "student"},
-        {"email": "student.class7@school.edu", "name": "Kabir Mehta (Class 7-A)", "role": "student"},
-        {"email": "student.class8@school.edu", "name": "Pooja Nair (Class 8-A)", "role": "student"},
-        {"email": "student.class9@school.edu", "name": "Arjun Rao (Class 9-A)", "role": "student"},
-        {"email": "student.class10@school.edu", "name": "Meera Joshi (Class 10-A)", "role": "student"},
+        {"email": "priya.s@student.edu", "name": "Priya Sharma", "role": "student"},
+        {"email": "rahul.k@student.edu", "name": "Rahul Kumar", "role": "student"},
+        {"email": "ananya.r@student.edu", "name": "Ananya Roy", "role": "student"},
+        {"email": "vikram.m@student.edu", "name": "Vikram Malhotra", "role": "student"},
+        {"email": "sneha.p@student.edu", "name": "Sneha Patel", "role": "student"},
+    ]
+
+    teacher_seeds = [
+        {"email": "teacher@example.com", "name": "Dr. Sarah Connor", "role": "teacher"},
+        {"email": "sarah.connor@institute.edu", "name": "Dr. Sarah Connor", "role": "teacher"},
+        {"email": "alan.turing@institute.edu", "name": "Prof. Alan Turing", "role": "teacher"},
+        {"email": "marc.b@institute.edu", "name": "Marc Benioff", "role": "teacher"},
+        {"email": "fred.l@institute.edu", "name": "Fred Luddy", "role": "teacher"},
+        {"email": "dan.a@institute.edu", "name": "Dan Abramov", "role": "teacher"},
+        {"email": "linus.t@institute.edu", "name": "Linus Torvalds", "role": "teacher"},
     ]
 
     admins = [
@@ -180,6 +188,20 @@ async def _bootstrap_defaults() -> None:
         admins.append((settings.bootstrap_admin_email.lower(), settings.bootstrap_admin_name, settings.bootstrap_admin_password))
 
     async with SessionFactory() as session:
+        # 0. Clean up legacy school dummy accounts & outdated users
+        try:
+            await session.execute(
+                delete(User).where(
+                    or_(
+                        User.email.like("%@school.edu"),
+                        User.display_name.like("%Class %"),
+                    )
+                )
+            )
+            await session.commit()
+        except Exception:
+            await session.rollback()
+
         # 1. Ensure Admins
         try:
             for email, name, pwd in admins:
@@ -205,12 +227,12 @@ async def _bootstrap_defaults() -> None:
 
         # 2. Ensure default Organization
         try:
-            org = await session.scalar(select(Organization).where(Organization.slug == "acharya-academy"))
+            org = await session.scalar(select(Organization).where(Organization.slug == "omni-institute"))
             if not org:
                 session.add(Organization(
-                    name="Acharya Global Academy",
-                    slug="acharya-academy",
-                    website="https://school.edu",
+                    name="Omni Technical Training Institute",
+                    slug="omni-institute",
+                    website="https://institute.edu",
                     status="active",
                     is_public=True,
                 ))
@@ -219,13 +241,29 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] ensure organization: {err}")
 
-        # 3. Seed school structure, grades, sections, subjects, rules, and teachers
+        # 3. Ensure Technical Faculty
         try:
-            await seed_school_defaults(session)
+            for t_data in teacher_seeds:
+                t = await session.scalar(select(User).where(User.email == t_data["email"].lower()))
+                if not t:
+                    session.add(User(
+                        email=t_data["email"].lower(),
+                        display_name=t_data["name"],
+                        password_hash=hash_password("Teacher123!"),
+                        role="teacher",
+                        status="active",
+                        email_verified=True,
+                    ))
+                else:
+                    t.display_name = t_data["name"]
+                    t.password_hash = hash_password("Teacher123!")
+                    t.role = "teacher"
+                    t.status = "active"
+                    t.email_verified = True
             await session.commit()
         except Exception as err:
             await session.rollback()
-            print(f"[Bootstrap] seed_school_defaults: {err}")
+            print(f"[Bootstrap] ensure teachers: {err}")
 
         # 4. Ensure Students
         try:
@@ -241,6 +279,7 @@ async def _bootstrap_defaults() -> None:
                         email_verified=True,
                     ))
                 else:
+                    stu.display_name = s_data["name"]
                     stu.password_hash = hash_password("Student123!")
                     stu.role = "student"
                     stu.status = "active"
@@ -250,34 +289,7 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] ensure students: {err}")
 
-        # 5. Ensure Generic teacher account & active status
-        try:
-            gen_t = await session.scalar(select(User).where(User.email == "teacher@example.com"))
-            if not gen_t:
-                session.add(User(
-                    email="teacher@example.com",
-                    display_name="Dr. Sarah Connor",
-                    password_hash=hash_password("Teacher123!"),
-                    role="teacher",
-                    status="active",
-                    email_verified=True,
-                ))
-            else:
-                gen_t.password_hash = hash_password("Teacher123!")
-                gen_t.role = "teacher"
-                gen_t.status = "active"
-
-            teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
-            for t in teachers:
-                t.password_hash = hash_password("Teacher123!")
-                t.status = "active"
-                t.email_verified = True
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] ensure teachers: {err}")
-
-        # 6. Seed Training Institute Technical Courses & Subjects
+        # 5. Seed Training Institute Technical Courses & Subjects
         try:
             from app.admin import seed_tech_courses_internal
             await seed_tech_courses_internal(session)
@@ -286,12 +298,15 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] seed tech courses error: {err}")
 
-        # 7. Generate Master Timetable if empty
+        # 6. Synchronize Timetable Engine & Generate Schedule
         try:
-            slot_count = await session.scalar(select(func.count(TimetableSlot.id)))
-            if not slot_count or slot_count == 0:
-                await generate_school_timetable(session)
-                await session.commit()
+            await seed_school_defaults(session)
+            await session.commit()
+            await generate_school_timetable(session)
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] timetable sync error: {err}")
         except Exception as err:
             await session.rollback()
             print(f"[Bootstrap] generate_school_timetable: {err}")

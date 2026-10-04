@@ -130,8 +130,8 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
   const isStaff = isAdmin || isTeacher
 
   // ── STAFF (ADMIN / TEACHER) COHORT VIEW STATE ─────────────────────────────
-  // Admin defaults to 0 (Entire School), Teacher defaults to 10 (Class 10)
-  const [selectedClassGrade, setSelectedClassGrade] = useState<number>(isAdmin ? 0 : 10)
+  // Admin defaults to 0 (All Tracks), Teacher defaults to 1 (Python & GenAI)
+  const [selectedClassGrade, setSelectedClassGrade] = useState<number>(isAdmin ? 0 : 1)
   const [cohortSearch, setCohortSearch] = useState('')
   const [filterBottleneck, setFilterBottleneck] = useState<string>('ALL')
   const [filterRisk, setFilterRisk] = useState<string>('ALL')
@@ -150,7 +150,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
     if (isAdmin) {
       return getAllSchoolStudents()
     }
-    return getCohortForGrade(10)
+    return getCohortForGrade(1)
   })
 
   const refreshStaffData = (gradeNum: number) => {
@@ -302,7 +302,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </p>
           </div>
 
-          {/* Class Grade Switcher */}
+          {/* Technical Training Track Switcher */}
           <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800 relative z-10">
             {isAdmin && (
               <button
@@ -314,41 +314,29 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>All School</span>
+                <span>All Tracks</span>
               </button>
             )}
 
-            {[10, 7, 4].map((gNum) => (
+            {[
+              { id: 1, label: 'Python & GenAI' },
+              { id: 2, label: 'Salesforce Dev' },
+              { id: 3, label: 'ServiceNow CAD' },
+              { id: 4, label: 'Full Stack Web' },
+              { id: 5, label: 'Cloud & DevOps' }
+            ].map((track) => (
               <button
-                key={gNum}
-                onClick={() => handleClassSwitch(gNum)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                  selectedClassGrade === gNum
+                key={track.id}
+                onClick={() => handleClassSwitch(track.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedClassGrade === track.id
                     ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md font-extrabold'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Class {gNum}
+                {track.label}
               </button>
             ))}
-
-            {isAdmin && (
-              <select
-                value={selectedClassGrade > 0 && ![10, 7, 4].includes(selectedClassGrade) ? selectedClassGrade : ''}
-                onChange={(e) => {
-                  const val = Number(e.target.value)
-                  if (val) handleClassSwitch(val)
-                }}
-                className="bg-[#0B0F19] border border-amber-500/15 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
-              >
-                <option value="">Other Grades...</option>
-                {[1, 2, 3, 5, 6, 8, 9, 11, 12].map((g) => (
-                  <option key={g} value={g}>
-                    Class {g}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
         </div>
 

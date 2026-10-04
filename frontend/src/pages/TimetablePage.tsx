@@ -566,19 +566,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
   const getPeriodMeta = (pNum: number) => {
     switch (pNum) {
-      case 0: return { label: 'Morning Standup & Overview', time: '08:45 - 09:00', isBreak: true, bg: 'bg-emerald-950/40 border-emerald-800/40 text-emerald-400' }
-      case 1: return { label: 'Session 1 (Core Technical Lecture)', time: '09:00 - 10:30', isBreak: false }
-      case 2: return { label: 'Session 2 (Architecture & Frameworks)', time: '10:45 - 12:15', isBreak: false }
-      case 3: return { label: 'Lunch & Peer Networking Break', time: '12:15 - 01:15', isBreak: true, bg: 'bg-amber-950/40 border-amber-800/40 text-amber-400' }
-      case 4: return { label: 'Session 3 (Hands-On Coding & Lab)', time: '01:15 - 02:45', isBreak: false }
-      case 5: return { label: 'Session 4 (Advanced Topics & Integration)', time: '03:00 - 04:30', isBreak: false }
-      case 6: return { label: 'Session 5 (Capstone Project & Q&A)', time: '04:45 - 06:00', isBreak: false }
+      case 0: return { label: 'Daily Standup & Sprint Overview', time: '08:45 - 09:00', isBreak: true, bg: 'bg-indigo-950/40 border-indigo-800/40 text-indigo-400' }
+      case 1: return { label: 'Technical Masterclass 1', time: '09:00 - 10:15', isBreak: false }
+      case 2: return { label: 'Technical Masterclass 2', time: '10:15 - 11:30', isBreak: false }
+      case 3: return { label: 'Morning Coffee & Collab Break', time: '11:30 - 11:45', isBreak: true, bg: 'bg-emerald-950/40 border-emerald-800/40 text-emerald-400' }
+      case 4: return { label: 'Hands-On Lab & Live Coding Sprint 1', time: '11:45 - 13:00', isBreak: false }
+      case 5: return { label: 'Lunch & Peer Networking Hour', time: '13:00 - 14:00', isBreak: true, bg: 'bg-amber-950/40 border-amber-800/40 text-amber-400' }
+      case 6: return { label: 'System Architecture & Frameworks', time: '14:00 - 15:15', isBreak: false }
+      case 7: return { label: 'Hands-On Lab & Live Coding Sprint 2', time: '15:15 - 16:30', isBreak: false }
+      case 8: return { label: 'Code Review, Doubt Clearing & Git Sync', time: '16:30 - 17:30', isBreak: true, bg: 'bg-purple-950/40 border-purple-800/40 text-purple-400' }
       default: return { label: `Training Session ${pNum}`, time: '', isBreak: false }
     }
   }
 
   const totalRestrictions = teachers.reduce((acc, t) => acc + (t.active_restrictions?.length || 0), 0)
-  const activeGroundCapacity = rules.find(r => r.rule_type === 'ground_capacity')?.parameters?.max_sections || 2
+  const activeLabCapacity = rules.find(r => r.rule_type === 'lab_capacity')?.parameters?.max_sections || 3
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -679,7 +681,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               <span>Concurrent Lab Limit</span>
               <Activity className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-2xl font-black text-amber-400">{activeGroundCapacity} Sessions Max</div>
+            <div className="text-2xl font-black text-amber-400">{activeLabCapacity} Cohorts Max</div>
             <div className="text-xs text-slate-500">Configurable in Policy Rules tab</div>
           </div>
 
@@ -1172,9 +1174,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                 <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-500/15 space-y-2 text-xs">
                   <div className="font-semibold text-slate-300">Live Parameters (Neon DB):</div>
-                  {r.rule_type === 'ground_capacity' && (
+                  {r.rule_type === 'lab_capacity' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Sections on Field Simultaneously:</span>
+                      <span className="text-slate-400">Max Cohorts in Cloud Sandbox Simultaneously:</span>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3, 4].map((cap) => (
                           <button
@@ -1182,11 +1184,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             onClick={() => handleUpdateRuleParam(r.id, 'max_sections', cap)}
                             className={`px-3 py-1 rounded-md font-bold text-xs ${
                               r.parameters?.max_sections === cap
-                                ? 'bg-cyan-500 text-slate-950'
+                                ? 'bg-cyan-500 text-slate-950 font-black'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                             }`}
                           >
-                            {cap} Classes
+                            {cap} Cohorts
                           </button>
                         ))}
                       </div>
@@ -1195,34 +1197,49 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                   {r.rule_type === 'max_daily_teacher_periods' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Teacher Daily Load:</span>
+                      <span className="text-slate-400">Max Faculty Mentorship Daily Load:</span>
                       <div className="flex items-center gap-2">
-                        {[4, 5, 6].map((p) => (
+                        {[3, 4, 5, 6].map((p) => (
                           <button
                             key={p}
                             onClick={() => handleUpdateRuleParam(r.id, 'max_periods', p)}
                             className={`px-3 py-1 rounded-md font-bold text-xs ${
                               r.parameters?.max_periods === p
-                                ? 'bg-cyan-500 text-slate-950'
+                                ? 'bg-cyan-500 text-slate-950 font-black'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                             }`}
                           >
-                            {p} Periods
+                            {p} Sessions
                           </button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {r.rule_type === 'post_lunch_blacklist' && (
-                    <div className="text-slate-400">
-                      Blacklisted Period: <span className="font-mono text-amber-400">Period {r.parameters?.forbidden_period || 8} (2:00 PM)</span>
+                  {r.rule_type === 'consecutive_lecture_limit' && (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-400">Max Back-to-Back Theory Modules:</span>
+                      <div className="flex items-center gap-2">
+                        {[1, 2, 3].map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => handleUpdateRuleParam(r.id, 'max_consecutive', m)}
+                            className={`px-3 py-1 rounded-md font-bold text-xs ${
+                              r.parameters?.max_consecutive === m
+                                ? 'bg-cyan-500 text-slate-950 font-black'
+                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                          >
+                            {m} Modules
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   {r.rule_type === 'rating_complaint_blacklist' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Blacklist Rating Threshold:</span>
+                      <span className="text-slate-400">Candidate Satisfaction Floor:</span>
                       <div className="flex items-center gap-2">
                         {[2.0, 2.5, 3.0].map((th) => (
                           <button
@@ -1230,7 +1247,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             onClick={() => handleUpdateRuleParam(r.id, 'threshold_rating', th)}
                             className={`px-2.5 py-1 rounded-md font-bold text-xs ${
                               r.parameters?.threshold_rating === th
-                                ? 'bg-cyan-500 text-slate-950'
+                                ? 'bg-cyan-500 text-slate-950 font-black'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                             }`}
                           >
@@ -1241,16 +1258,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     </div>
                   )}
 
-                  {r.rule_type === 'consecutive_subject_limit' && (
+                  {r.rule_type === 'doubt_clearing_interval' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Consecutive Periods:</span>
-                      <span className="font-bold text-amber-400">{r.parameters?.max_consecutive || 2} periods</span>
+                      <span className="text-slate-400">End-of-Day Code Review Mandate:</span>
+                      <span className="font-bold text-emerald-400">Enforced Daily (16:30 - 17:30)</span>
                     </div>
                   )}
 
-                  {r.rule_type === 'custom_day_schedule' && (
+                  {r.rule_type === 'weekend_sprint_schedule' && (
                     <div className="space-y-1">
-                      <span className="text-slate-400">Configured Day Overrides:</span>
+                      <span className="text-slate-400">Bootcamp Weekend Schedule Overrides:</span>
                       <div className="font-mono text-[11px] text-orange-300">
                         {JSON.stringify(r.parameters?.overrides || {})}
                       </div>

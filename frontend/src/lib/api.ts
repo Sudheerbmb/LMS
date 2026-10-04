@@ -492,7 +492,7 @@ export type TimetableSlot = {
 
   end_time: string
 
-  slot_type: 'assembly' | 'lecture' | 'recess' | 'lunch' | 'sports' | 'lab' | 'dispersal'
+  slot_type: 'standup' | 'lecture' | 'lab' | 'lunch' | 'break' | 'review' | 'assessment' | 'assembly' | 'recess' | 'sports' | 'dispersal'
 
   room_or_venue: string
 

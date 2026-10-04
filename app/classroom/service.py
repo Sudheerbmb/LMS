@@ -502,7 +502,7 @@ async def reconcile_meeting_attendance(
         if matched_user and matched_user.id == live_class.teacher_id:
             continue
 
-        student_email = agg["email"] or (matched_user.email if matched_user else f"{re.sub(r'[^a-zA-Z0-9]', '.', agg['name']).lower()}@school.edu")
+        student_email = agg["email"] or (matched_user.email if matched_user else f"{re.sub(r'[^a-zA-Z0-9]', '.', agg['name']).lower()}@student.edu")
         student_name = matched_user.display_name if matched_user else agg["name"]
 
         duration = round(agg["total_duration_mins"], 1)

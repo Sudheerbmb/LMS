@@ -84,55 +84,55 @@ TEACHER_SEEDS = [
 
 DEFAULT_POLICY_RULES = [
     {
-        "name": "Sports Ground Concurrent Capacity",
-        "rule_type": "ground_capacity",
+        "name": "Cloud Sandbox & GPU Lab Concurrent Capacity",
+        "rule_type": "lab_capacity",
         "category": "capacity",
-        "description": "Limits how many classes can occupy the playground simultaneously. Edit to 1, 2, or 3 based on your school field zones.",
-        "parameters": {"max_sections": 2},
+        "description": "Limits how many cohorts can run compute-heavy sandbox labs simultaneously across cloud infrastructure.",
+        "parameters": {"max_sections": 3},
         "is_enabled": True,
         "priority": 1,
     },
     {
-        "name": "Post-Lunch Heavy Activity Ban",
-        "rule_type": "post_lunch_blacklist",
-        "category": "ergonomics",
-        "description": "Prevents sports/running periods immediately after lunch (Period 8 / 2:00 PM) to protect student health.",
-        "parameters": {"forbidden_period": 8},
+        "name": "Cognitive Load & Lab Balancing",
+        "rule_type": "consecutive_lecture_limit",
+        "category": "pedagogy",
+        "description": "Enforces mandatory hands-on lab sprints so candidates do not have more than 2 consecutive theoretical lectures.",
+        "parameters": {"max_consecutive": 2},
         "is_enabled": True,
         "priority": 1,
     },
     {
-        "name": "Teacher Daily Workload Cap",
+        "name": "Faculty Daily Mentorship Cap",
         "rule_type": "max_daily_teacher_periods",
         "category": "workload",
-        "description": "Ceiling on how many instructional periods can be scheduled for any single teacher per day.",
+        "description": "Ceiling on how many instructional modules and live coding sessions can be scheduled for any single faculty per day.",
         "parameters": {"max_periods": 5},
         "is_enabled": True,
         "priority": 1,
     },
     {
-        "name": "Negative Review Auto-Disqualification",
+        "name": "Student Satisfaction & Review Guard",
         "rule_type": "rating_complaint_blacklist",
         "category": "pedagogy",
-        "description": "Automatically excludes teachers with student ratings <= 2.5 or active complaints from that specific section.",
+        "description": "Automatically excludes faculty mentors with candidate ratings <= 2.5 or active complaints from that specific cohort.",
         "parameters": {"threshold_rating": 2.5},
         "is_enabled": True,
         "priority": 1,
     },
     {
-        "name": "Cognitive Load (No Triple Consecutive Subject)",
-        "rule_type": "consecutive_subject_limit",
+        "name": "Daily Code Review & Doubt-Clearing Mandate",
+        "rule_type": "doubt_clearing_interval",
         "category": "pedagogy",
-        "description": "Prevents more than 2 back-to-back periods of the exact same academic subject to prevent student fatigue.",
-        "parameters": {"max_consecutive": 2},
+        "description": "Guarantees a dedicated mentor-assisted code review and architecture doubt-clearing session at the end of every training day.",
+        "parameters": {"required_daily": True},
         "is_enabled": True,
         "priority": 2,
     },
     {
-        "name": "Day-Specific Schedule (Delayed Start / Special Assembly)",
-        "rule_type": "custom_day_schedule",
+        "name": "Weekend Fast-Track Bootcamp Schedule",
+        "rule_type": "weekend_sprint_schedule",
         "category": "schedule",
-        "description": "Allows customized bell schedule start/end times or altered periods for specific weekdays.",
+        "description": "Allows flexible weekend masterclasses and hackathons for working professional cohorts.",
         "parameters": {"overrides": {}},
         "is_enabled": False,
         "priority": 2,
@@ -142,13 +142,20 @@ DEFAULT_POLICY_RULES = [
 
 async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[str, Any]:
     """
-    Synchronizes the Course Catalog (Course & CourseSubject) with the Timetable Engine
+    Synchronizes the Technical Course Catalog (Course & CourseSubject) with the Timetable Engine
     (SchoolGrade, SchoolSection, Subject, GradeCurriculum, TeacherProfile, TeacherSubjectSkill).
     Establishes the Course Catalog as the single source of truth for the LMS schedule.
     """
     from app.courses.models import Course, CourseSubject, CourseVersion
 
-    # 1. Ensure dynamic policy rules exist
+    # 1. Clean out legacy obsolete school rules
+    await session.execute(
+        delete(TimetableRule).where(
+            TimetableRule.rule_type.in_(["ground_capacity", "post_lunch_blacklist", "consecutive_subject_limit"])
+        )
+    )
+
+    # 2. Ensure dynamic technical policy rules exist
     for r_data in DEFAULT_POLICY_RULES:
         existing_rule = await session.scalar(select(TimetableRule).where(TimetableRule.rule_type == r_data["rule_type"]))
         if not existing_rule:
@@ -161,9 +168,18 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
                 is_enabled=r_data["is_enabled"],
                 priority=r_data["priority"],
             ))
-            await session.flush()
+        else:
+            existing_rule.name = r_data["name"]
+            existing_rule.description = r_data["description"]
+            existing_rule.category = r_data["category"]
+        await session.flush()
 
-    # 2. Fetch all published/active courses with versions & subjects
+    # 3. Clean out legacy school subjects (e.g. Mathematics, Hindi, Science, etc.)
+    obsolete_sub_codes = ["MATH-01", "ENG-01", "SCI-01", "SOC-01", "HIN-01", "SAN-01", "PE-01", "ART-01"]
+    await session.execute(delete(Subject).where(Subject.code.in_(obsolete_sub_codes)))
+    await session.flush()
+
+    # 4. Fetch all published/active courses with versions & subjects
     courses = (
         await session.scalars(
             select(Course)
@@ -190,7 +206,15 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
             )
         ).all()
 
-    # 3. Fetch all teachers and ensure TeacherProfile exists
+    # Clean out any old legacy SchoolGrades named "Class 1", "Class 2", ...
+    valid_titles = {(c.versions[0].title if c.versions else c.slug.replace("-", " ").title()) for c in courses}
+    all_grades = (await session.scalars(select(SchoolGrade))).all()
+    for g in all_grades:
+        if g.name.startswith("Class ") or (g.name not in valid_titles and not any(vt.lower() in g.name.lower() for vt in valid_titles)):
+            await session.delete(g)
+    await session.flush()
+
+    # 5. Fetch all teachers and ensure TeacherProfile exists
     teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
     teacher_profiles = (await session.scalars(select(TeacherProfile))).all()
     profile_by_user_id = {p.user_id: p for p in teacher_profiles}
@@ -200,7 +224,7 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
             p = TeacherProfile(
                 user_id=t.id,
                 employee_id=f"T{idx:03d}",
-                qualification="Senior Faculty Specialist",
+                qualification="Senior Technical Faculty Specialist",
                 max_daily_periods=5,
                 rating_avg=4.9,
                 complaint_count=0,
@@ -209,16 +233,15 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
             await session.flush()
             profile_by_user_id[t.id] = p
 
-    # 4. Synchronize each Course into SchoolGrade, Section, Subject, GradeCurriculum
+    # 6. Synchronize each Course into SchoolGrade, Section (Batches), Subject, GradeCurriculum
     synced_grade_ids = []
     synced_subject_ids = []
 
     for idx, c in enumerate(courses, start=1):
         course_title = c.versions[0].title if c.versions else c.slug.replace("-", " ").title()
 
-        # Match or create SchoolGrade by grade_number or name
         grade = await session.scalar(
-            select(SchoolGrade).where((SchoolGrade.grade_number == idx) | (SchoolGrade.name == course_title))
+            select(SchoolGrade).where((SchoolGrade.name == course_title) | (SchoolGrade.grade_number == idx))
         )
         if not grade:
             grade = SchoolGrade(
@@ -234,25 +257,30 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
             await session.flush()
         synced_grade_ids.append(grade.id)
 
-        # Ensure Section A exists
-        section = await session.scalar(
-            select(SchoolSection).where(
-                SchoolSection.grade_id == grade.id,
-                SchoolSection.name == "A",
+        # Ensure 2 batches exist per technical course: Batch-01 (Morning) and Batch-02 (Evening)
+        batch_configs = [
+            {"name": "Batch-01", "room": f"Sandbox Lab {idx}A (Morning)"},
+            {"name": "Batch-02", "room": f"Sandbox Lab {idx}B (Evening)"},
+        ]
+        for b_conf in batch_configs:
+            sec = await session.scalar(
+                select(SchoolSection).where(
+                    SchoolSection.grade_id == grade.id,
+                    SchoolSection.name == b_conf["name"],
+                )
             )
-        )
-        if not section:
-            section = SchoolSection(
-                grade_id=grade.id,
-                name="A",
-                room_number=f"Tech Lab {idx}01",
-            )
-            session.add(section)
-            await session.flush()
+            if not sec:
+                sec = SchoolSection(
+                    grade_id=grade.id,
+                    name=b_conf["name"],
+                    room_number=b_conf["room"],
+                )
+                session.add(sec)
+                await session.flush()
 
         # Synchronize course subjects
         course_subjects = c.subjects or []
-        periods_per_sub = max(5, int(40 / max(1, len(course_subjects))))
+        periods_per_sub = max(4, int(20 / max(1, len(course_subjects))))
         grade_subject_ids = []
 
         for sub_idx, cs in enumerate(course_subjects, start=1):
@@ -362,7 +390,7 @@ async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
         "subjects": [{"id": s.id, "code": s.code, "name": s.name, "requires_ground": s.requires_ground, "requires_lab": s.requires_lab, "category": s.category} for s in subjects],
         "teachers": [{
             "id": t.id,
-            "display_name": user_name_map.get(t.user_id, f"Teacher {t.employee_id}"),
+            "display_name": user_name_map.get(t.user_id, f"Faculty {t.employee_id}"),
             "employee_id": t.employee_id,
             "max_daily_periods": t.max_daily_periods,
             "rating_avg": t.rating_avg,
@@ -393,7 +421,7 @@ async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
             start_time=s_dict["start_time"],
             end_time=s_dict["end_time"],
             slot_type=s_dict["slot_type"],
-            room_or_venue=s_dict.get("room_or_venue", "Room"),
+            room_or_venue=s_dict.get("room_or_venue", "Tech Sandbox"),
             section_id=s_dict["section_id"],
             subject_id=s_dict.get("subject_id"),
             teacher_id=s_dict.get("teacher_id"),
@@ -407,9 +435,8 @@ async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
         "academic_year": "2026-2027",
         "total_slots_scheduled": len(generated_slots),
         "total_sections": len(sections),
-        "ground_capacity_complied": True,
         "autonomous_decisions": decisions[:12],
-        "audit_summary": f"Successfully generated dynamic master timetable using live Neon DB policy rules for all courses across weekly periods.",
+        "audit_summary": f"Successfully generated dynamic master timetable using live Neon DB policy rules for all technical tracks across weekly periods.",
     }
 
 
@@ -480,7 +507,7 @@ async def get_timetable_grid(
             enrolled_slugs = {c.slug for c in courses}
             filtered_slots = [
                 s for s in slots
-                if (s.section and s.section.grade and s.section.grade.name.lower() in enrolled_titles)
+                if (s.section and s.section.grade and any(et in s.section.grade.name.lower() for et in enrolled_titles))
                 or (s.subject and s.subject.category in enrolled_slugs)
             ]
             if filtered_slots:
@@ -517,10 +544,13 @@ async def get_timetable_grid(
             "teacher_id": s.teacher_id,
             "teacher_name": t_name,
         })
+    return result
+
 
 async def get_all_timetable_rules(session: AsyncSession) -> List[TimetableRule]:
     """Retrieves all dynamic school scheduling rules."""
     return (await session.scalars(select(TimetableRule).order_by(TimetableRule.priority, TimetableRule.name))).all()
+
 
 
 async def toggle_timetable_rule(session: AsyncSession, rule_id: UUID) -> TimetableRule:
@@ -945,9 +975,11 @@ async def get_school_courses_and_syllabus(
             teacher_classes_map[s.teacher_id].add(pair)
 
     courses_result: List[Dict[str, Any]] = []
+    from app.courses.models import Course
+    from app.enrollment.models import Enrollment
 
     # 1. TEACHER VIEW
-    if user_role == "teacher" or (not user_role and user_email and ("teacher" in user_email or "@school.edu" in user_email and "student" not in user_email)):
+    if user_role == "teacher" or (not user_role and user_email and ("teacher" in user_email or "@institute.edu" in user_email and "student" not in user_email)):
         # Locate teacher profile
         target_teacher = None
         if teacher_id:
@@ -961,13 +993,11 @@ async def get_school_courses_and_syllabus(
 
         if target_teacher:
             pairs = teacher_classes_map.get(target_teacher.id, set())
-            # If no slots generated, infer pairs from skills across reasonable grades (e.g. 6, 7, 8, 9)
             if not pairs:
                 for sk in target_teacher.skills:
                     if sk.subject:
-                        for g_num in [6, 7, 8]:
-                            if g_num in grade_map:
-                                pairs.add((grade_map[g_num].id, sk.subject.id))
+                        for gr in grades:
+                            pairs.add((gr.id, sk.subject.id))
 
             subjects_all = (await session.scalars(select(Subject))).all()
             sub_by_id = {s.id: s for s in subjects_all}
@@ -978,7 +1008,7 @@ async def get_school_courses_and_syllabus(
                 if gr and sb:
                     title, academic_year, chapters = curriculum_content(gr, sb)
                     curr_item = next((c for c in gr.curriculum if c.subject_id == sb.id), None)
-                    periods = curr_item.periods_per_week if curr_item else 5
+                    periods = curr_item.periods_per_week if curr_item else 4
                     t_info = teacher_info.get(target_teacher.id, {})
 
                     courses_result.append({
@@ -992,7 +1022,7 @@ async def get_school_courses_and_syllabus(
                         "grade_name": gr.name,
                         "academic_year": academic_year,
                         "periods_per_week": periods,
-                        "instructor_name": t_info.get("display_name", "Assigned Faculty"),
+                        "instructor_name": t_info.get("display_name", "Assigned Faculty Mentor"),
                         "instructor_email": t_info.get("email", ""),
                         "instructor_id": str(target_teacher.id),
                         "total_chapters": len(chapters),
@@ -1001,27 +1031,46 @@ async def get_school_courses_and_syllabus(
                     })
         return courses_result
 
-    # 2. STUDENT VIEW
+    # 2. STUDENT VIEW: Filter strictly to enrolled technical courses
     if user_role == "student" or (not user_role and user_email and "student" in user_email):
-        # Determine student grade number
-        target_g_num = 9  # default
-        if grade_number:
-            target_g_num = grade_number
+        target_user = None
+        if user_id:
+            target_user = await session.get(User, user_id)
         elif user_email:
-            m = re.search(r"class(\d+)", user_email, re.IGNORECASE)
-            if m:
-                target_g_num = int(m.group(1))
+            target_user = await session.scalar(select(User).where(User.email == user_email))
 
-        gr = grade_map.get(target_g_num) or (grades[0] if grades else None)
-        if gr:
+        student_grades = []
+        if target_user:
+            enrollments = (
+                await session.scalars(
+                    select(Enrollment).where(
+                        Enrollment.user_id == target_user.id,
+                        Enrollment.status == "active",
+                    )
+                )
+            ).all()
+            if enrollments:
+                enrolled_c_ids = [e.course_id for e in enrollments]
+                enrolled_courses = (
+                    await session.scalars(
+                        select(Course).options(selectinload(Course.versions)).where(Course.id.in_(enrolled_c_ids))
+                    )
+                ).all()
+                enrolled_titles = {
+                    (c.versions[0].title if c.versions else c.slug).lower() for c in enrolled_courses
+                }
+                student_grades = [g for g in grades if any(et in g.name.lower() for et in enrolled_titles)]
+
+        if not student_grades:
+            student_grades = grades  # fallback to all catalog tracks
+
+        for gr in student_grades:
             for curr in gr.curriculum:
                 sb = curr.subject
                 if not sb:
                     continue
-                # Find instructor
                 assigned_tid = assignment_map.get((gr.id, sb.id))
                 if not assigned_tid:
-                    # Pick first teacher with matching skill
                     cand = next((t for t in teachers if any(sk.subject_id == sb.id for sk in t.skills)), None)
                     if cand:
                         assigned_tid = cand.id
@@ -1040,7 +1089,7 @@ async def get_school_courses_and_syllabus(
                     "grade_name": gr.name,
                     "academic_year": academic_year,
                     "periods_per_week": curr.periods_per_week,
-                    "instructor_name": t_info.get("display_name", "Department Faculty"),
+                    "instructor_name": t_info.get("display_name", "Faculty Mentor"),
                     "instructor_email": t_info.get("email", ""),
                     "instructor_id": str(assigned_tid) if assigned_tid else None,
                     "total_chapters": len(chapters),
@@ -1049,7 +1098,7 @@ async def get_school_courses_and_syllabus(
                 })
         return courses_result
 
-    # 3. ADMIN VIEW (All courses or filtered by grade_number)
+    # 3. ADMIN VIEW (All technical courses or filtered by grade_number)
     for gr in grades:
         if grade_number and gr.grade_number != grade_number:
             continue
@@ -1077,7 +1126,7 @@ async def get_school_courses_and_syllabus(
                 "grade_name": gr.name,
                 "academic_year": academic_year,
                 "periods_per_week": curr.periods_per_week,
-                "instructor_name": t_info.get("display_name", "Department Faculty"),
+                "instructor_name": t_info.get("display_name", "Faculty Mentor"),
                 "instructor_email": t_info.get("email", ""),
                 "instructor_id": str(assigned_tid) if assigned_tid else None,
                 "total_chapters": len(chapters),
@@ -1137,12 +1186,12 @@ async def generate_zoom_classes_from_timetable_service(
                 end_h, end_m = map(int, s.end_time.split(":"))
             except Exception:
                 start_h, start_m = 9, 0
-                end_h, end_m = 10, 0
+                end_h, end_m = 10, 15
 
             starts_at = datetime(target_date.year, target_date.month, target_date.day, start_h, start_m, tzinfo=timezone.utc)
             ends_at = datetime(target_date.year, target_date.month, target_date.day, end_h, end_m, tzinfo=timezone.utc)
 
-            # Idempotency check: Don't recreate if class session already exists for this section, subject, and time
+            # Idempotency check
             existing = await session.scalar(
                 select(LiveClass).where(
                     LiveClass.grade_number == s.section.grade.grade_number,
@@ -1160,7 +1209,7 @@ async def generate_zoom_classes_from_timetable_service(
             if not teacher_user and teachers:
                 teacher_user = teachers[0]
 
-            title = f"{s.section.grade.name}-{s.section.name} {s.subject.name} (Period {s.period_number})"
+            title = f"{s.section.grade.name} • {s.section.name}: {s.subject.name} (Period {s.period_number})"
 
             create_data = LiveClassCreate(
                 title=title,
@@ -1186,3 +1235,4 @@ async def generate_zoom_classes_from_timetable_service(
         "classes_created": classes_created,
         "zoom_meetings_synced": zoom_meetings_synced,
     }
+

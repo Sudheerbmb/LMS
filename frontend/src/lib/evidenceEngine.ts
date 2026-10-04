@@ -281,41 +281,45 @@ export interface CohortStudentProfile {
 }
 
 const GRADE_STUDENT_NAMES: Record<number, Array<{ name: string; email: string; color: string; mBoost: number; bType: string }>> = {
-  10: [
-    { name: 'Aarav Patel', email: 'aarav.patel@school.edu', color: 'from-cyan-500 to-blue-600', mBoost: 0.15, bType: 'BALANCED' },
-    { name: 'Priya Sharma', email: 'priya.sharma@school.edu', color: 'from-pink-500 to-rose-600', mBoost: 0.22, bType: 'BALANCED' },
-    { name: 'Rohan Gupta', email: 'rohan.gupta@school.edu', color: 'from-amber-500 to-orange-600', mBoost: -0.10, bType: 'MISCONCEPTION' },
-    { name: 'Ananya Roy', email: 'ananya.roy@school.edu', color: 'from-purple-500 to-indigo-600', mBoost: 0.08, bType: 'RETRIEVAL_DECAY' },
-    { name: 'Vikram Malhotra', email: 'vikram.m@school.edu', color: 'from-emerald-500 to-teal-600', mBoost: -0.15, bType: 'TRANSFER_DEFICIT' },
-    { name: 'Neha Verma', email: 'neha.v@school.edu', color: 'from-blue-500 to-indigo-600', mBoost: 0.28, bType: 'BALANCED' },
-    { name: 'Devansh Singh', email: 'devansh.s@school.edu', color: 'from-teal-500 to-cyan-600', mBoost: -0.05, bType: 'RETRIEVAL_DECAY' },
-    { name: 'Ishita Sen', email: 'ishita.s@school.edu', color: 'from-rose-500 to-pink-600', mBoost: 0.12, bType: 'BALANCED' },
+  1: [
+    { name: 'Alex Rivera', email: 'alex.r@student.edu', color: 'from-cyan-500 to-blue-600', mBoost: 0.15, bType: 'BALANCED' },
+    { name: 'Priya Sharma', email: 'priya.s@student.edu', color: 'from-pink-500 to-rose-600', mBoost: 0.22, bType: 'BALANCED' },
+    { name: 'Rahul Kumar', email: 'rahul.k@student.edu', color: 'from-amber-500 to-orange-600', mBoost: -0.10, bType: 'MISCONCEPTION' },
+    { name: 'Ananya Roy', email: 'ananya.r@student.edu', color: 'from-purple-500 to-indigo-600', mBoost: 0.08, bType: 'RETRIEVAL_DECAY' },
+    { name: 'Vikram Malhotra', email: 'vikram.m@student.edu', color: 'from-emerald-500 to-teal-600', mBoost: -0.15, bType: 'TRANSFER_DEFICIT' },
+    { name: 'Sneha Patel', email: 'sneha.p@student.edu', color: 'from-blue-500 to-indigo-600', mBoost: 0.28, bType: 'BALANCED' },
   ],
-  7: [
-    { name: 'Harsh Vardhan', email: 'harsh.v@school.edu', color: 'from-amber-500 to-red-600', mBoost: -0.12, bType: 'MISCONCEPTION' },
-    { name: 'Prisha Mehra', email: 'prisha.m@school.edu', color: 'from-fuchsia-500 to-purple-600', mBoost: 0.18, bType: 'BALANCED' },
-    { name: 'Aditya Nair', email: 'aditya.n@school.edu', color: 'from-blue-500 to-cyan-600', mBoost: 0.05, bType: 'RETRIEVAL_DECAY' },
-    { name: 'Sneha Kapoor', email: 'sneha.k@school.edu', color: 'from-rose-500 to-orange-600', mBoost: 0.24, bType: 'BALANCED' },
-    { name: 'Rahul Joshi', email: 'rahul.j@school.edu', color: 'from-emerald-500 to-teal-600', mBoost: -0.18, bType: 'TRANSFER_DEFICIT' },
-    { name: 'Pooja Bhat', email: 'pooja.b@school.edu', color: 'from-indigo-500 to-violet-600', mBoost: 0.10, bType: 'BALANCED' },
+  2: [
+    { name: 'Harsh Vardhan', email: 'harsh.v@student.edu', color: 'from-amber-500 to-red-600', mBoost: -0.12, bType: 'MISCONCEPTION' },
+    { name: 'Prisha Mehra', email: 'prisha.m@student.edu', color: 'from-fuchsia-500 to-purple-600', mBoost: 0.18, bType: 'BALANCED' },
+    { name: 'Aditya Nair', email: 'aditya.n@student.edu', color: 'from-blue-500 to-cyan-600', mBoost: 0.05, bType: 'RETRIEVAL_DECAY' },
+    { name: 'Sneha Kapoor', email: 'sneha.k@student.edu', color: 'from-rose-500 to-orange-600', mBoost: 0.24, bType: 'BALANCED' },
+  ],
+  3: [
+    { name: 'Kabir Das', email: 'kabir.d@student.edu', color: 'from-cyan-500 to-sky-600', mBoost: 0.20, bType: 'BALANCED' },
+    { name: 'Tanvi Shah', email: 'tanvi.s@student.edu', color: 'from-pink-500 to-rose-600', mBoost: -0.14, bType: 'MISCONCEPTION' },
+    { name: 'Atharv Kulkarni', email: 'atharv.k@student.edu', color: 'from-amber-500 to-yellow-600', mBoost: -0.05, bType: 'RETRIEVAL_DECAY' },
   ],
   4: [
-    { name: 'Kabir Das', email: 'kabir.d@school.edu', color: 'from-cyan-500 to-sky-600', mBoost: 0.20, bType: 'BALANCED' },
-    { name: 'Tanvi Shah', email: 'tanvi.s@school.edu', color: 'from-pink-500 to-rose-600', mBoost: -0.14, bType: 'MISCONCEPTION' },
-    { name: 'Atharv Kulkarni', email: 'atharv.k@school.edu', color: 'from-amber-500 to-yellow-600', mBoost: -0.05, bType: 'RETRIEVAL_DECAY' },
-    { name: 'Meera Pillai', email: 'meera.p@school.edu', color: 'from-purple-500 to-indigo-600', mBoost: 0.15, bType: 'BALANCED' },
-    { name: 'Samar Khan', email: 'samar.k@school.edu', color: 'from-emerald-500 to-green-600', mBoost: 0.02, bType: 'BALANCED' },
+    { name: 'Devansh Singh', email: 'devansh.s@student.edu', color: 'from-teal-500 to-cyan-600', mBoost: 0.16, bType: 'BALANCED' },
+    { name: 'Ishita Sen', email: 'ishita.s@student.edu', color: 'from-rose-500 to-pink-600', mBoost: 0.12, bType: 'BALANCED' },
+  ],
+  5: [
+    { name: 'Rohan Gupta', email: 'rohan.g@student.edu', color: 'from-amber-500 to-orange-600', mBoost: 0.18, bType: 'BALANCED' },
+    { name: 'Meera Pillai', email: 'meera.p@student.edu', color: 'from-purple-500 to-indigo-600', mBoost: 0.15, bType: 'BALANCED' },
   ]
 }
 
 export function getCohortForGrade(gradeNumber: number): CohortStudentProfile[] {
-  const gradeName = `Class ${gradeNumber}`
-  const templateList = GRADE_STUDENT_NAMES[gradeNumber] || [
-    { name: `Student Alpha (${gradeName})`, email: `alpha.${gradeNumber}@school.edu`, color: 'from-cyan-500 to-blue-600', mBoost: 0.10, bType: 'BALANCED' },
-    { name: `Student Beta (${gradeName})`, email: `beta.${gradeNumber}@school.edu`, color: 'from-rose-500 to-pink-600', mBoost: -0.15, bType: 'MISCONCEPTION' },
-    { name: `Student Gamma (${gradeName})`, email: `gamma.${gradeNumber}@school.edu`, color: 'from-amber-500 to-orange-600', mBoost: -0.08, bType: 'RETRIEVAL_DECAY' },
-    { name: `Student Delta (${gradeName})`, email: `delta.${gradeNumber}@school.edu`, color: 'from-emerald-500 to-teal-600', mBoost: 0.22, bType: 'BALANCED' },
-  ]
+  const TRACK_NAMES: Record<number, string> = {
+    1: 'Python with GenAI Engineering',
+    2: 'Salesforce Admin & Dev Track',
+    3: 'ServiceNow CSA / CAD Track',
+    4: 'Full Stack Web Engineering',
+    5: 'Cloud & DevOps AWS SRE'
+  }
+  const gradeName = TRACK_NAMES[gradeNumber] || `Track ${gradeNumber}`
+  const templateList = GRADE_STUDENT_NAMES[gradeNumber] || GRADE_STUDENT_NAMES[1]
 
   // Retrieve any admin overrides
   const overridesKey = 'omni_admin_student_overrides'

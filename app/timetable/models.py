@@ -15,7 +15,7 @@ class SchoolGrade(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "school_grades"
 
     grade_number: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
     academic_year: Mapped[str] = mapped_column(String(16), default="2026-2027", nullable=False)
 
     sections: Mapped[list["SchoolSection"]] = relationship("SchoolSection", back_populates="grade", cascade="all, delete-orphan")
@@ -26,8 +26,8 @@ class SchoolSection(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "school_sections"
 
     grade_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("school_grades.id", ondelete="CASCADE"), nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(8), nullable=False)
-    room_number: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(32), nullable=False)
+    room_number: Mapped[str] = mapped_column(String(64), nullable=False)
 
     grade: Mapped["SchoolGrade"] = relationship("SchoolGrade", back_populates="sections")
     slots: Mapped[list["TimetableSlot"]] = relationship("TimetableSlot", back_populates="section", cascade="all, delete-orphan")
@@ -39,8 +39,8 @@ class Subject(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "school_subjects"
 
     code: Mapped[str] = mapped_column(String(16), unique=True, index=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
-    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
     requires_ground: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     requires_lab: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     color: Mapped[str] = mapped_column(String(16), default="#06b6d4", nullable=False)

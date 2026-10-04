@@ -234,11 +234,12 @@ export function App() {
 
                   {/* Teachers */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FB923C', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Faculty / Instructors</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FB923C', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Faculty / Technical Mentors</p>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                       {[
-                        ['sarah.connor@school.edu', 'Dr. Sarah — Python & Backend'],
-                        ['alan.turing@school.edu', 'Prof. Turing — Web & Data'],
+                        ['sarah.connor@institute.edu', 'Dr. Sarah — Python & GenAI'],
+                        ['alan.turing@institute.edu', 'Prof. Turing — LLMs & RAG'],
+                        ['marc.b@institute.edu', 'Marc Benioff — Salesforce'],
                       ].map(([email, label]) => (
                         <button
                           key={email}
@@ -254,12 +255,12 @@ export function App() {
 
                   {/* Students */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FDE047', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Enrolled Students</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FDE047', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Enrolled Technical Candidates</p>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                       {[
-                        ['student@example.com', 'Alex — Python Fullstack'],
-                        ['student.class1@school.edu', 'Aarav — Data Science'],
-                        ['student.class6@school.edu', 'Sanya — DevOps & Cloud'],
+                        ['alex.r@student.edu', 'Alex Rivera — Full Stack Web'],
+                        ['priya.s@student.edu', 'Priya Sharma — Python GenAI'],
+                        ['rahul.k@student.edu', 'Rahul Kumar — DevOps & Cloud'],
                       ].map(([email, label]) => (
                         <button
                           key={email}

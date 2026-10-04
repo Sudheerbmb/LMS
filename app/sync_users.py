@@ -6,22 +6,31 @@ from app.platform.database import SessionFactory
 from app.identity.models import User
 from app.identity.security import hash_password
 
+from sqlalchemy import delete, or_, select
+
 STUDENT_SEEDS = [
-    {"email": "student@example.com", "name": "Alex Rivera", "grade_num": 9, "sec_name": "A"},
-    {"email": "student.class1@school.edu", "name": "Aarav Patel (Class 1-A)", "grade_num": 1, "sec_name": "A"},
-    {"email": "student.class2@school.edu", "name": "Diya Sharma (Class 2-A)", "grade_num": 2, "sec_name": "A"},
-    {"email": "student.class3@school.edu", "name": "Ishaan Verma (Class 3-A)", "grade_num": 3, "sec_name": "A"},
-    {"email": "student.class4@school.edu", "name": "Ananya Iyer (Class 4-A)", "grade_num": 4, "sec_name": "A"},
-    {"email": "student.class5@school.edu", "name": "Rohan Gupta (Class 5-A)", "grade_num": 5, "sec_name": "A"},
-    {"email": "student.class6@school.edu", "name": "Sanya Reddy (Class 6-A)", "grade_num": 6, "sec_name": "A"},
-    {"email": "student.class7@school.edu", "name": "Kabir Mehta (Class 7-A)", "grade_num": 7, "sec_name": "A"},
-    {"email": "student.class8@school.edu", "name": "Pooja Nair (Class 8-A)", "grade_num": 8, "sec_name": "A"},
-    {"email": "student.class9@school.edu", "name": "Arjun Rao (Class 9-A)", "grade_num": 9, "sec_name": "A"},
-    {"email": "student.class10@school.edu", "name": "Meera Joshi (Class 10-A)", "grade_num": 10, "sec_name": "A"},
+    {"email": "student@example.com", "name": "Alex Rivera", "grade_num": 1, "sec_name": "Batch-01"},
+    {"email": "alex.r@student.edu", "name": "Alex Rivera", "grade_num": 1, "sec_name": "Batch-01"},
+    {"email": "priya.s@student.edu", "name": "Priya Sharma", "grade_num": 1, "sec_name": "Batch-01"},
+    {"email": "rahul.k@student.edu", "name": "Rahul Kumar", "grade_num": 2, "sec_name": "Batch-01"},
+    {"email": "ananya.r@student.edu", "name": "Ananya Roy", "grade_num": 3, "sec_name": "Batch-01"},
+    {"email": "vikram.m@student.edu", "name": "Vikram Malhotra", "grade_num": 4, "sec_name": "Batch-01"},
+    {"email": "sneha.p@student.edu", "name": "Sneha Patel", "grade_num": 5, "sec_name": "Batch-01"},
 ]
 
 async def sync_logins():
     async with SessionFactory() as session:
+        # 0. Clean up legacy school dummy accounts
+        await session.execute(
+            delete(User).where(
+                or_(
+                    User.email.like("%@school.edu"),
+                    User.display_name.like("%Class %"),
+                )
+            )
+        )
+        await session.commit()
+
         # 1. Ensure Admins
         admins = [
             ("admin@example.com", "System Admin", "ChangeMe123!"),
@@ -82,6 +91,7 @@ async def sync_logins():
                 )
                 session.add(stu)
             else:
+                stu.display_name = s_data["name"]
                 stu.password_hash = hash_password("Student123!")
                 stu.role = "student"
                 stu.status = "active"
