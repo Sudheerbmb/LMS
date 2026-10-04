@@ -43,6 +43,7 @@ import {
   updateSlot,
   recordTeacherLeave,
   getAdminCourses,
+  getMyEnrollments,
   createSchoolLiveClass,
   getSchoolLiveClasses,
   type SchoolGrade,
@@ -185,11 +186,12 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const loadData = async () => {
     try {
       setLoading(true)
-      const [gradesData, teachersData, coursesData, liveClassesData] = await Promise.all([
+      const [gradesData, teachersData, coursesData, liveClassesData, myEnrollmentsData] = await Promise.all([
         getGrades().catch(() => []),
         getTeachersWithFeedback().catch(() => []),
         getAdminCourses().catch(() => []),
-        getSchoolLiveClasses().catch(() => [])
+        getSchoolLiveClasses().catch(() => []),
+        getMyEnrollments().catch(() => []),
       ])
       setGrades(gradesData || [])
       setTeachers(teachersData || [])
@@ -217,20 +219,25 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         setSlots(studentSlots || [])
 
         // Filter grades to student's enrolled courses
-        const enrolledCourses = (coursesData || []).filter((c: any) => c.is_enrolled)
+        const enrolledIds = new Set((myEnrollmentsData || []).map(e => e.course_id))
+        const enrolledCourses = (coursesData || []).filter((c: any) => enrolledIds.has(c.id))
         const enrolledTitles = enrolledCourses.map((c: any) => c.title.toLowerCase())
-        const studentGrades = (gradesData || []).filter(g => enrolledTitles.some((t: string) => g.name.toLowerCase().includes(t)))
+        const enrolledSlugs = enrolledCourses.map((c: any) => (c.slug || '').toLowerCase())
+        const studentGrades = (gradesData || []).filter(g =>
+          enrolledTitles.some((t: string) => g.name.toLowerCase().includes(t)) ||
+          enrolledSlugs.some((s: string) => g.name.toLowerCase().includes(s))
+        )
 
         if (studentGrades.length > 0) {
+          setGrades(studentGrades)
           setSelectedGradeId(studentGrades[0].id)
           if (studentGrades[0].sections && studentGrades[0].sections.length > 0) {
             setSelectedSectionId(studentGrades[0].sections[0].id)
           }
-        } else if (gradesData && gradesData.length > 0) {
-          setSelectedGradeId(gradesData[0].id)
-          if (gradesData[0].sections && gradesData[0].sections.length > 0) {
-            setSelectedSectionId(gradesData[0].sections[0].id)
-          }
+        } else {
+          setGrades([])
+          setSelectedGradeId('')
+          setSelectedSectionId('')
         }
       } else {
         // Admin: Load master class section grid

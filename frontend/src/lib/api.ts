@@ -867,6 +867,7 @@ export interface TeacherTimetableSlot {
 
 export interface SchoolLiveClass {
   id: string
+  course_id?: string
   title: string
   teacher_id: string
   teacher_name?: string

@@ -484,12 +484,8 @@ async def get_timetable_grid(
 
     slots = (await session.scalars(query)).all()
 
-    # 1. Explicit grade_id filter
-    if grade_id:
-        slots = [s for s in slots if s.section and s.section.grade_id == grade_id]
-
-    # 2. Student role: Filter to enrolled courses/batches if no explicit grade requested
-    elif user and user.role == "student" and not section_id and not grade_id:
+    # 1. Student role: Strictly filter to enrolled courses, tracks and subjects
+    if user and user.role == "student":
         enrollments = (
             await session.scalars(
                 select(Enrollment).where(
@@ -500,32 +496,48 @@ async def get_timetable_grid(
         ).all()
         enrolled_course_ids = [e.course_id for e in enrollments]
 
-        if enrolled_course_ids:
-            courses = (
-                await session.scalars(
-                    select(Course)
-                    .options(selectinload(Course.versions))
-                    .where(Course.id.in_(enrolled_course_ids))
-                )
-            ).all()
-            enrolled_titles = {
-                (c.versions[0].title if c.versions else c.slug).lower()
-                for c in courses
-            }
-            enrolled_slugs = {c.slug for c in courses}
-            filtered_slots = [
-                s for s in slots
-                if (s.section and s.section.grade and any(et in s.section.grade.name.lower() for et in enrolled_titles))
-                or (s.subject and s.subject.category in enrolled_slugs)
-            ]
-            if filtered_slots:
-                slots = filtered_slots
+        if not enrolled_course_ids:
+            return []
 
-    # 3. Teacher role: Filter to teacher's own teaching schedule
-    elif user and user.role == "teacher" and not teacher_id and not grade_id and not section_id:
+        courses = (
+            await session.scalars(
+                select(Course)
+                .options(
+                    selectinload(Course.versions),
+                    selectinload(Course.subjects),
+                )
+                .where(Course.id.in_(enrolled_course_ids))
+            )
+        ).all()
+        enrolled_titles = {
+            (c.versions[0].title if c.versions else c.slug).lower()
+            for c in courses
+        }
+        enrolled_slugs = {c.slug.lower() for c in courses}
+        enrolled_sub_codes = {s.code for c in courses for s in (c.subjects or []) if s.code}
+        enrolled_sub_names = {s.name.lower() for c in courses for s in (c.subjects or []) if s.name}
+
+        slots = [
+            s for s in slots
+            if (s.section and s.section.grade and any(et in s.section.grade.name.lower() for et in enrolled_titles))
+            or (s.subject and (
+                s.subject.category.lower() in enrolled_slugs
+                or s.subject.code in enrolled_sub_codes
+                or (s.subject.name and s.subject.name.lower() in enrolled_sub_names)
+            ))
+        ]
+
+    # 2. Teacher role: Filter to teacher's own teaching schedule
+    elif user and user.role == "teacher" and not teacher_id:
         prof = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
         if prof:
             slots = [s for s in slots if s.teacher_id == prof.id]
+
+    # 3. Explicit grade_id or section_id filters (applied within role scope)
+    if grade_id:
+        slots = [s for s in slots if s.section and s.section.grade_id == grade_id]
+    if section_id:
+        slots = [s for s in slots if s.section_id == section_id]
 
     teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher}
     users = (await session.scalars(select(User).where(User.id.in_(teacher_user_ids)))).all() if teacher_user_ids else []
@@ -1047,30 +1059,49 @@ async def get_school_courses_and_syllabus(
         elif user_email:
             target_user = await session.scalar(select(User).where(User.email == user_email))
 
-        student_grades = []
-        if target_user:
-            enrollments = (
-                await session.scalars(
-                    select(Enrollment).where(
-                        Enrollment.user_id == target_user.id,
-                        Enrollment.status == "active",
-                    )
+        if not target_user:
+            return []
+
+        enrollments = (
+            await session.scalars(
+                select(Enrollment).where(
+                    Enrollment.user_id == target_user.id,
+                    Enrollment.status == "active",
                 )
-            ).all()
-            if enrollments:
-                enrolled_c_ids = [e.course_id for e in enrollments]
-                enrolled_courses = (
-                    await session.scalars(
-                        select(Course).options(selectinload(Course.versions)).where(Course.id.in_(enrolled_c_ids))
-                    )
-                ).all()
-                enrolled_titles = {
-                    (c.versions[0].title if c.versions else c.slug).lower() for c in enrolled_courses
-                }
-                student_grades = [g for g in grades if any(et in g.name.lower() for et in enrolled_titles)]
+            )
+        ).all()
+        if not enrollments:
+            return []
+
+        enrolled_c_ids = [e.course_id for e in enrollments]
+        enrolled_courses = (
+            await session.scalars(
+                select(Course)
+                .options(
+                    selectinload(Course.versions),
+                    selectinload(Course.subjects),
+                )
+                .where(Course.id.in_(enrolled_c_ids))
+            )
+        ).all()
+        if not enrolled_courses:
+            return []
+
+        enrolled_titles = {
+            (c.versions[0].title if c.versions else c.slug).lower() for c in enrolled_courses
+        }
+        enrolled_slugs = {c.slug.lower() for c in enrolled_courses}
+        enrolled_sub_codes = {s.code for c in enrolled_courses for s in (c.subjects or []) if s.code}
+
+        student_grades = [
+            g for g in grades
+            if any(et in g.name.lower() for et in enrolled_titles)
+        ]
+        if grade_number is not None:
+            student_grades = [g for g in student_grades if g.grade_number == grade_number]
 
         if not student_grades:
-            student_grades = grades  # fallback to all catalog tracks
+            return []
 
         for gr in student_grades:
             for curr in gr.curriculum:

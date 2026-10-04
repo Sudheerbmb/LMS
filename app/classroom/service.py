@@ -356,8 +356,67 @@ async def get_school_live_classes(
 
     query = select(LiveClass).order_by(LiveClass.starts_at.desc())
 
-    if grade_number is not None:
-        query = query.where(LiveClass.grade_number == grade_number)
+    if user.role == "student":
+        # Students: Strictly filter to enrolled courses, subjects, and corresponding grade tracks
+        enrollments = (
+            await session.scalars(
+                select(Enrollment).where(
+                    Enrollment.user_id == user.id,
+                    Enrollment.status == "active",
+                )
+            )
+        ).all()
+        enrolled_course_ids = [e.course_id for e in enrollments]
+
+        if not enrolled_course_ids:
+            return []
+
+        enrolled_courses = (
+            await session.scalars(
+                select(Course)
+                .options(
+                    selectinload(Course.versions),
+                    selectinload(Course.subjects),
+                )
+                .where(Course.id.in_(enrolled_course_ids))
+            )
+        ).all()
+
+        enrolled_subject_codes = set()
+        enrolled_subject_names = set()
+        enrolled_titles = set()
+        for c in enrolled_courses:
+            title = c.versions[0].title if c.versions else c.slug
+            enrolled_titles.add(title.lower())
+            enrolled_titles.add(c.slug.lower())
+            for s in (c.subjects or []):
+                if s.code:
+                    enrolled_subject_codes.add(s.code)
+                if s.name:
+                    enrolled_subject_names.add(s.name)
+
+        # Also match SchoolGrade numbers for enrolled courses
+        all_grades = (await session.scalars(select(SchoolGrade))).all()
+        enrolled_grade_numbers = [
+            g.grade_number for g in all_grades
+            if any(et in g.name.lower() for et in enrolled_titles)
+        ]
+
+        conditions = []
+        if enrolled_course_ids:
+            conditions.append(LiveClass.course_id.in_(enrolled_course_ids))
+        if enrolled_subject_codes:
+            conditions.append(LiveClass.subject_code.in_(list(enrolled_subject_codes)))
+        if enrolled_subject_names:
+            conditions.append(LiveClass.subject_name.in_(list(enrolled_subject_names)))
+        if enrolled_grade_numbers:
+            conditions.append(LiveClass.grade_number.in_(enrolled_grade_numbers))
+
+        if conditions:
+            query = query.where(or_(*conditions))
+        else:
+            return []
+
     elif user.role == "teacher":
         # Find all subject codes assigned to this teacher
         assigned_subs = (
@@ -390,58 +449,8 @@ async def get_school_live_classes(
         else:
             query = query.where(LiveClass.teacher_id == user.id)
 
-    elif user.role == "student":
-        # Students: Strictly filter to enrolled courses and subjects
-        enrollments = (
-            await session.scalars(
-                select(Enrollment).where(
-                    Enrollment.user_id == user.id,
-                    Enrollment.status == "active",
-                )
-            )
-        ).all()
-        enrolled_course_ids = [e.course_id for e in enrollments]
-
-        if not enrolled_course_ids:
-            return []
-
-        enrolled_courses = (
-            await session.scalars(
-                select(Course)
-                .options(
-                    selectinload(Course.versions),
-                    selectinload(Course.subjects),
-                )
-                .where(Course.id.in_(enrolled_course_ids))
-            )
-        ).all()
-
-        enrolled_subject_codes = set()
-        enrolled_titles = set()
-        for c in enrolled_courses:
-            title = c.versions[0].title if c.versions else c.slug
-            enrolled_titles.add(title.lower())
-            for s in (c.subjects or []):
-                if s.code:
-                    enrolled_subject_codes.add(s.code)
-
-        # Also match SchoolGrade numbers for enrolled courses
-        all_grades = (await session.scalars(select(SchoolGrade))).all()
-        enrolled_grade_numbers = [
-            g.grade_number for g in all_grades
-            if any(et in g.name.lower() for et in enrolled_titles)
-        ]
-
-        conditions = []
-        if enrolled_subject_codes:
-            conditions.append(LiveClass.subject_code.in_(list(enrolled_subject_codes)))
-        if enrolled_grade_numbers:
-            conditions.append(LiveClass.grade_number.in_(enrolled_grade_numbers))
-
-        if conditions:
-            query = query.where(or_(*conditions))
-        else:
-            return []
+    if grade_number is not None:
+        query = query.where(LiveClass.grade_number == grade_number)
 
     if status_filter:
         query = query.where(LiveClass.status == status_filter)

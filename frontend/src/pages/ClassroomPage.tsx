@@ -6555,7 +6555,7 @@ const handleTriggerTeacherCopilot = async (
               : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          All Courses ({classes.length})
+          All Modules ({classes.length})
         </button>
         <button
           onClick={() => setFilterRecordingOnly(prev => !prev)}
@@ -6568,12 +6568,12 @@ const handleTriggerTeacherCopilot = async (
           <Video className="w-3.5 h-3.5 text-amber-400" />
           <span>Watch Recordings ({classes.filter(c => !!c.recording_url || c.status === 'ended').length})</span>
         </button>
-        {availableCourses.map((crs, idx) => (
+        {availableCourses.map((crs) => (
           <button
-            key={crs.id || idx}
-            onClick={() => { setFilterGrade(idx + 1); setFilterRecordingOnly(false); }}
+            key={crs.id}
+            onClick={() => { setSelectedCourseSlug(crs.slug); setFilterGrade(crs.id as any); setFilterRecordingOnly(false); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              filterGrade === idx + 1 && !filterRecordingOnly
+              filterGrade === (crs.id as any) && !filterRecordingOnly
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
@@ -6604,7 +6604,17 @@ const handleTriggerTeacherCopilot = async (
           classes
             .filter(cls => {
               if (filterRecordingOnly) return !!cls.recording_url || cls.status === 'ended'
-              if (filterGrade !== 'all') return cls.grade_number === filterGrade
+              if (filterGrade !== 'all') {
+                const targetCourse = availableCourses.find(c => c.id === (filterGrade as any) || c.slug === (filterGrade as any))
+                if (targetCourse) {
+                  const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
+                  const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
+                  const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
+                  const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
+                                   (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
+                  return titleMatch || subMatch || cls.course_id === targetCourse.id
+                }
+              }
               return true
             })
             .map(cls => {
