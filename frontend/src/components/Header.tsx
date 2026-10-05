@@ -6,7 +6,6 @@ import {
   BookOpen,
   Video,
   CalendarDays,
-  Code2,
   FileText,
   CheckSquare,
   Award,
@@ -93,9 +92,6 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'courses', label: coursesLabel, icon: BookOpen },
     { id: 'classroom', label: liveSessionLabel, icon: Video },
     { id: 'timetable', label: timetableLabel, icon: CalendarDays },
-    ...(user.role !== 'admin'
-      ? [{ id: 'coding', label: 'Coding Playground', icon: Code2 }]
-      : []),
     ...(user.role !== 'admin'
       ? [{ id: 'assignments', label: 'Assignments', icon: FileText }]
       : []),
