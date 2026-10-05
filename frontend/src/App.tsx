@@ -389,10 +389,11 @@ export function App() {
   return (
     <div
       data-role={user.role}
-      className="min-h-screen w-full flex select-none relative overflow-hidden"
+      className="min-h-screen w-full flex select-none bg-[#080A12]"
       style={{
+        background: 'var(--bg)',
         color: 'var(--text)',
-        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
       {/* ── Enterprise Sidebar Navigation across all roles ── */}
@@ -409,7 +410,7 @@ export function App() {
       />
 
       {/* ── Main Page Workspace ── */}
-      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto relative z-10">
+      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto" style={{ background: 'var(--bg)' }}>
         {currentTab === 'overview' && (
           <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
         )}
