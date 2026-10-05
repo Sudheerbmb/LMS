@@ -817,7 +817,18 @@ async def process_zoom_webhook_event(
 
         elif event_type in ("recording.completed", "recording.transcript_completed"):
             recording_files = payload_obj.get("recording_files", [])
-            download_token = payload_obj.get("download_token")
+            download_token = (
+                body.get("payload", {}).get("download_token")
+                or body.get("download_token")
+                or payload_obj.get("download_token")
+            )
+            if not download_token:
+                try:
+                    from app.integrations.zoom.service import zoom_service
+                    if zoom_service.is_configured():
+                        download_token = await zoom_service.client.auth.get_access_token()
+                except Exception:
+                    pass
 
             for rf in recording_files:
                 rec_id = str(rf.get("id") or "")
