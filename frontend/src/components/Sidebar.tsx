@@ -170,23 +170,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside
-        className={`h-screen sticky top-0 flex flex-col bg-[#070A12] border-r border-amber-500/15 transition-all duration-300 z-40 select-none ${
+        className={`h-screen sticky top-0 flex flex-col bg-[#0A0E24]/90 backdrop-blur-2xl border-r border-indigo-500/20 shadow-2xl transition-all duration-300 z-40 select-none ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
         {/* Brand Header */}
-        <div className="p-4 border-b border-amber-500/15 flex items-center justify-between">
+        <div className="p-4 border-b border-indigo-500/20 flex items-center justify-between bg-slate-950/40">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/25 shrink-0">
-              <Flame className="w-5 h-5 fill-slate-950" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-violet-600 flex items-center justify-center text-white font-black shadow-lg shadow-cyan-500/25 shrink-0">
+              <Flame className="w-5 h-5 fill-white" />
             </div>
             {!collapsed && (
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black tracking-tight text-white truncate">
+                  <span className="text-sm font-black tracking-tight text-white truncate bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">
                     Acharya LMS
                   </span>
-                  <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                  <Sparkles className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border w-fit mt-0.5 ${roleCfg.badgeBg} ${roleCfg.badgeText} ${roleCfg.border}`}>
                   {user.role}
@@ -197,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-slate-800/80 border border-transparent hover:border-indigo-500/30 transition cursor-pointer shrink-0"
             title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -207,10 +207,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation Section */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
           {/* Main Academics */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <Layers className="w-3 h-3" />
+              <p className="px-3 text-[10px] font-extrabold text-cyan-400/80 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Layers className="w-3 h-3 text-cyan-400" />
                 <span>Academic Modules</span>
               </p>
             )}
@@ -221,17 +221,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => setCurrentTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative border ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
+                      ? 'bg-gradient-to-r from-cyan-500 via-indigo-600 to-violet-600 text-white border-cyan-400/40 shadow-lg shadow-cyan-500/25 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-900/90 border-transparent hover:border-indigo-500/30'
                   }`}
                   title={collapsed ? item.label : undefined}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-cyan-400 group-hover:text-cyan-300'}`} />
                   {!collapsed && <span className="truncate">{item.label}</span>}
                   {isActive && !collapsed && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                    <span className="ml-auto w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse" />
                   )}
                 </button>
               )
@@ -240,10 +240,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Tools & Workspace */}
           {toolNavItems.length > 0 && (
-            <div className="space-y-1 pt-3 border-t border-slate-800/80">
+            <div className="space-y-1.5 pt-3 border-t border-indigo-500/20">
               {!collapsed && (
-                <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <GraduationCap className="w-3 h-3" />
+                <p className="px-3 text-[10px] font-extrabold text-violet-400/80 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <GraduationCap className="w-3 h-3 text-violet-400" />
                   <span>Interactive Tools</span>
                 </p>
               )}
@@ -254,17 +254,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => setCurrentTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative ${
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative border ${
                       isActive
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
+                        ? 'bg-gradient-to-r from-cyan-500 via-indigo-600 to-violet-600 text-white border-cyan-400/40 shadow-lg shadow-cyan-500/25 font-black'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-900/90 border-transparent hover:border-indigo-500/30'
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-violet-400 group-hover:text-violet-300'}`} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                     {isActive && !collapsed && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                      <span className="ml-auto w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse" />
                     )}
                   </button>
                 )

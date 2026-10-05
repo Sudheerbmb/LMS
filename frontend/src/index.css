@@ -14,32 +14,32 @@
   font-size: 14px;
   line-height: 1.6;
 
-  /* ── Core Acharya-LMS Authentic Palette ── */
-  --omni-bg:          #06080F;
-  --omni-bg-sec:      #0B0F19;
-  --omni-surface:     #111726;
-  --omni-elevated:    #161E31;
-  --omni-accent:      #F59E0B;
-  --omni-accent-sec:  #EA580C;
-  --omni-accent-ai:   #FBBF24;
+  /* ── Eye-Catchy Futuristic Cyber-Glass Palette ── */
+  --omni-bg:          #090D1A;
+  --omni-bg-sec:      #0E1428;
+  --omni-surface:     #141C38;
+  --omni-elevated:    #1B264A;
+  --omni-accent:      #06B6D4;
+  --omni-accent-sec:  #6366F1;
+  --omni-accent-ai:   #F59E0B;
   --omni-success:     #10B981;
   --omni-warning:     #F59E0B;
-  --omni-danger:      #EF4444;
+  --omni-danger:      #F43F5E;
   --omni-text:        #F8FAFC;
   --omni-text-sec:    #CBD5E1;
   --omni-muted:       #94A3B8;
-  --omni-border:      rgba(245, 158, 11, 0.12);
-  --omni-border-subtle: rgba(255, 255, 255, 0.06);
-  --omni-glass:       rgba(17, 23, 38, 0.7);
-  --omni-glass-hover: rgba(245, 158, 11, 0.08);
+  --omni-border:      rgba(99, 102, 241, 0.22);
+  --omni-border-subtle: rgba(255, 255, 255, 0.08);
+  --omni-glass:       rgba(20, 28, 56, 0.75);
+  --omni-glass-hover: rgba(99, 102, 241, 0.15);
 
-  /* ── Gradients ── */
-  --omni-grad-primary: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
-  --omni-grad-ai:      linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #EA580C 100%);
-  --omni-grad-surface: linear-gradient(180deg, rgba(22, 30, 49, 0.85) 0%, rgba(11, 15, 25, 0.95) 100%);
+  /* ── Futuristic High-Energy Gradients ── */
+  --omni-grad-primary: linear-gradient(135deg, #06B6D4 0%, #6366F1 50%, #8B5CF6 100%);
+  --omni-grad-ai:      linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #F59E0B 100%);
+  --omni-grad-amber:   linear-gradient(135deg, #F59E0B 0%, #EA580C 50%, #F43F5E 100%);
+  --omni-grad-surface: linear-gradient(180deg, rgba(27, 38, 74, 0.9) 0%, rgba(14, 20, 40, 0.95) 100%);
 
-  /* ── Role Mappings (All Unified in Dark Cosmic Base) ── */
-  /* Default / Global */
+  /* ── Role Mappings ── */
   --bg:          var(--omni-bg);
   --bg-sec:      var(--omni-bg-sec);
   --surface:     var(--omni-surface);
@@ -51,53 +51,53 @@
   --text:        var(--omni-text);
   --text-sec:    var(--omni-text-sec);
   --muted:       var(--omni-muted);
-  --sidebar:     #080C16;
-  --sidebar-t:   #CBD5E1;
-  --active-bg:   rgba(245, 158, 11, 0.16);
-  --active-t:    #FDE68A;
+  --sidebar:     #0A0E1F;
+  --sidebar-t:   #E2E8F0;
+  --active-bg:   rgba(99, 102, 241, 0.22);
+  --active-t:    #38BDF8;
 
   /* Geometry & Shadows */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 24px rgba(245, 158, 11, 0.25);
-  --shadow-ai-glow: 0 0 30px rgba(234, 88, 12, 0.22);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(99, 102, 241, 0.08);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.12);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.65), 0 0 25px rgba(99, 102, 241, 0.2);
+  --shadow-glow: 0 0 30px rgba(6, 182, 212, 0.35);
+  --shadow-ai-glow: 0 0 35px rgba(139, 92, 246, 0.3);
 
   color-scheme: dark;
 }
 
-/* ── Role Customizations (Tailored Accents over Cosmic Dark Base) ── */
+/* ── Role Customizations with Futuristic Accents ── */
 [data-role="admin"] {
-  --sidebar:     #080C16;
-  --sidebar-t:   #CBD5E1;
-  --active-bg:   rgba(245, 158, 11, 0.18);
+  --sidebar:     #0A0E1F;
+  --sidebar-t:   #E2E8F0;
+  --active-bg:   rgba(245, 158, 11, 0.22);
   --active-t:    #FDE68A;
   --accent:      #F59E0B;
-  --accent-2:    #D97706;
+  --accent-2:    #EA580C;
   color-scheme: dark;
 }
 
 [data-role="teacher"] {
-  --sidebar:     #080C16;
-  --sidebar-t:   #CBD5E1;
-  --active-bg:   rgba(234, 88, 12, 0.18);
-  --active-t:    #FDBA74;
-  --accent:      #EA580C;
-  --accent-2:    #C2410C;
+  --sidebar:     #0A0E1F;
+  --sidebar-t:   #E2E8F0;
+  --active-bg:   rgba(99, 102, 241, 0.22);
+  --active-t:    #A5B4FC;
+  --accent:      #6366F1;
+  --accent-2:    #8B5CF6;
   color-scheme: dark;
 }
 
 [data-role="student"] {
-  --sidebar:     #080C16;
-  --sidebar-t:   #CBD5E1;
-  --active-bg:   rgba(251, 191, 36, 0.16);
-  --active-t:    #FEF08A;
-  --accent:      #FBBF24;
-  --accent-2:    #F59E0B;
+  --sidebar:     #0A0E1F;
+  --sidebar-t:   #E2E8F0;
+  --active-bg:   rgba(6, 182, 212, 0.22);
+  --active-t:    #67E8F9;
+  --accent:      #06B6D4;
+  --accent-2:    #3B82F6;
   color-scheme: dark;
 }
 
@@ -108,34 +108,40 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: var(--omni-bg);
+  background-color: #090D1A;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 30%, rgba(6, 182, 212, 0.12), transparent 60%),
+    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(139, 92, 246, 0.12), transparent 50%);
+  background-attachment: fixed;
   color: var(--omni-text);
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  background-color: var(--omni-bg);
+  background-color: transparent;
   color: var(--omni-text);
   font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Sleek Dark Scrollbar ───────────────────────────────── */
+/* ── Sleek Futuristic Scrollbar ─────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(8, 10, 18, 0.6);
+  background: rgba(9, 13, 26, 0.8);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(99, 102, 241, 0.3);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.4);
+  background: rgba(6, 182, 212, 0.6);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
 }
 
 /* ── Typography Scale ───────────────────────────────────── */
@@ -149,33 +155,37 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Card */
 .lms-card {
-  background: var(--omni-surface);
-  border: 1px solid var(--omni-border);
+  background: rgba(20, 28, 56, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   padding: 1.25rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lms-card:hover {
-  border-color: rgba(245, 158, 11, 0.25);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15);
+  transform: translateY(-2px);
 }
 
 /* Glass Card */
 .lms-card-glass {
-  background: rgba(17, 23, 38, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--omni-border);
+  background: rgba(20, 28, 56, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
 
 /* AI / Intelligent Cognitive Card */
 .lms-card-ai {
-  background: linear-gradient(180deg, rgba(22, 30, 49, 0.9) 0%, rgba(11, 15, 25, 0.95) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: linear-gradient(180deg, rgba(27, 38, 74, 0.9) 0%, rgba(14, 20, 40, 0.95) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
   border-radius: var(--radius-xl);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(254, 240, 138, 0.1);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(56, 189, 248, 0.15), 0 0 15px rgba(6, 182, 212, 0.1);
   position: relative;
   overflow: hidden;
 }
@@ -186,7 +196,7 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--omni-grad-ai);
+  background: var(--omni-grad-primary);
   opacity: 0.95;
 }
 
