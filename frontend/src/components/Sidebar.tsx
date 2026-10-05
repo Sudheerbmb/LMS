@@ -1,240 +1,423 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import type { User, Notification as LMSNotification } from '../lib/api'
+import {
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+  flushAllNotifications
+} from '../lib/api'
 import {
   LayoutDashboard,
   BookOpen,
-  CheckSquare,
-  FileText,
-  Code2,
   Video,
-  Users,
-  LogOut,
   CalendarDays,
+  Code2,
+  FileText,
+  CheckSquare,
   Award,
+  Users,
+  Bell,
+  X,
+  Trash2,
+  CheckCheck,
+  LogOut,
+  ChevronLeft,
   ChevronRight,
+  Sparkles,
+  Flame,
+  Layers,
+  GraduationCap
 } from 'lucide-react'
 
 type SidebarProps = {
+  user: User
+  notifications: LMSNotification[]
   currentTab: string
   setCurrentTab: (tab: string) => void
-  userRole?: 'admin' | 'teacher' | 'student'
+  onRefreshNotifications?: () => void
   onLogout: () => void
 }
 
-const ROLE_META = {
+const ROLE_CONFIG: Record<string, { label: string; badgeBg: string; badgeText: string; border: string; glow: string }> = {
   admin: {
     label: 'Administrator',
-    badge: 'Admin',
-    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    initials: 'A',
-    avatarBg: 'bg-gradient-to-tr from-amber-600 to-yellow-500 text-white',
+    badgeBg: 'bg-amber-500/15',
+    badgeText: 'text-amber-400',
+    border: 'border-amber-500/30',
+    glow: 'rgba(245, 158, 11, 0.25)',
   },
   teacher: {
-    label: 'Faculty Portal',
-    badge: 'Teacher',
-    badgeBg: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-    initials: 'T',
-    avatarBg: 'bg-gradient-to-tr from-orange-600 to-amber-500 text-white',
+    label: 'Faculty Member',
+    badgeBg: 'bg-orange-500/15',
+    badgeText: 'text-orange-400',
+    border: 'border-orange-500/30',
+    glow: 'rgba(234, 88, 12, 0.25)',
   },
   student: {
-    label: 'Learning Portal',
-    badge: 'Student',
-    badgeBg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    initials: 'S',
-    avatarBg: 'bg-gradient-to-tr from-yellow-500 to-amber-400 text-slate-950 font-black',
+    label: 'Student Scholar',
+    badgeBg: 'bg-yellow-500/15',
+    badgeText: 'text-yellow-300',
+    border: 'border-yellow-500/30',
+    glow: 'rgba(234, 179, 8, 0.25)',
   },
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  user,
+  notifications: initialNotifications,
   currentTab,
   setCurrentTab,
-  userRole = 'student',
+  onRefreshNotifications,
   onLogout,
 }) => {
-  const meta = ROLE_META[userRole]
+  const [collapsed, setCollapsed] = useState(false)
+  const [showNotifs, setShowNotifs] = useState(false)
+  const [localNotifications, setLocalNotifications] = useState<LMSNotification[]>(initialNotifications)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  useEffect(() => {
+    setLocalNotifications(initialNotifications)
+  }, [initialNotifications])
+
+  const unreadCount = localNotifications.filter((n) => !n.read_at).length
+  const roleCfg = ROLE_CONFIG[user.role] ?? ROLE_CONFIG.student
 
   const timetableLabel =
-    userRole === 'admin'
+    user.role === 'admin'
       ? 'Timetable Engine'
-      : userRole === 'teacher'
+      : user.role === 'teacher'
       ? 'Faculty Schedule'
       : 'Batch Timetable'
 
   const coursesLabel =
-    userRole === 'teacher'
+    user.role === 'teacher'
       ? 'Courses Handled'
-      : userRole === 'admin'
+      : user.role === 'admin'
       ? 'Courses & Subjects'
-      : 'Enrolled Courses & Tracks'
+      : 'Courses & Roadmap'
 
   const liveSessionLabel =
-    userRole === 'teacher'
-      ? 'Live Training Sessions'
-      : userRole === 'admin'
-      ? 'Virtual Classrooms'
-      : 'Live Interactive Classes'
+    user.role === 'teacher'
+      ? 'Live Training'
+      : user.role === 'admin'
+      ? 'Live Classrooms'
+      : 'Live Classes'
 
-  const navItems = [
-    { id: 'overview',              label: 'Dashboard',             icon: LayoutDashboard },
-    { id: 'courses',               label: coursesLabel,            icon: BookOpen },
-    { id: 'classroom',             label: liveSessionLabel,        icon: Video },
-    { id: 'timetable',             label: timetableLabel,          icon: CalendarDays },
-    ...(userRole !== 'admin'
-      ? [{ id: 'coding',           label: 'Coding Playground',     icon: Code2 }]
+  const mainNavItems = [
+    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'courses', label: coursesLabel, icon: BookOpen },
+    { id: 'classroom', label: liveSessionLabel, icon: Video },
+    { id: 'timetable', label: timetableLabel, icon: CalendarDays },
+  ]
+
+  const toolNavItems = [
+    ...(user.role !== 'admin'
+      ? [{ id: 'coding', label: 'Coding Playground', icon: Code2 }]
       : []),
-    ...(userRole !== 'admin'
-      ? [{ id: 'assignments',      label: 'Assignments',           icon: FileText }]
+    ...(user.role !== 'admin'
+      ? [{ id: 'assignments', label: 'Assignments', icon: FileText }]
       : []),
-    ...(userRole !== 'admin'
-      ? [{ id: 'assessments',      label: 'Assessments',           icon: CheckSquare }]
+    ...(user.role !== 'admin'
+      ? [{ id: 'assessments', label: 'Assessments', icon: CheckSquare }]
       : []),
-    ...(userRole === 'student'
-      ? [{ id: 'certificates',     label: 'Certificates',          icon: Award }]
+    ...(user.role === 'student'
+      ? [{ id: 'certificates', label: 'Certificates', icon: Award }]
       : []),
-    ...(userRole === 'admin'
-      ? [{ id: 'admin',            label: 'Institute Admin',       icon: Users }]
+    ...(user.role === 'admin'
+      ? [{ id: 'admin', label: 'Institute Admin', icon: Users }]
       : []),
   ]
 
+  const handleDeleteSingle = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    try {
+      setLocalNotifications((prev) => prev.filter((n) => n.id !== id))
+      await deleteNotification(id)
+      onRefreshNotifications?.()
+    } catch (err) {
+      console.error('Failed to delete notification:', err)
+    }
+  }
+
+  const handleFlushAll = async () => {
+    try {
+      setActionLoading(true)
+      setLocalNotifications([])
+      await flushAllNotifications()
+      onRefreshNotifications?.()
+    } catch (err) {
+      console.error('Failed to flush notifications:', err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    try {
+      setActionLoading(true)
+      setLocalNotifications((prev) =>
+        prev.map((n) => ({ ...n, read_at: new Date().toISOString() }))
+      )
+      await markAllNotificationsRead()
+      onRefreshNotifications?.()
+    } catch (err) {
+      console.error('Failed to mark all read:', err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   return (
-    <aside
-      className="w-64 shrink-0 flex flex-col h-screen select-none"
-      style={{
-        background: '#06080F',
-        borderRight: '1px solid rgba(245, 158, 11, 0.12)',
-      }}
-    >
-      {/* ── Brand ──────────────────────────────────── */}
-      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(245, 158, 11, 0.12)' }}>
-        <div className="flex items-center gap-3">
-          {/* Logo mark */}
-          <div className="relative group">
-            <img
-              src="/acharya_logo.png"
-              alt="Acharya Institute LMS"
-              className="w-10 h-10 rounded-xl object-cover select-none shadow-md ring-1 ring-amber-500/40"
-              style={{
-                boxShadow: '0 0 18px rgba(245, 158, 11, 0.25)',
-              }}
-            />
+    <>
+      <aside
+        className={`h-screen sticky top-0 flex flex-col bg-[#070A12] border-r border-amber-500/15 transition-all duration-300 z-40 select-none ${
+          collapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="p-4 border-b border-amber-500/15 flex items-center justify-between">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/25 shrink-0">
+              <Flame className="w-5 h-5 fill-slate-950" />
+            </div>
+            {!collapsed && (
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black tracking-tight text-white truncate">
+                    Acharya LMS
+                  </span>
+                  <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                </div>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border w-fit mt-0.5 ${roleCfg.badgeBg} ${roleCfg.badgeText} ${roleCfg.border}`}>
+                  {user.role}
+                </span>
+              </div>
+            )}
           </div>
-          <div>
-            <p className="text-white font-extrabold text-[15px] leading-tight tracking-tight">Acharya LMS</p>
-            <p style={{ color: '#F59E0B', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {meta.label}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* ── Role pill ───────────────────────────────── */}
-      <div className="px-4 py-3">
-        <div
-          className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-          style={{ background: 'rgba(245, 158, 11, 0.04)', border: '1px solid rgba(245, 158, 11, 0.1)' }}
-        >
-          <div
-            className={`w-6 h-6 rounded-lg ${meta.avatarBg} flex items-center justify-center font-extrabold text-[11px] shadow-sm`}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
+            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            {meta.initials}
-          </div>
-          <span style={{ color: '#F8FAFC', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
-            {meta.badge} Portal
-          </span>
-          <span className="ml-auto w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
-      </div>
 
-      {/* ── Navigation ──────────────────────────────── */}
-      <nav className="flex-1 px-3 pb-4 overflow-y-auto space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const active = currentTab === item.id
-          return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentTab(item.id)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 relative overflow-hidden"
-              style={{
-                background: active
-                  ? 'linear-gradient(90deg, rgba(245,158,11,0.2) 0%, rgba(234,88,12,0.1) 100%)'
-                  : 'transparent',
-                color: active ? '#FEF08A' : '#CBD5E1',
-                fontWeight: active ? 700 : 400,
-                fontSize: '0.8125rem',
-                border: active
-                  ? '1px solid rgba(245,158,11,0.35)'
-                  : '1px solid transparent',
-                cursor: 'pointer',
-                boxShadow: active ? '0 2px 12px rgba(245,158,11,0.15)' : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = 'rgba(245,158,11,0.06)'
-                  e.currentTarget.style.color = '#FFFFFF'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = '#CBD5E1'
-                }
-              }}
-            >
-              <Icon
-                style={{
-                  width: 16,
-                  height: 16,
-                  color: active ? '#FBBF24' : '#94A3B8',
-                  flexShrink: 0,
-                  filter: active ? 'drop-shadow(0 0 6px rgba(245,158,11,0.6))' : 'none',
-                }}
-              />
-              <span className="flex-1 truncate">{item.label}</span>
-              {active && (
-                <ChevronRight
-                  style={{
-                    width: 14,
-                    height: 14,
-                    color: '#FBBF24',
-                    opacity: 0.9,
-                  }}
-                />
+        {/* Navigation Section */}
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+          {/* Main Academics */}
+          <div className="space-y-1">
+            {!collapsed && (
+              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Layers className="w-3 h-3" />
+                <span>Academic Modules</span>
+              </p>
+            )}
+            {mainNavItems.map((item) => {
+              const Icon = item.icon
+              const isActive = currentTab === item.id
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative ${
+                    isActive
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
+                  }`}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  {isActive && !collapsed && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Tools & Workspace */}
+          {toolNavItems.length > 0 && (
+            <div className="space-y-1 pt-3 border-t border-slate-800/80">
+              {!collapsed && (
+                <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <GraduationCap className="w-3 h-3" />
+                  <span>Interactive Tools</span>
+                </p>
               )}
-            </button>
-          )
-        })}
-      </nav>
+              {toolNavItems.map((item) => {
+                const Icon = item.icon
+                const isActive = currentTab === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentTab(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer group relative ${
+                      isActive
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
+                    }`}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                    {isActive && !collapsed && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-      {/* ── Logout ──────────────────────────────────── */}
-      <div className="px-3 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
-          style={{
-            background: 'transparent',
-            border: '1px solid transparent',
-            color: '#6B7280',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
-            e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'
-            e.currentTarget.style.color = '#FCA5A5'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent'
-            e.currentTarget.style.borderColor = 'transparent'
-            e.currentTarget.style.color = '#6B7280'
-          }}
-        >
-          <LogOut style={{ width: 15, height: 15, flexShrink: 0 }} />
-          Sign Out
-        </button>
-      </div>
-    </aside>
+        {/* User Profile & Actions Footer */}
+        <div className="p-3 border-t border-amber-500/15 bg-slate-950/60 flex flex-col gap-2">
+          {/* Notification Button */}
+          <button
+            onClick={() => setShowNotifs(!showNotifs)}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition cursor-pointer relative ${
+              showNotifs ? 'bg-slate-900 border-amber-500/40 text-amber-400' : ''
+            }`}
+            title="Notifications"
+          >
+            <div className="relative shrink-0">
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-bounce">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+            {!collapsed && (
+              <span className="truncate">
+                {unreadCount > 0 ? `${unreadCount} Unread Alerts` : 'Notifications'}
+              </span>
+            )}
+          </button>
+
+          {/* User Profile Card */}
+          <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-900/90 border border-slate-800">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black text-xs shrink-0 shadow-md">
+                {(user.display_name || user.email || 'U')[0].toUpperCase()}
+              </div>
+              {!collapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-white truncate">
+                    {user.display_name || 'Academic User'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 truncate">
+                    {roleCfg.label}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {!collapsed && (
+              <button
+                onClick={onLogout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Notification Drawer Modal */}
+      {showNotifs && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-start p-4 md:pl-20 animate-in fade-in duration-200">
+          <div className="bg-[#0B0F19] border border-amber-500/30 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold text-white">Notifications</h3>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold border border-amber-500/30">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {localNotifications.length > 0 && (
+                  <>
+                    <button
+                      onClick={handleMarkAllRead}
+                      disabled={actionLoading || unreadCount === 0}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition disabled:opacity-40 cursor-pointer"
+                      title="Mark all as read"
+                    >
+                      <CheckCheck className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleFlushAll}
+                      disabled={actionLoading}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition disabled:opacity-40 cursor-pointer"
+                      title="Clear all notifications"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowNotifs(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+              {localNotifications.length === 0 ? (
+                <div className="text-center py-10">
+                  <Bell className="w-8 h-8 text-slate-600 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold text-slate-400">No notifications yet</p>
+                  <p className="text-[10px] text-slate-500">We'll alert you on important schedule & class updates.</p>
+                </div>
+              ) : (
+                localNotifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={async () => {
+                      if (!n.read_at) {
+                        setLocalNotifications((prev) =>
+                          prev.map((item) => (item.id === n.id ? { ...item, read_at: new Date().toISOString() } : item))
+                        )
+                        await markNotificationRead(n.id)
+                        onRefreshNotifications?.()
+                      }
+                    }}
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                      !n.read_at
+                        ? 'bg-slate-900 border-amber-500/30 shadow-md shadow-amber-500/5'
+                        : 'bg-slate-950/60 border-slate-800/80 opacity-70'
+                    }`}
+                  >
+                    <div className="space-y-1 flex-1">
+                      <p className="text-xs font-bold text-white">{n.title}</p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">{n.body}</p>
+                      <p className="text-[9px] text-slate-500">{new Date(n.created_at).toLocaleString()}</p>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteSingle(e, n.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1 rounded-lg hover:bg-rose-500/10 transition cursor-pointer"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
-
-export default Sidebar

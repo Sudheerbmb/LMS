@@ -1112,7 +1112,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const totalAllowedSeconds = scheduledDurationSeconds + extraTimeSeconds
   const remainingSeconds = Math.max(0, totalAllowedSeconds - elapsedSeconds)
 
-  // Meeting Timer & Timetable Auto-End Interval
+  // Meeting Timer & Live Lecture Duration Interval
   useEffect(() => {
     let interval: any = null
 
@@ -1123,16 +1123,9 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
           const remaining = totalAllowedSeconds - next
 
           if (remaining === 300) {
-            setTimetableWarningToast('⚠️ 5 Minutes remaining in this scheduled period.')
+            setTimetableWarningToast('⚠️ 5 Minutes remaining in scheduled slot.')
           } else if (remaining === 60) {
-            setTimetableWarningToast('🚨 1 Minute remaining. Class will auto-end according to timetable.')
-          } else if (remaining <= 0) {
-            // Auto-end class gracefully as per timetable
-            if (isHost) {
-              handleEndMeetingForAll()
-            } else {
-              handleLeaveMeetingOnly()
-            }
+            setTimetableWarningToast('🚨 1 Minute remaining in scheduled slot.')
           }
 
           return next
@@ -1145,7 +1138,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
     }
 
     return () => clearInterval(interval)
-  }, [activeCallRoom, totalAllowedSeconds, isHost])
+  }, [activeCallRoom, totalAllowedSeconds])
 
   // ==========================================
 
@@ -6583,222 +6576,240 @@ const handleTriggerTeacherCopilot = async (
         ))}
       </div>
 
-      {/* Live & Scheduled Classes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Live & Scheduled Classes Grid (Subject-Wise Grouped) */}
+      <div className="space-y-8">
         {loading ? (
-          <div className="col-span-full py-16 text-center text-slate-400">
+          <div className="py-16 text-center text-slate-400">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-amber-400 mb-3" />
-            <p className="text-sm font-semibold">Loading live classes...</p>
+            <p className="text-sm font-semibold">Loading live classes & recordings...</p>
           </div>
-        ) : classes.length === 0 ? (
-          <div className="col-span-full py-16 text-center rounded-3xl bg-slate-900/50 border border-amber-500/15">
-            <Calendar className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-            <h3 className="text-base font-bold text-slate-300">No Live Classes Scheduled</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              {isHost
-                ? 'Click "Schedule / Launch Class" above to create an instant session or schedule from your timetable.'
-                : 'Check back when your instructors launch their scheduled live sessions.'}
-            </p>
-          </div>
-        ) : (
-          classes
-            .filter(cls => {
-              if (filterRecordingOnly) return !!cls.recording_url || cls.status === 'ended'
-              if (filterGrade !== 'all') {
-                const targetCourse = availableCourses.find(c => c.id === (filterGrade as any) || c.slug === (filterGrade as any))
-                if (targetCourse) {
-                  const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
-                  const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
-                  const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
-                  const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
-                                   (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
-                  return titleMatch || subMatch || cls.course_id === targetCourse.id
-                }
+        ) : (() => {
+          const filtered = classes.filter(cls => {
+            if (filterRecordingOnly) return !!cls.recording_url || cls.status === 'ended'
+            if (filterGrade !== 'all') {
+              const targetCourse = availableCourses.find(c => c.id === (filterGrade as any) || c.slug === (filterGrade as any))
+              if (targetCourse) {
+                const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
+                const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
+                const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
+                const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
+                                 (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
+                return titleMatch || subMatch || cls.course_id === targetCourse.id
               }
-              return true
-            })
-            .map(cls => {
-            const isLive = cls.status === 'live'
-            const isEnded = cls.status === 'ended'
-            const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name}`
-            const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
-            const cleanSubject = cls.subject_name || 'Technical Module'
-
-            return (
-              <div
-                key={cls.id}
-                className={`rounded-3xl border p-5 flex flex-col justify-between transition-all hover:shadow-2xl ${
-                  isLive
-                    ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/30 border-cyan-500/40 shadow-cyan-500/10'
-                    : 'bg-slate-900 border-slate-800'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                      {cls.subject_code ? `${cls.subject_code} • ${cleanBatch}` : cleanBatch}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      {isLive && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
-                          <Radio className="w-3 h-3 text-red-500" />
-                          LIVE NOW
-                        </span>
-                      )}
-
-                      {isEnded && (
-                        <span className="text-[11px] font-medium text-slate-500">Ended</span>
-                      )}
-
-                      {!isLive && !isEnded && (
-                        <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
-                      )}
-
-                      {isHost && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteClass(cls.id)
-                          }}
-                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                          title="Delete class session"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cleanTitle}</h3>
-                  <p className="text-xs text-slate-400 mb-4">{cleanSubject} &bull; Period {cls.period_number || 1}</p>
-
-                  <div className="space-y-1.5 text-xs text-slate-300 mb-6 bg-slate-950/40 p-3 rounded-2xl border border-slate-800">
-
-                    <div className="flex items-center justify-between">
-
-                      <span className="text-slate-500">Instructor:</span>
-
-                      <span className="font-semibold text-white">{cls.teacher_name || 'Assigned Faculty'}</span>
-
-                    </div>
-
-                    {cls.room_number && (
-
-                      <div className="flex items-center justify-between">
-
-                        <span className="text-slate-500">Campus Venue:</span>
-
-                        <span className="font-semibold text-white">{cls.room_number}</span>
-
-                      </div>
-
-                    )}
-
-                  </div>
-
-                  {cls.zoom_meeting_id && (
-                    <div className="mt-3 p-2 rounded-xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 text-blue-300">
-                        <Video className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        <span className="font-semibold">Zoom ID:</span>
-                        <span className="font-mono text-white tracking-wider">{cls.zoom_meeting_id}</span>
-                      </div>
-                      {cls.zoom_password && (
-                        <div className="text-[10px] text-slate-400">
-                          Pass: <span className="font-mono text-white font-bold">{cls.zoom_password}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                </div>
-
-                <div className="mt-4">
-
-                  {cls.recording_url ? (
-
-                    <div className="flex gap-2">
-
-                      <button
-
-                        onClick={() => { setSelectedRecordingUrl(cls.recording_url!); setSelectedRecordingClass(cls); }}
-
-                        className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-95"
-
-                      >
-
-                        <Video className="w-4 h-4 text-white" />
-
-                        <span>Watch Zoom Recording</span>
-
-                      </button>
-
-                    </div>
-
-                  ) : isEnded ? (
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleSyncClassRecording(cls)}
-                        disabled={syncingRecordingId === cls.id}
-                        className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                        title="Fetch recording from Zoom Cloud"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
-                        <span>{syncingRecordingId === cls.id ? 'Syncing...' : '🔄 Sync / Play Zoom Recording'}</span>
-                      </button>
-                    </div>
-
-                  ) : (
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleJoinClass(cls)}
-                        disabled={isEnded}
-                        className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                          isEnded
-                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                            : isLive
-                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 hover:scale-[1.02] active:scale-95'
-                            : isHost
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 hover:scale-[1.02] active:scale-95'
-                            : 'bg-slate-800 hover:bg-slate-700 text-white'
-                        }`}
-                      >
-                        <Video className="w-4 h-4" />
-                        <span>
-                          {isLive
-                            ? 'Join Zoom Meeting'
-                            : isHost
-                            ? 'Start Zoom Class'
-                            : 'Join Zoom Meeting'}
-                        </span>
-                      </button>
-
-                      {isLive && isHost && (
-                        <button
-                          onClick={() => handleEndClassDirectly(cls.id)}
-                          className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 transition-all hover:scale-105 active:scale-95"
-                          title="Conclude live lecture"
-                        >
-                          <span>End Class</span>
-                        </button>
-                      )}
-                    </div>
-
-                  )}
-
-                </div>
-
-              </div>
-
-            )
-
+            }
+            return true
           })
 
-        )}
+          if (filtered.length === 0) {
+            return (
+              <div className="py-16 text-center rounded-3xl bg-slate-900/50 border border-amber-500/15">
+                <Calendar className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+                <h3 className="text-base font-bold text-slate-300">
+                  {filterRecordingOnly ? 'No Subject Recordings Found' : 'No Live Classes Scheduled'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  {isHost
+                    ? 'Click "Schedule / Launch Class" above to create an instant session or schedule from your timetable.'
+                    : 'Check back when your instructors launch their scheduled live sessions.'}
+                </p>
+              </div>
+            )
+          }
 
+          // Group by Subject
+          const groups: Record<string, typeof filtered> = {}
+          filtered.forEach(cls => {
+            const key = cls.subject_name || cls.subject_code || 'General Technical Modules'
+            if (!groups[key]) groups[key] = []
+            groups[key].push(cls)
+          })
+
+          return Object.entries(groups).map(([subjName, subjClasses]) => (
+            <div key={subjName} className="space-y-4">
+              {/* Subject Group Header */}
+              <div className="flex items-center justify-between p-4 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-[#0B0F19] border border-amber-500/20 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold shadow-inner">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white flex items-center gap-2">
+                      <span>{subjName}</span>
+                      {subjClasses[0]?.subject_code && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 border border-slate-700">
+                          {subjClasses[0].subject_code}
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {subjClasses.length} {subjClasses.length === 1 ? 'Class Session / Recording' : 'Class Sessions / Recordings'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/25">
+                    {subjClasses.filter(c => c.status === 'live').length > 0
+                      ? `🔴 ${subjClasses.filter(c => c.status === 'live').length} Live Now`
+                      : `${subjClasses.filter(c => !!c.recording_url || c.status === 'ended').length} Recorded`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Subject Class Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subjClasses.map(cls => {
+                  const isLive = cls.status === 'live'
+                  const isEnded = cls.status === 'ended'
+                  const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name}`
+                  const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
+                  const cleanSubject = cls.subject_name || 'Technical Module'
+
+                  return (
+                    <div
+                      key={cls.id}
+                      className={`rounded-3xl border p-5 flex flex-col justify-between transition-all hover:shadow-2xl ${
+                        isLive
+                          ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/30 border-cyan-500/40 shadow-cyan-500/10'
+                          : 'bg-slate-900 border-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                            {cls.subject_code ? `${cls.subject_code} • ${cleanBatch}` : cleanBatch}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {isLive && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                                <Radio className="w-3 h-3 text-red-500" />
+                                LIVE NOW
+                              </span>
+                            )}
+
+                            {isEnded && (
+                              <span className="text-[11px] font-medium text-slate-500">Ended</span>
+                            )}
+
+                            {!isLive && !isEnded && (
+                              <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
+                            )}
+
+                            {isHost && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClass(cls.id)
+                                }}
+                                className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                                title="Delete class session"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cleanTitle}</h3>
+                        <p className="text-xs text-slate-400 mb-4">{cleanSubject} &bull; Period {cls.period_number || 1}</p>
+
+                        <div className="space-y-1.5 text-xs text-slate-300 mb-6 bg-slate-950/40 p-3 rounded-2xl border border-slate-800">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">Instructor:</span>
+                            <span className="font-semibold text-white">{cls.teacher_name || 'Assigned Faculty'}</span>
+                          </div>
+                          {cls.room_number && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Campus Venue:</span>
+                              <span className="font-semibold text-white">{cls.room_number}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {cls.zoom_meeting_id && (
+                          <div className="mt-3 p-2 rounded-xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 text-blue-300">
+                              <Video className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                              <span className="font-semibold">Zoom ID:</span>
+                              <span className="font-mono text-white tracking-wider">{cls.zoom_meeting_id}</span>
+                            </div>
+                            {cls.zoom_password && (
+                              <div className="text-[10px] text-slate-400">
+                                Pass: <span className="font-mono text-white font-bold">{cls.zoom_password}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4">
+                        {cls.recording_url ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => { setSelectedRecordingUrl(cls.recording_url!); setSelectedRecordingClass(cls); }}
+                              className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                            >
+                              <Video className="w-4 h-4 text-white" />
+                              <span>Watch Zoom Recording</span>
+                            </button>
+                          </div>
+                        ) : isEnded ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleSyncClassRecording(cls)}
+                              disabled={syncingRecordingId === cls.id}
+                              className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 cursor-pointer"
+                              title="Fetch recording from Zoom Cloud"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
+                              <span>{syncingRecordingId === cls.id ? 'Syncing...' : '🔄 Sync / Play Zoom Recording'}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleJoinClass(cls)}
+                              disabled={isEnded}
+                              className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                isEnded
+                                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                  : isLive
+                                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 hover:scale-[1.02] active:scale-95'
+                                  : isHost
+                                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 hover:scale-[1.02] active:scale-95'
+                                  : 'bg-slate-800 hover:bg-slate-700 text-white'
+                              }`}
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>
+                                {isLive
+                                  ? 'Join Zoom Meeting'
+                                  : isHost
+                                  ? 'Start Zoom Class'
+                                  : 'Join Zoom Meeting'}
+                              </span>
+                            </button>
+
+                            {isLive && isHost && (
+                              <button
+                                onClick={() => handleEndClassDirectly(cls.id)}
+                                className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                title="Conclude live lecture"
+                              >
+                                <span>End Class</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))
+        })()}
       </div>
 
       {/* SCHEDULE MODAL */}

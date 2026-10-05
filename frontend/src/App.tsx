@@ -13,7 +13,7 @@ import {
   register as registerApi,
   getAdminCourses
 } from './lib/api'
-import { Header } from './components/Header'
+import { Sidebar } from './components/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { AssessmentsPage } from './pages/AssessmentsPage'
@@ -389,15 +389,15 @@ export function App() {
   return (
     <div
       data-role={user.role}
-      className="min-h-screen w-full flex flex-col select-none"
+      className="min-h-screen w-full flex select-none bg-[#080A12]"
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
-      {/* ── Top Navigation Bar across all roles ── */}
-      <Header
+      {/* ── Enterprise Sidebar Navigation across all roles ── */}
+      <Sidebar
         user={user}
         notifications={notifications}
         currentTab={currentTab}
@@ -409,8 +409,8 @@ export function App() {
         onLogout={handleLogout}
       />
 
-      {/* ── Full-Width Page Workspace (No Sidebar) ── */}
-      <main className="flex-1 w-full overflow-y-auto" style={{ background: 'var(--bg)' }}>
+      {/* ── Main Page Workspace ── */}
+      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto" style={{ background: 'var(--bg)' }}>
         {currentTab === 'overview' && (
           <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
         )}
