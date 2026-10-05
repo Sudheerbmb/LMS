@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import type { CodingExercise, Course, User } from '../lib/api'
 import { getCourses, getCodingExercises, createCodingExercise, submitCodingSolution } from '../lib/api'
-import { Code2, Play, Plus, Terminal, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Code2, Play, Plus, Terminal, CheckCircle2, AlertCircle, X } from 'lucide-react'
 
 type CodingPageProps = {
   user: User
@@ -102,14 +102,19 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
-            <Code2 className="w-8 h-8 text-amber-400" />
-            Coding Playground & Sandbox
-          </h2>
-          <p className="text-stone-400 text-xs sm:text-sm mt-1 font-light">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-xs">
+              <Code2 className="w-5 h-5" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+              Coding Playground & Sandbox
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
             Solve algorithms, test code snippets, and receive automated test results.
           </p>
         </div>
@@ -117,21 +122,21 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
         {user.role !== 'student' && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-sm"
+            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all text-xs sm:text-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            New Problem
+            <span>New Problem</span>
           </button>
         )}
       </div>
 
       {/* Course Filter */}
-      <div className="flex items-center gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-        <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Select Course:</label>
+      <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+        <label className="text-xs uppercase font-bold tracking-wider text-slate-500">Select Course:</label>
         <select
           value={selectedCourseId}
           onChange={(e) => setSelectedCourseId(e.target.value)}
-          className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-cyan-500"
+          className="bg-slate-50 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-amber-400"
         >
           {courses.map((c) => (
             <option key={c.id} value={c.id}>
@@ -141,12 +146,12 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Problems Menu */}
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl p-6 space-y-4">
-          <h3 className="font-bold text-slate-200 text-base flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
+          <h3 className="font-bold text-slate-900 text-sm flex items-center justify-between">
             <span>Exercises</span>
-            <span className="text-xs text-slate-500">{exercises.length} Total</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">{exercises.length} Total</span>
           </h3>
 
           <div className="space-y-2">
@@ -159,29 +164,29 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
                   setOutput(null)
                   setPassed(null)
                 }}
-                className={`w-full text-left p-3.5 rounded-xl border transition-all ${
+                className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                   selectedEx?.id === ex.id
-                    ? 'bg-cyan-500/10 border-cyan-500/30 text-white'
-                    : 'bg-slate-800/40 border-slate-800 text-slate-300 hover:bg-slate-800'
+                    ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <p className="font-bold text-sm">{ex.title}</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">{ex.language}</p>
+                <p className="font-bold text-xs sm:text-sm">{ex.title}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5 font-mono">{ex.language}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Code Editor & Execution Panel */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           {selectedEx ? (
-            <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-cyan-500/10 px-2.5 py-0.5 rounded border border-cyan-500/20">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
                   {selectedEx.language}
                 </span>
-                <h3 className="text-xl font-bold text-white mt-1">{selectedEx.title}</h3>
-                <p className="text-xs text-slate-400 mt-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800 font-sans">
+                <h3 className="text-lg font-bold text-slate-900 mt-2">{selectedEx.title}</h3>
+                <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
                   {selectedEx.prompt}
                 </p>
               </div>
@@ -189,29 +194,29 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
               {/* Code Editor */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-slate-400 font-mono font-bold">Solution Editor</label>
+                  <label className="text-xs text-slate-600 font-mono font-bold">Solution Editor</label>
                   <button
                     onClick={handleRunCode}
                     disabled={evaluating}
-                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg shadow-md shadow-emerald-500/20 text-xs transition-all"
+                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow-xs text-xs transition-all cursor-pointer"
                   >
-                    <Play className="w-3.5 h-3.5 fill-slate-950" /> {evaluating ? 'Running...' : 'Run Code'}
+                    <Play className="w-3.5 h-3.5 fill-current" /> {evaluating ? 'Running...' : 'Run Code'}
                   </button>
                 </div>
 
                 <textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl p-4 text-xs font-mono text-yellow-300 focus:outline-none focus:border-cyan-500 h-64 resize-none leading-relaxed"
+                  className="w-full bg-[#111726] border border-slate-800 text-emerald-300 rounded-xl p-4 text-xs font-mono focus:outline-none focus:border-amber-400 h-64 resize-none leading-relaxed"
                   spellCheck={false}
                 />
               </div>
 
               {/* Terminal Output */}
               {output && (
-                <div className="bg-[#0B0F19] border border-amber-500/15 rounded-xl p-4 space-y-2 font-mono">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 font-mono">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-2">
                       <Terminal className="w-3.5 h-3.5 text-amber-400" /> Terminal Output
                     </span>
                     {passed !== null && (
@@ -223,66 +228,73 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
                       </span>
                     )}
                   </div>
-                  <pre className="text-xs text-slate-300 whitespace-pre-wrap">{output}</pre>
+                  <pre className="text-xs text-slate-200 whitespace-pre-wrap">{output}</pre>
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 py-12 text-center">Select an exercise to start coding.</p>
+            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 text-xs shadow-xs">
+              Select an exercise from the list to start coding.
+            </div>
           )}
         </div>
       </div>
 
       {/* Create Exercise Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white">Create Coding Exercise</h3>
-            <form onSubmit={handleCreateExercise} className="space-y-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">Create Coding Exercise</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-900">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateExercise} className="space-y-3.5 text-xs">
               <div>
-                <label className="text-xs text-slate-400 font-semibold">Title</label>
+                <label className="text-slate-700 font-semibold block mb-1">Title</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Reverse Binary Tree"
-                  className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:border-cyan-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 font-semibold">Prompt Instructions</label>
+                <label className="text-slate-700 font-semibold block mb-1">Prompt Instructions</label>
                 <textarea
                   required
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Problem description and expected input/output..."
-                  className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:border-cyan-500 h-20"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400 h-20"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 font-semibold">Starter Code Boilerplate</label>
+                <label className="text-slate-700 font-semibold block mb-1">Starter Code Boilerplate</label>
                 <textarea
                   value={starterCode}
                   onChange={(e) => setStarterCode(e.target.value)}
                   placeholder="def solution(n): pass"
-                  className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-yellow-300 focus:border-cyan-500 h-24"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono text-slate-900 focus:outline-none focus:border-amber-400 h-24"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs"
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer"
                 >
                   Save Exercise
                 </button>
@@ -294,3 +306,5 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
     </div>
   )
 }
+
+export default CodingPage

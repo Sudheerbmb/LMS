@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Sparkles,
-  Bot,
   Send,
   FileText,
   CheckCircle2,
@@ -12,13 +11,8 @@ import {
   User,
   BookOpen,
   RefreshCw,
-  Check,
-  XCircle,
-  GraduationCap,
   AlignLeft,
-  Copy,
-  Play,
-  Compass
+  Copy
 } from 'lucide-react'
 import { askClassAiDoubt, getClassAiSummary, getClassTranscript } from '../lib/api'
 import type { ClassAiSummaryData, AgentAction } from '../lib/api'
@@ -47,7 +41,6 @@ interface ChatMessage {
   sender: 'ai' | 'user'
   text: string
   timestamp: string
-  isGrounded?: boolean
   actions?: AgentAction[]
   suggestedFollowups?: string[]
 }
@@ -77,8 +70,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   }
 
   const isZoom = !!(recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('zoomgov.com')))
-  const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript' | 'quiz'>('doubt')
-  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>(isVimeo || isZoom ? 'embed' : 'video')
+  const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript'>('doubt')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputQuery, setInputQuery] = useState('')
   const [isAsking, setIsAsking] = useState(false)
@@ -87,87 +79,107 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   const [transcriptText, setTranscriptText] = useState<string | null>(null)
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false)
   const [hasCopiedTranscript, setHasCopiedTranscript] = useState(false)
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
-  const [showQuizResults, setShowQuizResults] = useState(false)
-  const [chatQuizAnswers, setChatQuizAnswers] = useState<Record<string, number>>({})
-  const [quickPrompts, setQuickPrompts] = useState<string[]>([
+  const quickPrompts = [
     'What is this video about?',
     'What key topics were covered in this recording?',
     'Where are AI agents discussed in the video?',
     'Give me a quick knowledge check'
-  ])
+  ]
   
   const chatBottomRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const [hasCopiedPasscode, setHasCopiedPasscode] = useState(false)
+  const classTitle = classInfo?.title || 'Classroom Lecture Recording'
+  const classSubject = classInfo?.subject || classInfo?.subject_name || 'Academic Class'
+  const classGrade = classInfo?.grade_number || classInfo?.grade || ''
+  const classId = classInfo?.id || 'demo_class_id'
+  const authenticatedEmbedUrl = `/api/v1/classroom/classes/${classId}/video-embed`
 
-  const classId = classInfo?.id || 'sample-class'
-  const classTitle = classInfo?.title || 'Technical Lecture Recording'
-  
-  // Extract Subject and Track with high accuracy
-  const classSubject = classInfo?.subject || classInfo?.subject_name || classInfo?.course_title || 'Technical Module'
-  const trackDisplay = classInfo?.course_title || classInfo?.section_name || 'Professional Track'
-  const zoomPasscode = classInfo?.zoom_password || classInfo?.password || classInfo?.passcode || ''
+  useEffect(() => {
+    const greeting: ChatMessage = {
+      id: 'msg-init',
+      sender: 'ai',
+      text: `Hello! I am your AI Lecture Assistant for "${classTitle}". I can answer questions directly based on what was spoken in this class, explain concepts, and test your understanding.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      suggestedFollowups: [
+        'Summarize this class',
+        'What are the key takeaways?',
+        'Give me a quick quiz'
+      ]
+    }
+    setMessages([greeting])
+    fetchSummary()
+    fetchTranscript()
+  }, [recordingUrl, classInfo?.id])
 
-  // Build authenticated embed URL with passcode attached
-  let authenticatedEmbedUrl = isVimeo ? vimeoEmbedUrl : recordingUrl
-  if (!isVimeo && zoomPasscode && authenticatedEmbedUrl) {
-    if (!authenticatedEmbedUrl.includes('pwd=')) {
-      authenticatedEmbedUrl += (authenticatedEmbedUrl.includes('?') ? '&' : '?') + `pwd=${encodeURIComponent(zoomPasscode)}`
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isAsking])
+
+  const fetchSummary = async () => {
+    if (!classInfo?.id) return
+    setIsLoadingSummary(true)
+    try {
+      const data = await getClassAiSummary(classInfo.id)
+      setSummaryData(data)
+    } catch (err) {
+      console.warn('Could not load AI summary:', err)
+    } finally {
+      setIsLoadingSummary(false)
     }
   }
 
-  // Load transcript and summary on mount
-  useEffect(() => {
-    loadTranscript()
-    loadSummary()
-
-    const welcomeMsg: ChatMessage = {
-      id: 'init-1',
-      sender: 'ai',
-      text: `👋 Hello! I am Omni-Agent, your AI technical study assistant for "${classTitle}".\n\nI have analyzed this lecture's recording and dialogue. Ask me questions about the code, request a topic jump, or test your comprehension!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isGrounded: true
-    }
-    setMessages([welcomeMsg])
-  }, [classId, classTitle])
-
-  // Auto scroll chat
-  useEffect(() => {
-    if (activeTab === 'doubt') {
-      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages, activeTab])
-
-  const loadTranscript = async () => {
+  const fetchTranscript = async () => {
+    if (!classInfo?.id) return
     setIsLoadingTranscript(true)
     try {
-      const res = await getClassTranscript(classId)
-      if (res && res.transcript_text) {
-        let t = res.transcript_text.trim()
-        // If raw timeline JSON leaked through, convert it to clean readable dialogue
-        if (t.startsWith('{') && t.includes('timeline')) {
-          t = `[00:00] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Welcome everyone to today's lecture on ${classTitle}.\n[01:15] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: In this session, we will break down the fundamental problem-solving principles and solve curriculum exercises step-by-step.\n[05:40] Student: Could you review the primary formula once more?\n[06:10] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Excellent question! Let's examine this key proof on the board.\n[12:30] ${classInfo?.teacher_name || 'Dr. Sarah Connor'}: Remember to practice the summary exercises for our next class.`
-        }
-        setTranscriptText(t)
+      const data = await getClassTranscript(classInfo.id)
+      if (data) {
+        setTranscriptText(data.transcript_text || data.raw_text || null)
       }
     } catch (err) {
-      console.warn('Could not fetch transcript:', err)
+      console.warn('Could not load transcript:', err)
     } finally {
       setIsLoadingTranscript(false)
     }
   }
 
-  const loadSummary = async () => {
-    setIsLoadingSummary(true)
+  const handleAskDoubt = async (queryText?: string) => {
+    const textToAsk = queryText || inputQuery
+    if (!textToAsk.trim() || isAsking) return
+
+    const userMsg: ChatMessage = {
+      id: `usr-${Date.now()}`,
+      sender: 'user',
+      text: textToAsk.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }
+
+    setMessages((prev) => [...prev, userMsg])
+    setInputQuery('')
+    setIsAsking(true)
+
     try {
-      const data = await getClassAiSummary(classId)
-      setSummaryData(data)
-    } catch (err) {
-      console.warn('Could not load dynamic summary:', err)
+      const res = await askClassAiDoubt(classInfo?.id || 'demo', textToAsk)
+      const aiMsg: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        text: res.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actions: res.actions,
+        suggestedFollowups: res.suggested_followups
+      }
+      setMessages((prev) => [...prev, aiMsg])
+    } catch (err: any) {
+      const errorMsg: ChatMessage = {
+        id: `err-${Date.now()}`,
+        sender: 'ai',
+        text: "I couldn't process that question right now. You can try asking another question about the video topics.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, errorMsg])
     } finally {
-      setIsLoadingSummary(false)
+      setIsAsking(false)
     }
   }
 
@@ -178,124 +190,28 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
     setTimeout(() => setHasCopiedTranscript(false), 2000)
   }
 
-  const handleSeekVideo = (seconds: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = seconds
-      videoRef.current.play()
-    }
-  }
-
-  const handleSendDoubt = async (queryText?: string) => {
-    const question = (queryText || inputQuery).trim()
-    if (!question || isAsking) return
-
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      text: question,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-
-    setMessages(prev => [...prev, userMsg])
-    setInputQuery('')
-    setIsAsking(true)
-
-    // Build chat history for Agent
-    const historyPayload = messages.slice(-6).map(m => ({
-      sender: m.sender,
-      text: m.text
-    }))
-
-    try {
-      const res = await askClassAiDoubt(classId, question, {
-        title: classTitle,
-        subject: classSubject,
-        grade: trackDisplay,
-        history: historyPayload
-      })
-
-      const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: res.answer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isGrounded: res.has_transcript || !!transcriptText,
-        actions: res.actions,
-        suggestedFollowups: res.suggested_followups
-      }
-      setMessages(prev => [...prev, aiMsg])
-
-      // If Agent proposed suggested follow-ups, update quick prompt chips!
-      if (res.suggested_followups && res.suggested_followups.length > 0) {
-        setQuickPrompts(res.suggested_followups)
-      }
-
-      // If Agent included a direct seek action and user asked for it, auto-seek!
-      const seekAction = res.actions?.find(a => a.type === 'SEEK_VIDEO')
-      if (seekAction && (question.toLowerCase().includes('jump') || question.toLowerCase().includes('where') || question.toLowerCase().includes('show me'))) {
-        handleSeekVideo(seekAction.timestamp || 0)
-      }
-    } catch (err: any) {
-      const fallbackAnswer = transcriptText
-        ? `Based on the video recording:\n\n"${transcriptText}"\n\nRegarding "${question}": The lecture specifically addresses this context.`
-        : `Regarding "${question}": In this session, the instructor reviews key principles. Check the **AI Summary** or **Transcript** tab for full notes!`
-
-      const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: fallbackAnswer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-      setMessages(prev => [...prev, aiMsg])
-    } finally {
-      setIsAsking(false)
-    }
-  }
-
-  const handleSelectQuizOption = (qIdx: number, optIdx: number) => {
-    setSelectedAnswers(prev => ({ ...prev, [qIdx]: optIdx }))
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fadeIn">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-7xl h-[94vh] flex flex-col overflow-hidden shadow-2xl">
         
-        {/* TOP BAR */}
-        <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between gap-4">
+        {/* TOP MODAL HEADER */}
+        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Video className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+              <Video className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  {trackDisplay}
-                </span>
-                <span className="text-xs font-medium text-slate-300">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                   {classSubject}
                 </span>
-                {zoomPasscode && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(zoomPasscode)
-                      setHasCopiedPasscode(true)
-                      setTimeout(() => setHasCopiedPasscode(false), 3000)
-                    }}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-bold hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm"
-                    title="Click to copy Zoom recording passcode"
-                  >
-                    <span>Passcode: <strong className="text-white">{zoomPasscode}</strong></span>
-                    {hasCopiedPasscode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-amber-400" />}
-                  </button>
+                {classGrade && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">
+                    Grade {classGrade}
+                  </span>
                 )}
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  HD Stream Ready
-                </span>
               </div>
-              <h2 className="text-sm sm:text-base font-bold text-white truncate mt-0.5">
-                {classTitle}
-              </h2>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">{classTitle}</h2>
             </div>
           </div>
 
@@ -304,15 +220,15 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
               href={recordingUrl || authenticatedEmbedUrl}
               target="_blank"
               rel="noreferrer"
-              title="Open video in new tab / download"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
+              title="Open video in new tab"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 shadow-xs transition"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>{isVimeo ? 'Open in Vimeo' : 'Open in Zoom Tab'}</span>
+              <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
+              <span>{isVimeo ? 'Open Vimeo' : 'Open Video'}</span>
             </a>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
               aria-label="Close recording viewer"
             >
               <X className="w-5 h-5" />
@@ -321,15 +237,15 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
         </div>
 
         {/* MAIN BODY: 2 COLUMNS ON DESKTOP */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-800 overflow-hidden">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 overflow-hidden">
           
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
-          <div className="lg:col-span-7 flex flex-col bg-black/60 overflow-y-auto">
+          <div className="lg:col-span-7 flex flex-col bg-slate-950 overflow-y-auto">
             <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
-              {(isVimeo || playerMode === 'embed') && (authenticatedEmbedUrl || vimeoEmbedUrl) ? (
+              {(isVimeo || isZoom) && (authenticatedEmbedUrl || vimeoEmbedUrl) ? (
                 <iframe
                   src={isVimeo ? (vimeoEmbedUrl || recordingUrl) : authenticatedEmbedUrl}
-                  title={isVimeo ? "Vimeo Recording Player" : "Zoom Cloud Recording Video"}
+                  title={isVimeo ? "Vimeo Recording Player" : "Cloud Recording Video"}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   allowFullScreen
@@ -354,73 +270,23 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
               )}
             </div>
 
-            {/* VIDEO PLAYER VIEW TOGGLE & DIRECT ACTIONS */}
-            <div className="px-4 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                {isVimeo ? (
-                  <span className="px-3 py-1 rounded-lg font-bold text-[11px] bg-blue-600 text-white shadow flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-200 animate-ping" />
-                    Vimeo HD Stream (Fast & Buffer-Free)
-                  </span>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setPlayerMode('video')}
-                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
-                        playerMode === 'video'
-                          ? 'bg-blue-600 text-white shadow'
-                          : 'text-slate-400 hover:text-white bg-slate-800/80'
-                      }`}
-                    >
-                      Inline HD Player (No Passcode Needed)
-                    </button>
-                    {recordingUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setPlayerMode('embed')}
-                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
-                          playerMode === 'embed'
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'text-slate-400 hover:text-white bg-slate-800/80'
-                        }`}
-                      >
-                        Zoom Cloud Embed
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-              {recordingUrl && (
-                <a
-                  href={recordingUrl || authenticatedEmbedUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
-                >
-                  <span>{isVimeo ? 'Open Vimeo Page' : 'Open Zoom View'}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-
             {/* VIDEO METADATA & QUICK INFO */}
-            <div className="p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400 pb-3 border-b border-slate-800/80">
+            <div className="p-4 sm:p-5 space-y-3 bg-slate-900 text-slate-300">
+              <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-4">
                   {classInfo?.teacher_name && (
-                    <span className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-400" />
-                      Teacher: <strong className="text-slate-200">{classInfo.teacher_name}</strong>
+                    <span className="flex items-center gap-1.5 text-slate-300">
+                      <User className="w-3.5 h-3.5 text-amber-400" />
+                      Teacher: <strong className="text-white">{classInfo.teacher_name}</strong>
                     </span>
                   )}
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-slate-300">
                     <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-                    Subject: <strong className="text-slate-200">{classSubject}</strong>
+                    Subject: <strong className="text-white">{classSubject}</strong>
                   </span>
                 </div>
                 {(classInfo?.scheduled_start || classInfo?.starts_at) && (
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     <Clock className="w-3.5 h-3.5 text-amber-400" />
                     {new Date(classInfo?.scheduled_start || classInfo?.starts_at!).toLocaleDateString()}
                   </span>
@@ -428,21 +294,21 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
               </div>
 
               {/* TRANSCRIPT PREVIEW BANNER */}
-              {transcriptText ? (
-                <div className="rounded-xl bg-slate-800/40 border border-slate-700/60 p-3 text-xs text-slate-300 flex items-start gap-2.5">
+              {transcriptText && (
+                <div className="rounded-xl bg-slate-800/80 border border-slate-700 p-3 text-xs text-slate-300 flex items-start gap-2.5">
                   <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
                     <AlignLeft className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-emerald-300 text-[11px] uppercase tracking-wider">
-                        Transcribed Spoken Audio
+                        Transcribed Audio
                       </span>
                       <button
                         onClick={() => setActiveTab('transcript')}
-                        className="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-medium"
+                        className="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
                       >
-                        Read full transcript
+                        Read transcript
                       </button>
                     </div>
                     <p className="text-slate-300 italic text-[11px] truncate mt-0.5">
@@ -450,461 +316,200 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
                     </p>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-xl bg-slate-800/30 border border-slate-800 p-3 text-xs text-slate-400 flex items-center gap-2">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                  <span>Transcribing video audio using Groq Whisper...</span>
-                </div>
               )}
-
-              {/* AGENT CONTROLS & CHAPTERS */}
-              <div className="rounded-xl bg-indigo-950/30 border border-indigo-500/30 p-3.5 text-xs text-slate-300 space-y-2">
-                <div className="flex items-center gap-1.5 text-indigo-400 font-semibold">
-                  <Compass className="w-4 h-4" />
-                  <span>Omni-Agent Interactive Actions:</span>
-                </div>
-                <p className="text-slate-400 leading-relaxed text-[11px]">
-                  Omni-Agent autonomously indexes video timestamps. Click any timestamp below to jump to that moment in the lecture:
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    onClick={() => handleSeekVideo(0.0)}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs flex items-center gap-1.5 transition"
-                  >
-                    <Play className="w-3 h-3 text-indigo-300" />
-                    <span>00:00 • Introduction & Overview</span>
-                  </button>
-                  <button
-                    onClick={() => handleSeekVideo(8.0)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 border border-emerald-500/40 text-xs flex items-center gap-1.5 transition"
-                  >
-                    <Play className="w-3 h-3 text-emerald-300" />
-                    <span>00:08 • Core Architecture / AI Agents</span>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: AI AGENT TABS (5/12) */}
-          <div className="lg:col-span-5 flex flex-col h-full bg-slate-900 overflow-hidden">
+          {/* RIGHT COLUMN: AI COPILOT / SUMMARY / TRANSCRIPT (5/12) */}
+          <div className="lg:col-span-5 flex flex-col bg-white overflow-hidden">
             
             {/* TABS HEADER */}
-            <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1 shrink-0 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 p-2.5 bg-slate-50 border-b border-slate-200 shrink-0">
               <button
                 onClick={() => setActiveTab('doubt')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'doubt'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Bot className="w-3.5 h-3.5" />
-                <span>Omni-Agent Chat</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Doubt Solver</span>
               </button>
+
               <button
                 onClick={() => setActiveTab('summary')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'summary'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Executive Summary</span>
+                <span>Summary</span>
               </button>
+
               <button
                 onClick={() => setActiveTab('transcript')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'transcript'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <AlignLeft className="w-3.5 h-3.5" />
                 <span>Transcript</span>
               </button>
-              <button
-                onClick={() => setActiveTab('quiz')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-                  activeTab === 'quiz'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-              >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>Quiz</span>
-              </button>
             </div>
 
-            {/* TAB CONTENT */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              
-              {/* TAB 1: OMNI-AGENT CHAT */}
-              {activeTab === 'doubt' && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  {/* MESSAGES LIST */}
-                  <div className="flex-1 p-4 overflow-y-auto space-y-3.5">
-                    {messages.map(msg => (
+            {/* TAB CONTENT: AI DOUBT SOLVER CHAT */}
+            {activeTab === 'doubt' && (
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* MESSAGES SCROLL */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${
+                        msg.sender === 'user' ? 'items-end' : 'items-start'
+                      }`}
+                    >
                       <div
-                        key={msg.id}
-                        className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`max-w-[88%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                          msg.sender === 'user'
+                            ? 'bg-amber-500 text-slate-950 font-medium rounded-br-xs'
+                            : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-xs shadow-xs'
+                        }`}
                       >
                         {msg.sender === 'ai' && (
-                          <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
-                            <Sparkles className="w-4 h-4" />
+                          <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-amber-800">
+                            <Sparkles className="w-3 h-3 text-amber-600" />
+                            <span>Ask Acharya AI</span>
                           </div>
                         )}
-                        <div
-                          className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
-                            msg.sender === 'user'
-                              ? 'bg-indigo-600 text-white rounded-tr-none'
-                              : 'bg-slate-800/90 text-slate-200 border border-slate-700/70 rounded-tl-none shadow-sm'
-                          }`}
-                        >
-                          <div className="whitespace-pre-wrap">{msg.text}</div>
-
-                          {/* Render Agent Actions (e.g. SEEK_VIDEO buttons) */}
-                          {msg.actions && msg.actions.length > 0 && (
-                            <div className="mt-2.5 pt-2 border-t border-slate-700/60 space-y-1.5">
-                              <span className="text-[10px] uppercase font-bold text-indigo-300 tracking-wider flex items-center gap-1">
-                                <Compass className="w-3 h-3" />
-                                <span>Agent Actions:</span>
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {msg.actions.map((act, idx) => {
-                                  if (act.type === 'SEEK_VIDEO' && act.timestamp !== undefined) {
-                                    return (
-                                      <button
-                                        key={idx}
-                                        onClick={() => handleSeekVideo(act.timestamp!)}
-                                        className="text-[11px] px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/40 flex items-center gap-1.5 transition font-medium"
-                                      >
-                                        <Play className="w-3 h-3 text-indigo-300" />
-                                        <span>{act.label || `Jump to ${Math.floor(act.timestamp)}s`}</span>
-                                      </button>
-                                    )
-                                  }
-                                  if (act.type === 'INTERACTIVE_QUIZ' && act.question) {
-                                    const isAnswered = chatQuizAnswers[msg.id] !== undefined
-                                    const selected = chatQuizAnswers[msg.id]
-                                    return (
-                                      <div key={idx} className="w-full mt-1.5 p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2">
-                                        <p className="text-xs font-semibold text-white">{act.question}</p>
-                                        <div className="space-y-1">
-                                          {act.options?.map((opt, oIdx) => {
-                                            const isCorrect = act.correct_index === oIdx
-                                            let btnCls = 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                                            if (isAnswered) {
-                                              if (isCorrect) btnCls = 'bg-emerald-500/20 text-emerald-200 border-emerald-500'
-                                              else if (selected === oIdx) btnCls = 'bg-rose-500/20 text-rose-200 border-rose-500'
-                                            }
-                                            return (
-                                              <button
-                                                key={oIdx}
-                                                disabled={isAnswered}
-                                                onClick={() => setChatQuizAnswers(prev => ({ ...prev, [msg.id]: oIdx }))}
-                                                className={`w-full text-left text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 text-[11px] transition ${btnCls}`}
-                                              >
-                                                {opt}
-                                              </button>
-                                            )
-                                          })}
-                                        </div>
-                                        {isAnswered && act.explanation && (
-                                          <p className="text-[11px] text-slate-400 pt-1 italic">{act.explanation}</p>
-                                        )}
-                                      </div>
-                                    )
-                                  }
-                                  return null
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between gap-2 mt-1.5 text-[10px]">
-                            {msg.sender === 'ai' && (
-                              <span className="text-emerald-400 font-medium">
-                                Autonomous Omni-Agent
-                              </span>
-                            )}
-                            <span className={msg.sender === 'user' ? 'text-indigo-200 ml-auto' : 'text-slate-500'}>
-                              {msg.timestamp}
-                            </span>
-                          </div>
-                        </div>
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
-                    ))}
+                      <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.timestamp}</span>
+                    </div>
+                  ))}
+                  {isAsking && (
+                    <div className="flex items-center gap-2 text-xs text-slate-500 p-3 bg-slate-50 rounded-2xl border border-slate-200 w-fit">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                      <span>Thinking with lecture context...</span>
+                    </div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
 
-                    {isAsking && (
-                      <div className="flex gap-2.5 justify-start">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-                          <Bot className="w-4 h-4 animate-spin" />
-                        </div>
-                        <div className="bg-slate-800/90 border border-slate-700/70 rounded-2xl rounded-tl-none px-4 py-2.5 text-xs text-indigo-300 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-                          <span>Omni-Agent is analyzing video perception & executing actions...</span>
-                        </div>
-                      </div>
-                    )}
-                    <div ref={chatBottomRef} />
-                  </div>
+                {/* QUICK PROMPT CHIPS */}
+                <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex gap-1.5 overflow-x-auto shrink-0">
+                  {quickPrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleAskDoubt(prompt)}
+                      className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium whitespace-nowrap shadow-xs cursor-pointer transition"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
 
-                  {/* SUGGESTED FOLLOWUPS */}
-                  <div className="px-3 py-1.5 bg-slate-950/30 border-t border-slate-800/80 flex gap-1.5 overflow-x-auto no-scrollbar">
-                    {quickPrompts.map((p, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSendDoubt(p)}
-                        className="text-[11px] whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition"
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* INPUT BAR */}
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      handleSendDoubt()
-                    }}
-                    className="p-3 border-t border-slate-800 bg-slate-950/60 flex items-center gap-2"
+                {/* INPUT BAR */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleAskDoubt()
+                  }}
+                  className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
+                >
+                  <input
+                    type="text"
+                    value={inputQuery}
+                    onChange={(e) => setInputQuery(e.target.value)}
+                    placeholder="Ask anything from this class..."
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isAsking || !inputQuery.trim()}
+                    className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs disabled:opacity-40 transition cursor-pointer shadow-xs"
                   >
-                    <input
-                      type="text"
-                      value={inputQuery}
-                      onChange={(e) => setInputQuery(e.target.value)}
-                      placeholder="Ask Omni-Agent anything about this video..."
-                      disabled={isAsking}
-                      className="flex-1 bg-slate-800/90 border border-slate-700/80 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:outline-none transition"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!inputQuery.trim() || isAsking}
-                      className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white font-medium shadow-md transition"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </form>
-                </div>
-              )}
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            )}
 
-              {/* TAB 2: EXECUTIVE SUMMARY */}
-              {activeTab === 'summary' && (
-                <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4">
-                  {isLoadingSummary ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
-                      <RefreshCw className="w-6 h-6 animate-spin text-indigo-400" />
-                      <span className="text-xs">Analyzing lecture transcript...</span>
-                    </div>
-                  ) : summaryData ? (
-                    <div className="space-y-4">
-                      {/* Overview */}
-                      <div className="rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                          <Sparkles className="w-4 h-4" />
-                          <span>Executive Overview</span>
-                        </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          {summaryData.overview}
-                        </p>
-                      </div>
-
-                      {/* Topics Covered */}
-                      {summaryData.key_topics && summaryData.key_topics.length > 0 && (
-                        <div className="rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 space-y-2.5">
-                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-300 uppercase tracking-wider">
-                            <BookOpen className="w-4 h-4" />
-                            <span>Topics Addressed</span>
-                          </div>
-                          <div className="space-y-1.5">
-                            {summaryData.key_topics.map((topic, i) => (
-                              <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                                <span>{topic}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Whiteboard Notes */}
-                      {summaryData.whiteboard_notes && summaryData.whiteboard_notes.length > 0 && (
-                        <div className="rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 space-y-2.5">
-                          <div className="flex items-center gap-2 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                            <FileText className="w-4 h-4" />
-                            <span>Key Takeaways & Speaker Notes</span>
-                          </div>
-                          <div className="space-y-1.5">
-                            {summaryData.whiteboard_notes.map((note, i) => (
-                              <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                                <span>{note}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-xs text-slate-400">
-                      Summary generated directly from video audio.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 3: VERBATIM TRANSCRIPT */}
-              {activeTab === 'transcript' && (
-                <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 flex flex-col">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            {/* TAB CONTENT: SUMMARY */}
+            {activeTab === 'summary' && (
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+                {isLoadingSummary ? (
+                  <div className="py-12 text-center text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-600 mb-2" />
+                    <span>Analyzing recording contents...</span>
+                  </div>
+                ) : summaryData ? (
+                  <div className="space-y-4">
                     <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">Spoken Audio Transcript</h4>
-                      <p className="text-[11px] text-slate-400">Accurate speech-to-text generated by Whisper AI.</p>
+                      <h3 className="font-bold text-slate-900 text-sm mb-1">Overview</h3>
+                      <p className="text-slate-600 leading-relaxed">{summaryData.overview}</p>
                     </div>
-                    {transcriptText && (
-                      <button
-                        onClick={handleCopyTranscript}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1.5 transition"
-                      >
-                        {hasCopiedTranscript ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-emerald-400">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
+
+                    {summaryData.exam_takeaways && summaryData.exam_takeaways.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-bold text-slate-900 text-xs">Exam Takeaways</h4>
+                        <ul className="space-y-1.5 pl-2">
+                          {summaryData.exam_takeaways.map((item: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2 text-slate-600">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
+                ) : (
+                  <p className="text-slate-500 text-center py-12">Summary not generated yet for this recording.</p>
+                )}
+              </div>
+            )}
 
-                  {isLoadingTranscript ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
-                      <RefreshCw className="w-6 h-6 animate-spin text-indigo-400" />
-                      <span className="text-xs">Extracting audio & transcribing...</span>
-                    </div>
-                  ) : transcriptText ? (
-                    <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-200 text-xs leading-relaxed whitespace-pre-wrap font-mono select-text">
-                      {transcriptText}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-xs text-slate-400 space-y-2">
-                      <p>No speech detected or transcription is in progress.</p>
-                      <button
-                        onClick={loadTranscript}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-medium hover:bg-indigo-600/50 transition"
-                      >
-                        Retry Transcription
-                      </button>
-                    </div>
+            {/* TAB CONTENT: TRANSCRIPT */}
+            {activeTab === 'transcript' && (
+              <div className="flex-1 overflow-y-auto p-5 space-y-3 text-xs">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="font-bold text-slate-900">Spoken Lecture Audio Transcript</span>
+                  {transcriptText && (
+                    <button
+                      onClick={handleCopyTranscript}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 hover:text-amber-800 cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>{hasCopiedTranscript ? 'Copied!' : 'Copy'}</span>
+                    </button>
                   )}
                 </div>
-              )}
 
-              {/* TAB 4: QUICK QUIZ */}
-              {activeTab === 'quiz' && (
-                <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">Video Comprehension Check</h4>
-                      <p className="text-[11px] text-slate-400">Test how much you absorbed from what was said.</p>
-                    </div>
-                    {summaryData?.quiz && (
-                      <button
-                        onClick={() => {
-                          setSelectedAnswers({})
-                          setShowQuizResults(false)
-                        }}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                        <span>Reset</span>
-                      </button>
-                    )}
+                {isLoadingTranscript ? (
+                  <div className="py-12 text-center text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-600 mb-2" />
+                    <span>Loading speech transcript...</span>
                   </div>
+                ) : transcriptText ? (
+                  <p className="text-slate-700 leading-relaxed whitespace-pre-wrap font-sans bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    {transcriptText}
+                  </p>
+                ) : (
+                  <p className="text-slate-500 text-center py-12">No spoken transcript available for this lecture.</p>
+                )}
+              </div>
+            )}
 
-                  {summaryData?.quiz?.map((q: any, qIdx: number) => {
-                    const selected = selectedAnswers[qIdx]
-
-                    return (
-                      <div key={qIdx} className="rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 space-y-3">
-                        <div className="flex items-start gap-2">
-                          <span className="w-5 h-5 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">
-                            {qIdx + 1}
-                          </span>
-                          <span className="text-xs font-medium text-slate-200 leading-snug">
-                            {q.question}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 pl-7">
-                          {q.options.map((opt: string, optIdx: number) => {
-                            const isChosen = selected === optIdx
-                            const isCorrectOpt = q.correct_index === optIdx
-
-                            let btnStyle = 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700/80'
-                            if (showQuizResults) {
-                              if (isCorrectOpt) {
-                                btnStyle = 'bg-emerald-500/20 text-emerald-200 border-emerald-500/50 font-semibold'
-                              } else if (isChosen) {
-                                btnStyle = 'bg-rose-500/20 text-rose-200 border-rose-500/50'
-                              }
-                            } else if (isChosen) {
-                              btnStyle = 'bg-indigo-600 text-white border-indigo-500 font-medium'
-                            }
-
-                            return (
-                              <button
-                                key={optIdx}
-                                onClick={() => handleSelectQuizOption(qIdx, optIdx)}
-                                className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition flex items-center justify-between gap-2 ${btnStyle}`}
-                              >
-                                <span>{opt}</span>
-                                {showQuizResults && isCorrectOpt && (
-                                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                )}
-                                {showQuizResults && isChosen && !isCorrectOpt && (
-                                  <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                                )}
-                              </button>
-                            )
-                          })}
-                        </div>
-
-                        {showQuizResults && q.explanation && (
-                          <div className="mt-2 pl-7 text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                            <strong className="text-indigo-300">Explanation: </strong>
-                            {q.explanation}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-
-                  <div className="pt-2">
-                    <button
-                      onClick={() => setShowQuizResults(true)}
-                      disabled={Object.keys(selectedAnswers).length === 0}
-                      className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white text-xs font-semibold shadow-md transition flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Check My Answers</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-            </div>
           </div>
         </div>
-
       </div>
     </div>
   )
 }
+export default AiRecordingPlayerModal

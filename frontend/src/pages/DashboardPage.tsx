@@ -169,7 +169,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     }
   }
 
-
   const handleApproveUser = async (userId: string, role: 'student' | 'teacher') => {
     setActionLoading(`approve-${userId}`)
     try {
@@ -278,7 +277,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     }
   }
 
-
   const [selectedScheduleDay, setSelectedScheduleDay] = useState<string>('')
 
   const activeLiveClass = liveClasses.find(c => c.status === 'live')
@@ -299,22 +297,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto min-h-screen">
       {/* ── TOAST NOTIFICATION ───────────────────────────────────────────────── */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border text-xs font-bold flex items-center gap-2.5 animate-in slide-in-from-top-4 duration-200 max-w-md ${
+        <div className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2.5 animate-in slide-in-from-top-4 duration-200 max-w-md bg-white ${
           toast.type === 'success'
-            ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50'
+            ? 'border-emerald-200 text-emerald-800 shadow-emerald-500/10'
             : toast.type === 'error'
-            ? 'bg-red-950/90 border-red-500/40 text-red-200 shadow-red-950/50'
-            : 'bg-cyan-950/90 border-cyan-500/40 text-cyan-200 shadow-cyan-950/50'
+            ? 'border-rose-200 text-rose-800 shadow-rose-500/10'
+            : 'border-amber-200 text-amber-800 shadow-amber-500/10'
         }`}>
           {toast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : toast.type === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
           ) : (
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
           )}
           <span className="flex-1">{toast.message}</span>
         </div>
@@ -322,31 +320,31 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── LIVE DATA REFRESHING BAR ────────────────────────────────────────── */}
       {loading && (
-        <div className="h-1 w-full bg-slate-800 overflow-hidden rounded-full">
-          <div className="h-full bg-cyan-500 w-1/3 animate-pulse" />
+        <div className="h-1 w-full bg-slate-100 overflow-hidden rounded-full">
+          <div className="h-full bg-amber-500 w-1/3 animate-pulse" />
         </div>
       )}
 
       {/* ── ROLE-SPECIFIC HERO BANNER ────────────────────────────────────────── */}
       {user.role === 'admin' && (
-        <div className="bg-gradient-to-r from-[#0B0F19] via-[#161E31] to-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-white border border-amber-200/80 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xs">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-200/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span className="px-3 py-1 rounded-full bg-white text-amber-800 border border-amber-200 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
                   Institutional Command Center
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Platform Operational
+                  Live Platform Active
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Welcome, Administrator {user.display_name}
               </h1>
-              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
+              <p className="text-slate-600 text-xs sm:text-sm max-w-2xl leading-relaxed font-normal">
                 Manage academy operations, trigger autonomous timetable scheduling, oversee faculty assignments, and broadcast institutional announcements.
               </p>
             </div>
@@ -355,21 +353,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               <button
                 onClick={handleRunAiScheduler}
                 disabled={actionLoading === 'scheduler'}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {actionLoading === 'scheduler' ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Cpu className="w-4 h-4 text-indigo-200" />
+                  <Cpu className="w-4 h-4" />
                 )}
                 <span>Run AI Auto-Scheduler</span>
               </button>
 
               <button
                 onClick={() => setShowAnnouncementModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
               >
-                <Bell className="w-4 h-4 text-amber-400" />
+                <Bell className="w-4 h-4 text-amber-600" />
                 <span>Broadcast Notice</span>
               </button>
             </div>
@@ -378,23 +376,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       )}
 
       {user.role === 'teacher' && (
-        <div className="bg-gradient-to-r from-[#0B0F19] via-[#161E31] to-[#0B0F19] border border-orange-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-r from-orange-50/90 via-amber-50/40 to-white border border-orange-200/80 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xs">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3.5 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                <span className="px-3 py-1 rounded-full bg-white text-orange-800 border border-orange-200 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+                  <GraduationCap className="w-3.5 h-3.5 text-orange-600" />
                   Faculty Instructor Desk
                 </span>
-                <span className="text-xs text-stone-400">
+                <span className="text-xs text-slate-500">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Welcome back, {user.display_name}
               </h1>
-              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
+              <p className="text-slate-600 text-xs sm:text-sm max-w-2xl leading-relaxed font-normal">
                 Review your assigned technical batch schedule for today, initiate live Zoom classroom video streams with cloud recording, and manage your students.
               </p>
             </div>
@@ -402,17 +400,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button
                 onClick={() => setCurrentTab('classroom')}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Video className="w-4 h-4 text-slate-950" />
+                <Video className="w-4 h-4" />
                 <span>Go to Classroom</span>
               </button>
 
               <button
                 onClick={() => setShowAnnouncementModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
               >
-                <Bell className="w-4 h-4 text-amber-400" />
+                <Bell className="w-4 h-4 text-amber-600" />
                 <span>Announce to Students</span>
               </button>
             </div>
@@ -421,21 +419,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       )}
 
       {user.role === 'student' && (
-        <div className="bg-gradient-to-r from-[#0B0F19] via-[#161E31] to-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-r from-amber-50/90 via-yellow-50/40 to-white border border-amber-200/80 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xs">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-yellow-200/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                <span className="px-3 py-1 rounded-full bg-white text-amber-800 border border-amber-200 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+                  <Award className="w-3.5 h-3.5 text-amber-600" />
                   Candidate Training Portal
                 </span>
-                <span className="text-xs text-stone-400">Professional Course Program</span>
+                <span className="text-xs text-slate-500">Professional Course Program</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Hello, {user.display_name}
               </h1>
-              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
+              <p className="text-slate-600 text-xs sm:text-sm max-w-2xl leading-relaxed font-normal">
                 Track your course milestones, attend live Zoom interactive lectures, download faculty learning resources, and review past class recordings.
               </p>
             </div>
@@ -443,17 +441,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button
                 onClick={() => setCurrentTab('classroom')}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Radio className="w-4 h-4 text-red-600 animate-pulse" />
+                <Radio className="w-4 h-4" />
                 <span>Join Live Class</span>
               </button>
 
               <button
                 onClick={() => setCurrentTab('courses')}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
               >
-                <BookOpen className="w-4 h-4 text-amber-400" />
+                <BookOpen className="w-4 h-4 text-amber-600" />
                 <span>Explore Catalog</span>
               </button>
             </div>
@@ -463,25 +461,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── LIVE NOW HERO BANNER (Visible if any class is currently live) ─── */}
       {activeLiveClass && (
-        <div className="bg-gradient-to-r from-red-950/60 via-slate-900 to-slate-900 border border-red-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-rose-50 via-red-50/50 to-white border border-rose-200 rounded-3xl p-5 sm:p-6 shadow-xs relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center shrink-0">
-              <Radio className="w-6 h-6 text-red-500 animate-pulse" />
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <Radio className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-600 text-white animate-pulse">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
                   CLASS LIVE NOW
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   {activeLiveClass.grade_name || 'Course'} • Batch {activeLiveClass.section_name} &bull; Period {activeLiveClass.period_number || 1}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white mt-1">
+              <h3 className="text-base font-bold text-slate-900 mt-1">
                 {activeLiveClass.title}
               </h3>
-              <p className="text-xs text-slate-300">
-                Instructor: <span className="text-amber-400 font-semibold">{activeLiveClass.teacher_name || 'Faculty Member'}</span>
+              <p className="text-xs text-slate-600">
+                Instructor: <span className="text-amber-700 font-semibold">{activeLiveClass.teacher_name || 'Faculty Member'}</span>
               </p>
             </div>
           </div>
@@ -489,7 +487,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setCurrentTab('classroom')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Play className="w-4 h-4 fill-white" />
               <span>Join Live Session</span>
@@ -498,72 +496,72 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         </div>
       )}
 
-      {/* ── STATS CARDS GRID (Role Tailored) ───────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* ── STATS CARDS GRID (Role Tailored Pastel Cards) ──────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {user.role === 'admin' && (
           <>
             <div
               onClick={() => setUserFilter('student')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#F4F1FD] border border-[#E5DEFF] hover:border-[#D1C4FE] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Enrolled Students</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <Users className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#6E56CF]">Enrolled Students</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#6E56CF] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Users className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.students_total ?? 0}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.students_total ?? 0}</p>
+              <p className="text-[11px] text-[#6E56CF] mt-2 font-semibold flex items-center gap-1">
                 Filter students &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setUserFilter('teacher')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-orange-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#EAF5FF] border border-[#D0EAFF] hover:border-[#B5DEFF] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Certified Faculty</span>
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <UserCheck className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#0284C7]">Certified Faculty</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#0284C7] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.teachers_total ?? 0}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.teachers_total ?? 0}</p>
+              <p className="text-[11px] text-[#0284C7] mt-2 font-semibold flex items-center gap-1">
                 Filter teachers &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('timetable')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-emerald-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#ECFDF5] border border-[#C6F6D5] hover:border-[#9AE6B4] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Scheduled Slots</span>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                  <Calendar className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#059669]">Scheduled Slots</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#059669] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.timetable_slots_total ?? 36}</p>
-              <p className="text-[11px] text-emerald-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.timetable_slots_total ?? 36}</p>
+              <p className="text-[11px] text-[#059669] mt-2 font-semibold flex items-center gap-1">
                 View Timetable &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setUserFilter('pending')}
-              className={`bg-slate-900 border rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group ${
-                (statsData.pending_users ?? 0) > 0 ? 'border-amber-500/40 shadow-lg shadow-amber-500/5' : 'border-slate-800'
+              className={`rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group ${
+                (statsData.pending_users ?? 0) > 0 ? 'bg-[#FFF7ED] border border-[#FED7AA]' : 'bg-slate-50 border border-slate-200'
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Pending Approvals</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <AlertCircle className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#EA580C]">Pending Approvals</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#EA580C] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <AlertCircle className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.pending_users ?? 0}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.pending_users ?? 0}</p>
+              <p className="text-[11px] text-[#EA580C] mt-2 font-semibold flex items-center gap-1">
                 Review accounts &rarr;
               </p>
             </div>
@@ -574,64 +572,64 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <>
             <div
               onClick={() => setCurrentTab('timetable')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-orange-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#EAF5FF] border border-[#D0EAFF] hover:border-[#B5DEFF] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">My Daily Periods</span>
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <Calendar className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#0284C7]">My Daily Periods</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#0284C7] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{todayTeacherSlots.length}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{todayTeacherSlots.length}</p>
+              <p className="text-[11px] text-[#0284C7] mt-2 font-semibold flex items-center gap-1">
                 Manage schedule &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('classroom')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#FFF1F0] border border-[#FFD0CE] hover:border-[#FFAAA6] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Live Lectures Today</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <Video className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#E11D48]">Live Lectures Today</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#E11D48] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Video className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{liveClasses.length}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{liveClasses.length}</p>
+              <p className="text-[11px] text-[#E11D48] mt-2 font-semibold flex items-center gap-1">
                 Open Classroom &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('courses')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-yellow-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#F4F1FD] border border-[#E5DEFF] hover:border-[#D1C4FE] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Curriculum Courses</span>
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#6E56CF]">Curriculum Courses</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#6E56CF] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{teacherCurriculumCourses.length}</p>
-              <p className="text-[11px] text-blue-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{teacherCurriculumCourses.length}</p>
+              <p className="text-[11px] text-[#6E56CF] mt-2 font-semibold flex items-center gap-1">
                 Edit curriculum &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('assignments')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#FFF7ED] border border-[#FFEDD5] hover:border-[#FED7AA] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Student Submissions</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <FileText className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#EA580C]">Student Submissions</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#EA580C] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.submissions ?? 0}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.submissions ?? 0}</p>
+              <p className="text-[11px] text-[#EA580C] mt-2 font-semibold flex items-center gap-1">
                 Grade submissions &rarr;
               </p>
             </div>
@@ -642,73 +640,88 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <>
             <div
               onClick={() => setCurrentTab('courses')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-amber-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#F4F1FD] border border-[#E5DEFF] hover:border-[#D1C4FE] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Enrolled Courses</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#6E56CF]">Enrolled Courses</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#6E56CF] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{enrollments.length}</p>
-              <p className="text-[11px] text-amber-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{enrollments.length}</p>
+              <p className="text-[11px] text-[#6E56CF] mt-2 font-semibold flex items-center gap-1">
                 Resume course &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('classroom')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-red-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#FFF1F0] border border-[#FFD0CE] hover:border-[#FFAAA6] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Live Lectures</span>
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
-                  <Radio className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#E11D48]">Live Lectures</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#E11D48] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Radio className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{liveClasses.length}</p>
-              <p className="text-[11px] text-red-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{liveClasses.length}</p>
+              <p className="text-[11px] text-[#E11D48] mt-2 font-semibold flex items-center gap-1">
                 Join session &rarr;
               </p>
             </div>
 
             <div
               onClick={() => setCurrentTab('assessments')}
-              className="bg-[#0B0F19] border border-amber-500/15 hover:border-emerald-500/40 rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.02] group"
+              className="bg-[#ECFDF5] border border-[#C6F6D5] hover:border-[#9AE6B4] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-400">Quizzes & Tests</span>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                  <CheckSquare className="w-5 h-5" />
+                <span className="text-xs font-bold text-[#059669]">Quizzes & Tests</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#059669] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CheckSquare className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-white">{statsData.assessments ?? 0}</p>
-              <p className="text-[11px] text-emerald-400 mt-2 font-medium flex items-center gap-1">
+              <p className="text-3xl font-black text-slate-900">{statsData.assessments ?? 0}</p>
+              <p className="text-[11px] text-[#059669] mt-2 font-semibold flex items-center gap-1">
                 Take quiz &rarr;
               </p>
             </div>
 
+            <div
+              onClick={() => setCurrentTab('timetable')}
+              className="bg-[#FFFBEB] border border-[#FDE68A] hover:border-[#FCD34D] rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 shadow-xs group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-[#D97706]">Class Timetable</span>
+                <div className="w-9 h-9 rounded-xl bg-white text-[#D97706] shadow-2xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-4 h-4" />
+                </div>
+              </div>
+              <p className="text-3xl font-black text-slate-900">{studentTimetable.length > 0 ? studentTimetable.length : 36}</p>
+              <p className="text-[11px] text-[#D97706] mt-2 font-semibold flex items-center gap-1">
+                Weekly schedule &rarr;
+              </p>
+            </div>
           </>
         )}
       </div>
 
       {/* ── TEACHER INTERACTIVE TIMETABLE SCHEDULE BOARD ──────────────────── */}
       {user.role === 'teacher' && (
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-400" />
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-amber-600" />
                 Your Teaching Schedule ({activeDisplayDay}'s Assigned Periods)
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 One-click live classroom launching with synchronized whiteboard and automatic Cloudinary recording.
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentTab('timetable')}
-                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Full Timetable Grid</span>
                 <ChevronRight className="w-4 h-4" />
@@ -717,7 +730,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
 
           {/* 7-Day Quick Switcher Bar */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-[#06080F] rounded-2xl border border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-50 rounded-2xl border border-slate-200">
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
               const isToday = day.toLowerCase() === currentWeekday.toLowerCase()
               const isSelected = activeDisplayDay.toLowerCase() === day.toLowerCase()
@@ -726,20 +739,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 <button
                   key={day}
                   onClick={() => setSelectedScheduleDay(day)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                   }`}
                 >
                   <span>{day.slice(0, 3)}</span>
                   {isToday && (
-                    <span className={`text-[9px] px-1 rounded font-extrabold uppercase ${isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-amber-500/20 text-amber-400'}`}>
+                    <span className={`text-[9px] px-1 rounded font-extrabold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
                       Today
                     </span>
                   )}
                   {daySlotCount > 0 && (
-                    <span className={`text-[10px] px-1.5 rounded-full ${isSelected ? 'bg-slate-950/30 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'}`}>
+                    <span className={`text-[10px] px-1.5 rounded-full ${isSelected ? 'bg-white/30 text-white font-black' : 'bg-slate-200 text-slate-700'}`}>
                       {daySlotCount}
                     </span>
                   )}
@@ -749,9 +762,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
 
           {todayTeacherSlots.length === 0 ? (
-            <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-3">
-              <Sparkles className="w-8 h-8 text-amber-400 mx-auto opacity-50" />
-              <p className="text-sm font-semibold text-slate-300">
+            <div className="p-8 text-center bg-slate-50/60 rounded-2xl border border-slate-100 space-y-3">
+              <Sparkles className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
+              <p className="text-sm font-semibold text-slate-700">
                 {activeDisplayDay === 'Sunday' || activeDisplayDay === 'Saturday'
                   ? `${activeDisplayDay} Weekend • Scheduled Institute Off-Day & Self-Paced Coding Sandbox`
                   : `No timetable periods assigned to your profile for ${activeDisplayDay}.`}
@@ -765,14 +778,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 {(activeDisplayDay === 'Sunday' || activeDisplayDay === 'Saturday') && (
                   <button
                     onClick={() => setSelectedScheduleDay('Monday')}
-                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-amber-500/20"
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                   >
                     Preview Monday's Schedule &rarr;
                   </button>
                 )}
                 <button
                   onClick={() => setCurrentTab('timetable')}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all"
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition-all cursor-pointer"
                 >
                   Open Timetable Hub
                 </button>
@@ -783,63 +796,63 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               {todayTeacherSlots.map((slot, idx) => {
                 const canLaunch = isCurrentPeriod(slot)
                 return (
-                <div
-                  key={idx}
-                  className="bg-[#111726] border border-amber-500/12 hover:border-amber-500/40 rounded-2xl p-5 shadow-sm flex flex-col justify-between transition-all group"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[11px] font-bold">
-                        Period {slot.period_number}
-                      </span>
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
-                        {slot.start_time} - {slot.end_time}
-                      </span>
+                  <div
+                    key={idx}
+                    className="bg-white border border-slate-200 hover:border-amber-300 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-800 border border-orange-200 text-[11px] font-bold">
+                          Period {slot.period_number}
+                        </span>
+                        <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          {slot.start_time} - {slot.end_time}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900 group-hover:text-amber-700 transition-colors">
+                          {slot.subject_name}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {slot.grade_name || 'Course'} • Batch {slot.section_name} &bull; {slot.subject_code}
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex items-center justify-between">
+                        <span className="text-slate-400">Venue:</span>
+                        <span className="font-semibold text-slate-800">{slot.room_or_venue || 'Technical Lab Hall'}</span>
+                      </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-bold text-base text-white group-hover:text-amber-300 transition-colors">
-                        {slot.subject_name}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {slot.grade_name || 'Course'} • Batch {slot.section_name} &bull; {slot.subject_code}
-                      </p>
-                    </div>
+                    <div className="pt-4 flex items-center gap-2">
+                      <button
+                        onClick={() => handleInstantLaunchClass(slot)}
+                        disabled={!canLaunch || actionLoading === `launch-${slot.period_number}`}
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          canLaunch
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs active:scale-95'
+                            : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                        }`}
+                      >
+                        {actionLoading === `launch-${slot.period_number}` ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                        )}
+                        <span>{canLaunch ? 'Launch Class' : 'Not Active'}</span>
+                      </button>
 
-                    <div className="text-xs text-slate-400 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 flex items-center justify-between">
-                      <span className="text-slate-500">Venue:</span>
-                      <span className="font-semibold text-slate-200">{slot.room_or_venue || 'Technical Lab Hall'}</span>
+                      <button
+                        onClick={() => { setLeaveSlot(slot); setShowLeaveModal(true); }}
+                        className="px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                        title="Request substitute teacher or report leave"
+                      >
+                        Sub / Leave
+                      </button>
                     </div>
                   </div>
-
-                  <div className="pt-4 flex items-center gap-2">
-                    <button
-                      onClick={() => handleInstantLaunchClass(slot)}
-                      disabled={!canLaunch || actionLoading === `launch-${slot.period_number}`}
-                      className={`flex-1 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${
-                        canLaunch
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 shadow-md shadow-cyan-500/20 active:scale-95'
-                          : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                      }`}
-                    >
-                      {actionLoading === `launch-${slot.period_number}` ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                      ) : (
-                        <Play className="w-3.5 h-3.5 fill-slate-950" />
-                      )}
-                      <span>{canLaunch ? 'Launch Class' : 'Not Active'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => { setLeaveSlot(slot); setShowLeaveModal(true); }}
-                      className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
-                      title="Request substitute teacher or report leave"
-                    >
-                      Sub / Leave
-                    </button>
-                  </div>
-                </div>
                 )
               })}
             </div>
@@ -849,28 +862,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── ADMIN LIVE SESSIONS & USER APPROVAL DESK ───────────────────────── */}
       {user.role === 'admin' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* USER MANAGEMENT & APPROVAL DESK */}
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-amber-600" />
                   User Directory & Role Approvals
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   {adminUsers.length} total accounts registered across academy
                 </p>
               </div>
 
               {/* Filter Pills */}
-              <div className="flex items-center gap-1 bg-[#06080F] p-1 rounded-xl border border-slate-800 text-[11px] font-semibold">
+              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-[11px] font-semibold">
                 {(['all', 'pending', 'student', 'teacher'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setUserFilter(tab)}
-                    className={`px-2.5 py-1 rounded-lg capitalize transition-colors ${
-                      userFilter === tab ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                    className={`px-2.5 py-1 rounded-lg capitalize transition-colors cursor-pointer ${
+                      userFilter === tab ? 'bg-amber-500 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {tab}
@@ -879,7 +892,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               </div>
             </div>
 
-            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 divide-y divide-slate-100">
               {adminUsers
                 .filter(u => {
                   if (userFilter === 'pending') return u.status !== 'active'
@@ -891,21 +904,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 .map(u => (
                   <div
                     key={u.id}
-                    className="p-3 bg-[#06080F]/70 border border-amber-500/15 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                    className="pt-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-slate-50 p-2 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs flex items-center justify-center shrink-0 border border-slate-700">
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-200">
                         {u.display_name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-white truncate">{u.display_name}</p>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                          <p className="text-xs font-bold text-slate-800 truncate">{u.display_name}</p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded capitalize ${
                             u.role === 'admin'
-                              ? 'bg-indigo-500/20 text-orange-300'
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
                               : u.role === 'teacher'
-                              ? 'bg-purple-500/20 text-amber-300'
-                              : 'bg-cyan-500/20 text-yellow-300'
+                              ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                              : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
                           }`}>
                             {u.role}
                           </span>
@@ -920,20 +933,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                           <button
                             onClick={() => handleApproveUser(u.id, u.role === 'teacher' ? 'teacher' : 'student')}
                             disabled={actionLoading === `approve-${u.id}`}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             {actionLoading === `approve-${u.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                             <span>Approve</span>
                           </button>
                           <button
                             onClick={() => handleRejectUser(u.id)}
-                            className="px-2 py-1 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold text-[11px] transition-colors"
+                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] border border-rose-200 transition-colors cursor-pointer"
                           >
                             Reject
                           </button>
                         </>
                       ) : (
-                        <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1">
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Active
                         </span>
                       )}
@@ -944,20 +957,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
 
           {/* RECENT LIVE CLASSES & RECORDINGS */}
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Video className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Video className="w-5 h-5 text-amber-600" />
                   Live Classroom Sessions & Cloud Recordings
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Real-time status across all grade levels
                 </p>
               </div>
               <button
                 onClick={() => setCurrentTab('classroom')}
-                className="text-xs font-bold text-amber-400 hover:text-yellow-300 flex items-center gap-1 transition-colors"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Classroom View</span>
                 <ChevronRight className="w-4 h-4" />
@@ -965,32 +978,32 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             </div>
 
             {liveClasses.length === 0 ? (
-              <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
-                <Video className="w-8 h-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400">No live sessions recorded yet today.</p>
+              <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                <Video className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-xs text-slate-500 font-semibold">No live sessions recorded yet today.</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 divide-y divide-slate-100">
                 {liveClasses.slice(0, 10).map(cls => (
                   <div
                     key={cls.id}
-                    className="p-3.5 bg-[#06080F]/70 border border-amber-500/15 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                    className="pt-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-slate-50 p-2 rounded-xl transition-colors"
                   >
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                           {cls.grade_name || 'Course'} • Batch {cls.section_name}
                         </span>
                         {cls.status === 'live' ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
                             ● LIVE NOW
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium text-slate-500">Ended</span>
+                          <span className="text-[10px] font-medium text-slate-400">Ended</span>
                         )}
                       </div>
-                      <h4 className="text-xs font-bold text-white truncate">{cls.title}</h4>
-                      <p className="text-[11px] text-slate-400">
+                      <h4 className="text-xs font-bold text-slate-800 truncate">{cls.title}</h4>
+                      <p className="text-[11px] text-slate-500">
                         Instructor: {cls.teacher_name || 'Assigned Faculty'} &bull; Period {cls.period_number || 1}
                       </p>
                     </div>
@@ -999,17 +1012,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                       {cls.recording_url ? (
                         <button
                           onClick={() => { setSelectedRecordingUrl(cls.recording_url!); setSelectedRecordingClass(cls); }}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                          className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
-                          <Video className="w-3.5 h-3.5 text-amber-300" />
+                          <Video className="w-3.5 h-3.5 text-amber-700" />
                           <span>Watch</span>
                         </button>
                       ) : cls.status === 'live' ? (
                         <button
                           onClick={() => setCurrentTab('classroom')}
-                          className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                         >
-                          <Play className="w-3 h-3 fill-slate-950" />
+                          <Play className="w-3 h-3 fill-white" />
                           <span>Join</span>
                         </button>
                       ) : null}
@@ -1024,20 +1037,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── STUDENT RECORDED LECTURES & REPLAYS ────────────────────────────── */}
       {user.role === 'student' && (
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Video className="w-5 h-5 text-amber-400" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Video className="w-5 h-5 text-amber-600" />
                 Recorded Class Lectures & Cloud Replays
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Watch past classes taught by your faculty with synchronized video and audio playback.
               </p>
             </div>
             <button
               onClick={() => setCurrentTab('classroom')}
-              className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+              className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition-colors cursor-pointer"
             >
               <span>View in Classroom</span>
               <ChevronRight className="w-4 h-4" />
@@ -1045,47 +1058,47 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
 
           {liveClasses.filter(c => !!c.recording_url).length === 0 ? (
-            <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
-              <Video className="w-8 h-8 text-slate-600 mx-auto" />
-              <p className="text-xs text-slate-400">No lecture recordings available yet.</p>
-              <p className="text-[11px] text-slate-500">When teachers record their live classes, recordings will show up here for you to watch anytime.</p>
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+              <Video className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs font-semibold text-slate-700">No lecture recordings available yet.</p>
+              <p className="text-[11px] text-slate-400">When teachers record their live classes, recordings will show up here for you to watch anytime.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {liveClasses.filter(c => !!c.recording_url).map(cls => (
                 <div
                   key={cls.id}
-                  className="bg-[#111726] border border-amber-500/12 hover:border-amber-500/40 rounded-2xl p-5 shadow-sm flex flex-col justify-between transition-all group hover:scale-[1.01]"
+                  className="bg-white border border-slate-200 hover:border-amber-300 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-all group hover:-translate-y-0.5"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[11px] font-bold">
+                      <span className="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-800 border border-orange-200 text-[11px] font-bold">
                         {cls.grade_name || 'Course'} • Batch {cls.section_name}
                       </span>
-                      <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Ready to Watch
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-amber-300 transition-colors line-clamp-1">
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-amber-700 transition-colors line-clamp-1">
                         {cls.title}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         {cls.subject_name || 'Subject Lecture'} &bull; Period {cls.period_number || 1}
                       </p>
                     </div>
 
-                    <div className="text-xs text-slate-400 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 flex items-center justify-between">
-                      <span className="text-slate-500">Instructor:</span>
-                      <span className="font-semibold text-slate-200">{cls.teacher_name || 'Faculty Member'}</span>
+                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-400">Instructor:</span>
+                      <span className="font-semibold text-slate-800">{cls.teacher_name || 'Faculty Member'}</span>
                     </div>
                   </div>
 
                   <div className="pt-4">
                     <button
                       onClick={() => { setSelectedRecordingUrl(cls.recording_url!); setSelectedRecordingClass(cls); }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+                      className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5 fill-white" />
                       <span>Watch Recording</span>
@@ -1100,20 +1113,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── STUDENT ACTIVE COURSES & GRADE TIMETABLE ────────────────────────── */}
       {user.role === 'student' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* MY ENROLLED SUBJECTS */}
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-amber-600" />
                   My Enrolled Courses & Subjects
                 </h2>
-                <p className="text-xs text-slate-400">Track your progress and continue course material</p>
+                <p className="text-xs text-slate-500">Track your progress and continue course material</p>
               </div>
               <button
                 onClick={() => setCurrentTab('courses')}
-                className="text-xs font-bold text-amber-400 hover:text-yellow-300 flex items-center gap-1 transition-colors"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Browse All</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1121,32 +1134,32 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             </div>
 
             {enrollments.length === 0 ? (
-              <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-3">
-                <BookOpen className="w-8 h-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400">You are not enrolled in any course tracks yet.</p>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-xs font-semibold text-slate-700">You are not enrolled in any course tracks yet.</p>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
                   Course enrollments are assigned directly by the institute administrator. Once your enrollment is activated by the admin, your respective subjects and syllabus materials will appear here automatically.
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
                 {enrollments.map(en => (
                   <div
                     key={en.id}
-                    className="p-4 bg-[#06080F]/70 border border-amber-500/15 hover:border-amber-500/40 rounded-2xl flex items-center justify-between gap-3 transition-colors group"
+                    className="p-3.5 bg-slate-50/70 border border-slate-200 hover:border-amber-300 rounded-2xl flex items-center justify-between gap-3 transition-colors group"
                   >
                     <div className="min-w-0 space-y-1 text-left">
-                      <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-yellow-300 transition-colors truncate">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-amber-700 transition-colors truncate">
                         {en.course?.title || (en.course as any)?.slug?.replace(/-/g, ' ') || 'Institute Course'}
                       </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Status: <span className="capitalize text-emerald-400 font-semibold">{en.status}</span>
+                      <p className="text-[11px] text-slate-500">
+                        Status: <span className="capitalize text-emerald-700 font-bold">{en.status}</span>
                       </p>
                     </div>
 
                     <button
                       onClick={() => setCurrentTab('courses')}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs"
                     >
                       <span>Study</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1158,18 +1171,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
 
           {/* CLASS TIMETABLE PREVIEW */}
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-600" />
                   Today's Classroom Timetable
                 </h2>
-                <p className="text-xs text-slate-400">Periods and venue schedule for your track</p>
+                <p className="text-xs text-slate-500">Periods and venue schedule for your track</p>
               </div>
               <button
                 onClick={() => setCurrentTab('timetable')}
-                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Full Timetable</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1186,12 +1199,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
               if (slotsToRender.length === 0) {
                 return (
-                  <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
-                    <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
-                    <p className="text-xs text-slate-400">No active classes scheduled today. Check full weekly grid.</p>
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <Calendar className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-700">No active classes scheduled today. Check full weekly grid.</p>
                     <button
                       onClick={() => setCurrentTab('timetable')}
-                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
                     >
                       View Timetable Grid
                     </button>
@@ -1204,22 +1217,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   {slotsToRender.slice(0, 6).map((slot, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-[#06080F]/70 border border-amber-500/15 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-700 transition-colors text-left"
+                      className="p-3 bg-slate-50/80 border border-slate-200 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-300 transition-colors text-left"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-500/30">
+                        <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-200">
                           P{slot.period_number}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{slot.subject_name || slot.subject_code || 'Technical Masterclass'}</p>
-                          <p className="text-[11px] text-slate-400 truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">{slot.subject_name || slot.subject_code || 'Technical Masterclass'}</p>
+                          <p className="text-[11px] text-slate-500 truncate">
                             {slot.room_or_venue || 'Cloud Sandbox'} &bull; {slot.day_of_week}
-                            {slot.teacher_name && <span className="text-amber-400/90"> &bull; {slot.teacher_name}</span>}
+                            {slot.teacher_name && <span className="text-amber-700"> &bull; {slot.teacher_name}</span>}
                           </p>
                         </div>
                       </div>
 
-                      <div className="text-[11px] font-mono text-yellow-300 font-semibold shrink-0">
+                      <div className="text-[11px] font-mono text-slate-700 font-semibold shrink-0">
                         {slot.start_time} - {slot.end_time}
                       </div>
                     </div>
@@ -1232,50 +1245,50 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       )}
 
       {/* ── SCHOOL ANNOUNCEMENTS FEED (For All Roles) ────────────────────────── */}
-      <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <Bell className="w-5 h-5 text-amber-400" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Bell className="w-5 h-5 text-amber-600" />
               Institute Announcements & Bulletins
             </h2>
-            <p className="text-xs text-slate-400">Official updates from faculty and administrators</p>
+            <p className="text-xs text-slate-500">Official updates from faculty and administrators</p>
           </div>
 
           {(user.role === 'admin' || user.role === 'teacher') && (
             <button
               onClick={() => setShowAnnouncementModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
-              <Plus className="w-3.5 h-3.5 text-amber-400" />
+              <Plus className="w-3.5 h-3.5 text-amber-600" />
               <span>Post Announcement</span>
             </button>
           )}
         </div>
 
         {announcements.length === 0 ? (
-          <div className="p-8 text-center bg-[#06080F]/60 rounded-2xl border border-slate-800 space-y-2">
-            <Bell className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-xs text-slate-400">No active announcements posted.</p>
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <Bell className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-xs text-slate-500 font-semibold">No active announcements posted.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {announcements.slice(0, 6).map(an => (
               <div
                 key={an.id}
-                className="bg-[#06080F]/70 border border-slate-800 rounded-2xl p-5 space-y-3 hover:border-slate-700 transition-colors flex flex-col justify-between"
+                className="bg-slate-50/70 border border-slate-200 rounded-2xl p-5 space-y-3 hover:border-slate-300 transition-colors flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                       Official Notice
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-slate-400">
                       {new Date(an.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <h3 className="font-bold text-sm text-white line-clamp-1">{an.title}</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                  <h3 className="font-bold text-sm text-slate-900 line-clamp-1">{an.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                     {an.content || (an as any).body}
                   </p>
                 </div>
@@ -1284,8 +1297,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           </div>
         )}
       </div>
-
-
 
       {/* ── MODAL: CLOUDINARY CLASS RECORDING PLAYER WITH AI DOUBT SOLVER ───── */}
       {selectedRecordingUrl && (
@@ -1301,16 +1312,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── MODAL: BROADCAST INSTITUTIONAL ANNOUNCEMENT ──────────────────────── */}
       {showAnnouncementModal && (
-        <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-lg shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Bell className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-600" />
                 Broadcast Institutional Notice
               </h3>
               <button
                 onClick={() => setShowAnnouncementModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1318,7 +1329,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
             <form onSubmit={handlePostAnnouncement} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Announcement Title
                 </label>
                 <input
@@ -1327,18 +1338,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   placeholder="e.g., Mid-Term Examination Schedule & Practical Labs"
                   value={announcementTitle}
                   onChange={e => setAnnouncementTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#06080F] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Target Audience
                 </label>
                 <select
                   value={announcementAudience}
                   onChange={e => setAnnouncementAudience(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#06080F] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="all">Everyone (All Students & Faculty)</option>
                   <option value="student">Students Only</option>
@@ -1347,7 +1358,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Notice Details / Body Content
                 </label>
                 <textarea
@@ -1356,7 +1367,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   placeholder="Type the announcement details and guidelines..."
                   value={announcementBody}
                   onChange={e => setAnnouncementBody(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#06080F] border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1364,14 +1375,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'announcement'}
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   {actionLoading === 'announcement' ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1388,31 +1399,31 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
 
       {/* ── MODAL: TEACHER LEAVE & SUBSTITUTION REQUEST ─────────────────────── */}
       {showLeaveModal && leaveSlot && (
-        <div className="fixed inset-0 z-50 bg-[#06080F]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-amber-600" />
                 Report Leave & Request Substitution
               </h3>
               <button
                 onClick={() => setShowLeaveModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="bg-[#06080F] p-3 rounded-2xl border border-slate-800 space-y-1 text-xs">
-              <p className="text-white font-bold">{leaveSlot.subject_name}</p>
-              <p className="text-slate-400">
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
+              <p className="text-slate-900 font-bold">{leaveSlot.subject_name}</p>
+              <p className="text-slate-500">
                 Period {leaveSlot.period_number} &bull; {leaveSlot.grade_name || 'Course'} • Batch {leaveSlot.section_name} ({leaveSlot.day_of_week})
               </p>
             </div>
 
             <form onSubmit={handleSubmitLeaveRequest} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Reason for Absence
                 </label>
                 <textarea
@@ -1421,7 +1432,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   placeholder="e.g., Medical appointment, family emergency, academic conference..."
                   value={leaveReason}
                   onChange={e => setLeaveReason(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#06080F] border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1429,14 +1440,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 <button
                   type="button"
                   onClick={() => setShowLeaveModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'leave'}
-                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   {actionLoading === 'leave' ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

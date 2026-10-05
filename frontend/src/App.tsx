@@ -143,90 +143,89 @@ export function App() {
 
   if (!user || !token) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", background: '#080A12', color: '#F8FAFC' }}>
+      <div className="min-h-screen flex font-sans bg-slate-50 text-slate-900">
         {/* Left branding panel */}
-        <div style={{ width: 440, background: '#06080F', borderRight: '1px solid rgba(245,158,11,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 3rem', color: '#F8FAFC', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+        <div className="w-[420px] bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-white border-r border-slate-200/80 hidden lg:flex flex-col justify-between p-12 shrink-0 relative overflow-hidden">
           {/* Subtle Ambient Glow */}
-          <div style={{ position: 'absolute', top: -100, left: -100, width: 320, height: 320, background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -100, right: -100, width: 320, height: 320, background: 'radial-gradient(circle, rgba(234,88,12,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-200/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl pointer-events-none" />
 
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '2.5rem', position: 'relative', zIndex: 1 }}>
-            <img
-              src="/acharya_logo.png"
-              alt="Acharya LMS Logo"
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 14,
-                objectFit: 'cover',
-                boxShadow: '0 0 24px rgba(245, 158, 11, 0.35)',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
-              }}
-            />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em', color: '#F8FAFC' }}>Acharya LMS</div>
-              <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Training Institute OS</div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3.5 mb-8">
+              <img
+                src="/acharya_logo.png"
+                alt="Acharya LMS Logo"
+                className="w-12 h-12 rounded-2xl object-cover shadow-sm ring-1 ring-amber-500/30"
+              />
+              <div>
+                <div className="font-extrabold text-xl tracking-tight text-slate-900">Acharya LMS</div>
+                <div className="text-[11px] text-amber-700 font-bold tracking-wider uppercase">Learning Operating System</div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-black leading-tight mb-3 text-slate-900 tracking-tight">
+              AI-Native Technical Education & Live Classrooms
+            </h2>
+            <p className="text-xs text-slate-600 leading-relaxed font-normal mb-8">
+              Engineered for modern academies. Manage multi-subject courses, live Zoom video lectures, chapter roadmaps, assignments, and verifiable certificates.
+            </p>
+
+            {/* Feature list */}
+            <div className="space-y-4">
+              {[
+                { label: 'Modular Course & Subject Tracks', desc: 'Group multiple specialized modules under each program', color: 'border-indigo-500' },
+                { label: 'Live Video Sessions & Recordings', desc: 'Synchronized live classrooms, recording playback, and AI dialogue notes', color: 'border-amber-500' },
+                { label: 'Adaptive Timetable AI Scheduling', desc: 'Autonomous conflict-free scheduling with Zoom links', color: 'border-emerald-500' },
+                { label: 'Integrated Coding & Assessments', desc: 'Interactive coding lab sandbox, auto-grading, and anti-cheat telemetry', color: 'border-sky-500' },
+              ].map((f) => (
+                <div key={f.label} className={`pl-3.5 border-l-2 ${f.color}`}>
+                  <div className="font-bold text-xs text-slate-800">{f.label}</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">{f.desc}</div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <h2 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.25, marginBottom: 14, letterSpacing: '-0.02em', color: '#F8FAFC', position: 'relative', zIndex: 1 }}>
-            Professional Technical Education & Live Classrooms
-          </h2>
-          <p style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.75, marginBottom: '2.25rem', position: 'relative', zIndex: 1 }}>
-            Engineered for modern training institutes. Manage full-stack courses, multi-subject modules, live Zoom lectures, cloud recordings, assignments, and verified certificates seamlessly.
-          </p>
-
-          {/* Feature list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', zIndex: 1 }}>
-            {[
-              { label: 'Modular Course & Subject Architecture', desc: 'Group multiple classes (Python, HTML, JS, APIs) under each course track' },
-              { label: 'HD Zoom Live Video Sessions', desc: 'Synchronized live streams, cloud recording playback, and AI dialogue transcripts' },
-              { label: 'Flexible Batch Enrollment', desc: 'Enroll students and assign specialized faculty per subject module' },
-              { label: 'Integrated Coding & Labs', desc: 'Live code executions, interactive assessments, and automated grading' },
-            ].map((f) => (
-              <div key={f.label} style={{ paddingLeft: 14, borderLeft: '2px solid rgba(245,158,11,0.6)' }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: '#F8FAFC' }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{f.desc}</div>
-              </div>
-            ))}
+          <div className="relative z-10 text-[11px] text-slate-400">
+            &copy; {new Date().getFullYear()} Acharya Learning OS. Enterprise Edition.
           </div>
         </div>
 
         {/* Right: form panel */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2.5rem', overflowY: 'auto', background: '#06080F' }}>
-          <div style={{ width: '100%', maxWidth: 440 }}>
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 overflow-y-auto bg-slate-50">
+          <div className="w-full max-w-md bg-white p-8 rounded-3xl border border-slate-200/80 shadow-md">
             {/* Heading */}
-            <div style={{ marginBottom: 24 }}>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.02em' }}>
-                {authMode === 'login' ? 'Sign in to Acharya Institute' : 'Create an Account'}
+            <div className="mb-6">
+              <h1 className="text-2xl font-black text-slate-900 mb-1.5 tracking-tight">
+                {authMode === 'login' ? 'Sign in to Acharya' : 'Create an Account'}
               </h1>
-              <p style={{ fontSize: 13, color: '#CBD5E1' }}>
-                {authMode === 'login' ? 'Enter your credentials to access your institute portal.' : 'Fill in your details and select your technical course track.'}
+              <p className="text-xs text-slate-500">
+                {authMode === 'login' ? 'Enter your credentials to access your institute workspace.' : 'Fill in your details and select your technical course track.'}
               </p>
             </div>
 
             {/* Error */}
             {authError && (
-              <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, color: '#F87171', fontSize: 12, marginBottom: 20, fontWeight: 500 }}>
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs mb-4 font-semibold">
                 {authError}
               </div>
             )}
 
             {/* Demo quick-access */}
             {authMode === 'login' && (
-              <div style={{ background: '#111726', border: '1px solid rgba(245,158,11,0.14)', borderRadius: 12, padding: '16px', marginBottom: 24, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 12 }}>
+              <div className="bg-amber-50/60 border border-amber-200/70 rounded-2xl p-4 mb-6">
+                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-2.5">
                   Instant Demo Access — Click to autofill
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                <div className="space-y-3">
                   {/* Admin */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FBBF24', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Administrator</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">Administrator</p>
                     <button
                       type="button"
                       onClick={() => { setAuthEmail('admin@example.com'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
-                      style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, color: '#FDE68A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      className="px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-amber-900 text-xs font-bold shadow-2xs hover:bg-amber-100 transition cursor-pointer"
                     >
                       System Administrator
                     </button>
@@ -234,8 +233,8 @@ export function App() {
 
                   {/* Teachers */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FB923C', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Faculty / Technical Mentors</p>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">Faculty / Mentors</p>
+                    <div className="flex gap-1.5 flex-wrap">
                       {[
                         ['sarah.connor@institute.edu', 'Dr. Sarah — Python & GenAI'],
                         ['alan.turing@institute.edu', 'Prof. Turing — LLMs & RAG'],
@@ -245,7 +244,7 @@ export function App() {
                           key={email}
                           type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Teacher123!'); setAuthError(''); }}
-                          style={{ padding: '6px 12px', background: 'rgba(234,88,12,0.14)', border: '1px solid rgba(234,88,12,0.35)', borderRadius: 8, color: '#FDBA74', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                          className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-orange-900 text-xs font-semibold shadow-2xs hover:bg-orange-50 transition cursor-pointer"
                         >
                           {label}
                         </button>
@@ -255,8 +254,8 @@ export function App() {
 
                   {/* Students */}
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#FDE047', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Enrolled Technical Candidates</p>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">Enrolled Candidates</p>
+                    <div className="flex gap-1.5 flex-wrap">
                       {[
                         ['alex.r@student.edu', 'Alex Rivera — Full Stack Web'],
                         ['priya.s@student.edu', 'Priya Sharma — Python GenAI'],
@@ -266,7 +265,7 @@ export function App() {
                           key={email}
                           type="button"
                           onClick={() => { setAuthEmail(email); setAuthPassword('Student123!'); setAuthError(''); }}
-                          style={{ padding: '6px 12px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, color: '#FEF08A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                          className="px-2.5 py-1 bg-white border border-yellow-300 rounded-lg text-yellow-900 text-xs font-semibold shadow-2xs hover:bg-yellow-50 transition cursor-pointer"
                         >
                           {label}
                         </button>
@@ -278,49 +277,49 @@ export function App() {
             )}
 
             {/* Login / Register form */}
-            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               {authMode === 'register' && (
                 <>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Full Name *</label>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name *</label>
                     <input
                       type="text"
                       required
                       value={authName}
                       onChange={(e) => setAuthName(e.target.value)}
                       placeholder="e.g. Priya Sharma"
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Phone Number *</label>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Phone Number *</label>
                     <input
                       type="tel"
                       required
                       value={authPhone}
                       onChange={(e) => setAuthPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Account Role *</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">Account Role *</label>
                       <select
                         value={authRole}
                         onChange={(e) => setAuthRole(e.target.value as 'student' | 'teacher')}
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                       >
                         <option value="student">Student</option>
-                        <option value="teacher">Teacher / Instructor</option>
+                        <option value="teacher">Teacher / Mentor</option>
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Target Track *</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">Target Track *</label>
                       <select
                         value={authCourseId}
                         onChange={(e) => setAuthCourseId(e.target.value)}
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                       >
                         {availableCourses.length > 0 ? (
                           availableCourses.map((c) => (
@@ -341,41 +340,41 @@ export function App() {
                 </>
               )}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Email Address *</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address *</label>
                 <input
                   type="email"
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
                   placeholder="you@institute.com"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', display: 'block', marginBottom: 5 }}>Password *</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Password *</label>
                 <input
                   type="password"
                   required
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   placeholder="Enter your password"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, fontSize: 13, color: '#F8FAFC', background: '#111726', outline: 'none', boxSizing: 'border-box' as const }}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submittingAuth}
-                style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)', color: '#111827', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: submittingAuth ? 'not-allowed' : 'pointer', opacity: submittingAuth ? 0.7 : 1, marginTop: 6, boxShadow: '0 4px 18px rgba(245,158,11,0.35)', letterSpacing: '-0.01em' }}
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
               >
-                {submittingAuth ? 'Processing...' : authMode === 'login' ? 'Sign In to Institute' : 'Register Account & Enroll'}
+                {submittingAuth ? 'Processing...' : authMode === 'login' ? 'Sign In to Workspace' : 'Register & Enroll'}
               </button>
             </form>
 
-            <p style={{ marginTop: 20, textAlign: 'center' as const, fontSize: 12, color: '#94A3B8' }}>
+            <p className="mt-5 text-center text-xs text-slate-500">
               {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
                 onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
-                style={{ background: 'none', border: 'none', color: '#F59E0B', fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0 }}
+                className="text-amber-600 font-bold hover:underline cursor-pointer"
               >
                 {authMode === 'login' ? 'Register Now' : 'Sign In'}
               </button>
@@ -389,11 +388,9 @@ export function App() {
   return (
     <div
       data-role={user.role}
-      className="min-h-screen w-full flex select-none bg-[#080A12]"
+      className="min-h-screen w-full flex select-none bg-[#F8F9FA] text-[#17181C]"
       style={{
-        background: 'var(--bg)',
-        color: 'var(--text)',
-        fontFamily: "'Inter', system-ui, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
       {/* ── Enterprise Sidebar Navigation across all roles ── */}
@@ -410,7 +407,7 @@ export function App() {
       />
 
       {/* ── Main Page Workspace ── */}
-      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto" style={{ background: 'var(--bg)' }}>
+      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto bg-[#F8F9FA]">
         {currentTab === 'overview' && (
           <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
         )}

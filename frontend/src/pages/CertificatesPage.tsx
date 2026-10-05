@@ -63,37 +63,44 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      <div>
-        <h2 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
-          <Award className="w-8 h-8 text-amber-400" />
-          Certificates & Credentials
-        </h2>
-        <p className="text-stone-400 text-xs sm:text-sm mt-1 font-light">
-          Issue verifiable course completion certificates and validate student credentials.
-        </p>
+    <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-xs">
+              <Award className="w-5 h-5" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+              Certificates & Credentials
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
+            Issue verifiable course completion certificates and validate student credentials.
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Issue Certificate Box */}
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl p-6 space-y-6">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-amber-400 border border-cyan-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-100 text-base">Claim Course Certificate</h3>
-              <p className="text-xs text-slate-400">Claim your official credential upon course completion</p>
+              <h3 className="font-bold text-slate-900 text-base">Claim Course Certificate</h3>
+              <p className="text-xs text-slate-500">Claim your official credential upon course completion</p>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 text-xs">
             <div>
-              <label className="text-xs text-slate-400 font-semibold">Select Completed Course</label>
+              <label className="text-slate-700 font-semibold block mb-1">Select Completed Course</label>
               <select
                 value={selectedCourseId}
                 onChange={(e) => setSelectedCourseId(e.target.value)}
-                className="w-full mt-1 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2.5 text-sm focus:border-cyan-500"
+                className="w-full bg-slate-50 text-slate-900 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400"
               >
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -106,7 +113,7 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
             <button
               onClick={handleIssueCertificate}
               disabled={issuing}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold py-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-sm"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl shadow-xs transition-all text-xs cursor-pointer"
             >
               {issuing ? 'Generating Certificate...' : 'Generate Official Certificate'}
             </button>
@@ -114,27 +121,26 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
 
           {/* Render Certificate Card if Issued */}
           {myCertificate && (
-            <div className="mt-6 p-6 bg-gradient-to-br from-slate-950 to-slate-900 border border-cyan-500/30 rounded-2xl shadow-xl space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full filter blur-2xl pointer-events-none" />
+            <div className="mt-6 p-6 bg-amber-50/40 border-2 border-amber-300 rounded-2xl shadow-xs space-y-4 relative overflow-hidden">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Official Certificate of Completion</span>
-                  <h4 className="text-lg font-black text-white mt-1">{user.display_name}</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-800">Official Certificate of Completion</span>
+                  <h4 className="text-lg font-bold text-slate-900 mt-1">{user.display_name}</h4>
                 </div>
-                <Award className="w-8 h-8 text-amber-400" />
+                <Award className="w-8 h-8 text-amber-600" />
               </div>
 
-              <div className="pt-2 border-t border-slate-800 space-y-1 text-xs">
-                <p className="text-slate-400">Certificate No: <span className="font-mono text-yellow-300">{myCertificate.certificate_number}</span></p>
-                <p className="text-slate-400">Issued On: {new Date(myCertificate.issued_at).toLocaleDateString()}</p>
+              <div className="pt-2 border-t border-amber-200/80 space-y-1 text-xs">
+                <p className="text-slate-600">Certificate No: <span className="font-mono font-bold text-slate-900">{myCertificate.certificate_number}</span></p>
+                <p className="text-slate-600">Issued On: {new Date(myCertificate.issued_at).toLocaleDateString()}</p>
               </div>
 
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={() => alert(`Certificate verified: ${myCertificate.certificate_number}`)}
-                  className="bg-slate-800 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5"
+                  className="bg-white text-slate-800 hover:text-slate-950 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-amber-400" /> Export PDF
+                  <Download className="w-3.5 h-3.5 text-amber-600" /> Export PDF
                 </button>
               </div>
             </div>
@@ -142,55 +148,55 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
         </div>
 
         {/* Certificate Verification Lookup */}
-        <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl p-6 space-y-6">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-100 text-base">Public Verification Desk</h3>
-              <p className="text-xs text-slate-400">Verify authenticity of any certificate number</p>
+              <h3 className="font-bold text-slate-900 text-base">Public Verification Desk</h3>
+              <p className="text-xs text-slate-500">Verify authenticity of any certificate number</p>
             </div>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-4">
+          <form onSubmit={handleVerify} className="space-y-4 text-xs">
             <div>
-              <label className="text-xs text-slate-400 font-semibold">Enter Certificate Number</label>
-              <div className="relative mt-1">
+              <label className="text-slate-700 font-semibold block mb-1">Enter Certificate Number</label>
+              <div className="relative">
                 <input
                   type="text"
                   required
                   value={verifyNum}
                   onChange={(e) => setVerifyNum(e.target.value)}
                   placeholder="e.g. CERT-2026-XXXX"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 pr-10 text-xs text-slate-200 focus:border-cyan-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pr-10 text-xs text-slate-900 focus:outline-none focus:border-amber-400 font-mono"
                 />
-                <Search className="w-4 h-4 text-slate-500 absolute right-3 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3" />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={verifying}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl border border-slate-700 transition-colors text-xs"
+              className="w-full bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold py-2.5 rounded-xl border border-slate-200 transition-colors text-xs cursor-pointer shadow-xs"
             >
               {verifying ? 'Checking Verification Database...' : 'Verify Credential'}
             </button>
           </form>
 
           {verifyError && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs text-center">
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs text-center font-medium">
               {verifyError}
             </div>
           )}
 
           {verifiedCert && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <CheckCircle2 className="w-4 h-4" /> Certificate Verified & Authentic
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1.5 text-xs">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Certificate Verified & Authentic
               </div>
-              <p className="text-slate-300">Certificate Number: <span className="font-mono">{verifiedCert.certificate_number}</span></p>
-              <p className="text-slate-300">Issued Date: {new Date(verifiedCert.issued_at).toLocaleDateString()}</p>
+              <p className="text-slate-700">Certificate Number: <span className="font-mono font-bold text-slate-900">{verifiedCert.certificate_number}</span></p>
+              <p className="text-slate-700">Issued Date: {new Date(verifiedCert.issued_at).toLocaleDateString()}</p>
             </div>
           )}
         </div>
@@ -198,3 +204,5 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
     </div>
   )
 }
+
+export default CertificatesPage
