@@ -36,7 +36,7 @@ async def test_vimeo_upload_zoom_recording_success(monkeypatch):
     mock_stream_resp.raise_for_status = MagicMock()
 
     async def mock_aiter_bytes(chunk_size=65536):
-        yield b"dummy_mp4_bytes_data"
+        yield b"\x00\x00\x00 ftypmp42\x00\x00\x00\x00mp42isom" + (b"\x00" * 2000)
 
     mock_stream_resp.aiter_bytes = mock_aiter_bytes
 

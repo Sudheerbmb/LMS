@@ -853,8 +853,11 @@ async def process_zoom_webhook_event(
                         try:
                             vimeo_uri = await upload_zoom_recording({**rf, "download_token": download_token, "file_name": f"{live_class.title or 'Lecture'} - {meeting_id}"})
                             if vimeo_uri:
-                                v_id = vimeo_uri.split('/')[-1]
-                                vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
+                                if str(vimeo_uri).startswith("http"):
+                                    vimeo_embed_url = str(vimeo_uri)
+                                else:
+                                    v_id = str(vimeo_uri).split('/')[-1]
+                                    vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
                                 live_class.recording_url = vimeo_embed_url
                                 if target_rec:
                                     target_rec.vimeo_url = vimeo_embed_url

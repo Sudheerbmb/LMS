@@ -60,17 +60,25 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   const isVimeo = !!(recordingUrl && (recordingUrl.includes('vimeo.com') || recordingUrl.includes('player.vimeo.com')))
   let vimeoEmbedUrl = ''
   if (isVimeo && recordingUrl) {
-    const vimeoMatch = recordingUrl.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/)
-    const vimeoId = vimeoMatch ? vimeoMatch[1] : ''
-    if (vimeoId) {
-      vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0`
+    if (recordingUrl.includes('player.vimeo.com/video/')) {
+      vimeoEmbedUrl = recordingUrl.includes('autoplay=')
+        ? recordingUrl
+        : `${recordingUrl}${recordingUrl.includes('?') ? '&' : '?'}autoplay=1&title=0&byline=0`
     } else {
-      vimeoEmbedUrl = recordingUrl
+      const vimeoMatch = recordingUrl.match(/(?:vimeo\.com\/(?:video\/|manage\/videos\/)?|player\.vimeo\.com\/video\/)(\d+)(?:\/([a-zA-Z0-9]+))?/)
+      const vimeoId = vimeoMatch ? vimeoMatch[1] : ''
+      const vimeoHash = vimeoMatch && vimeoMatch[2] ? vimeoMatch[2] : ''
+      if (vimeoId) {
+        vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0${vimeoHash ? `&h=${vimeoHash}` : ''}`
+      } else {
+        vimeoEmbedUrl = recordingUrl
+      }
     }
   }
 
+  const isZoom = !!(recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('zoomgov.com')))
   const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript' | 'quiz'>('doubt')
-  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>(isVimeo ? 'embed' : 'video')
+  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>(isVimeo || isZoom ? 'embed' : 'video')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputQuery, setInputQuery] = useState('')
   const [isAsking, setIsAsking] = useState(false)

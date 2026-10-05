@@ -27,7 +27,17 @@ async def upload_zoom_recording(recording: dict) -> str | None:
         raise ValueError("Zoom recording does not contain a download_url")
 
     download_token = recording.get("download_token")
+    if not download_token:
+        try:
+            from app.integrations.zoom.service import zoom_service
+            if zoom_service.is_configured():
+                download_token = await zoom_service.client.auth.get_access_token()
+        except Exception:
+            pass
+
+    zoom_headers = {}
     if download_token:
+        zoom_headers["Authorization"] = f"Bearer {download_token}"
         separator = "&" if "?" in download_url else "?"
         download_url = f"{download_url}{separator}access_token={download_token}"
 
@@ -40,7 +50,7 @@ async def upload_zoom_recording(recording: dict) -> str | None:
         temp_path = Path(temp_file.name)
         try:
             try:
-                async with client.stream("GET", download_url) as stream_resp:
+                async with client.stream("GET", download_url, headers=zoom_headers) as stream_resp:
                     stream_resp.raise_for_status()
                     async for chunk in stream_resp.aiter_bytes(chunk_size=65536):
                         temp_file.write(chunk)
@@ -48,6 +58,15 @@ async def upload_zoom_recording(recording: dict) -> str | None:
                 temp_file.close()
 
             file_size = temp_path.stat().st_size
+            if file_size < 1024:
+                raise ValueError(f"Downloaded video file is too small ({file_size} bytes)")
+
+            # Verify it is not an HTML/JSON error page
+            with temp_path.open("rb") as f:
+                header_bytes = f.read(512)
+                if header_bytes.startswith(b"<!DOCTYPE") or header_bytes.startswith(b"<html") or header_bytes.startswith(b"{\""):
+                    raise ValueError(f"Zoom returned an HTML/JSON error page instead of binary MP4 video: {header_bytes[:100].decode('utf-8', errors='replace')}")
+
             logger.info("Uploading %s (%.2f MB) to Vimeo...", name, file_size / (1024 * 1024))
             
             create_response = await client.post(
@@ -65,9 +84,9 @@ async def upload_zoom_recording(recording: dict) -> str | None:
                     },
                 },
             )
-            create_response.raise_for_status()
-            upload_link = create_response.json().get("upload", {}).get("upload_link")
-            uri = create_response.json().get("uri")
+            create_json = create_response.json()
+            upload_link = create_json.get("upload", {}).get("upload_link")
+            uri = create_json.get("player_embed_url") or create_json.get("link") or create_json.get("uri")
             if not upload_link:
                 raise RuntimeError("Vimeo did not return an upload link")
 

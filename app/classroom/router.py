@@ -510,10 +510,17 @@ async def sync_class_with_zoom_endpoint(
     recordings_data, transcript_text = await zoom_service.get_recordings_and_transcript(live_class.zoom_meeting_id)
     recordings_count = 0
     if recordings_data:
+        bearer_token = None
+        try:
+            bearer_token = await zoom_service.client.auth.get_access_token()
+        except Exception:
+            pass
+
         for rf in recordings_data.recording_files:
             existing = await session.scalar(select(ClassRecording).where(ClassRecording.zoom_recording_id == rf.id))
+            target_rec = existing
             if not existing:
-                session.add(ClassRecording(
+                target_rec = ClassRecording(
                     class_id=class_id,
                     zoom_meeting_id=str(recordings_data.id),
                     zoom_recording_id=rf.id,
@@ -525,10 +532,33 @@ async def sync_class_with_zoom_endpoint(
                     status=rf.status,
                     recording_start=rf.recording_start,
                     recording_end=rf.recording_end,
-                ))
+                )
+                session.add(target_rec)
                 recordings_count += 1
             if not live_class.recording_url and (rf.play_url or rf.download_url):
                 live_class.recording_url = rf.play_url or rf.download_url
+
+            # Forward video to Vimeo pipeline if configured
+            if rf.file_type == "MP4" and (not live_class.recording_url or "vimeo" not in (live_class.recording_url or "")):
+                try:
+                    from app.vimeo import upload_zoom_recording
+                    vimeo_uri = await upload_zoom_recording({
+                        "download_url": rf.download_url,
+                        "download_token": bearer_token,
+                        "file_name": f"{live_class.title or 'Lecture'} - {live_class.zoom_meeting_id}",
+                    })
+                    if vimeo_uri:
+                        if str(vimeo_uri).startswith("http"):
+                            vimeo_embed_url = str(vimeo_uri)
+                        else:
+                            v_id = str(vimeo_uri).split('/')[-1]
+                            vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
+                        live_class.recording_url = vimeo_embed_url
+                        if target_rec:
+                            target_rec.vimeo_url = vimeo_embed_url
+                            target_rec.play_url = vimeo_embed_url
+                except Exception as v_err:
+                    logging.getLogger(__name__).warning("Vimeo forward note during sync: %s", v_err)
         await session.commit()
 
     if transcript_text:
