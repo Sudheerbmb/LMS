@@ -131,10 +131,11 @@ export function App() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#080A12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: '#FAFAF7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#F59E0B', borderRightColor: '#EA580C', animation: 'spin 0.75s linear infinite', margin: '0 auto 16px', boxShadow: '0 0 20px rgba(245,158,11,0.3)' }} />
-          <p style={{ fontSize: 11, color: '#A7B0C0', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading Acharya Institute LMS...</p>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(0,0,0,0.06)', borderTopColor: '#E8820C', animation: 'spin 0.75s linear infinite', margin: '0 auto 20px', boxShadow: '0 4px 16px rgba(232,130,12,0.15)' }} />
+          <div style={{ fontSize: 18, fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400, color: '#171717', marginBottom: 6 }}>Acharya</div>
+          <p style={{ fontSize: 11, color: '#A3A3A3', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Loading your workspace...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -388,12 +389,15 @@ export function App() {
   return (
     <div
       data-role={user.role}
-      className="min-h-screen w-full flex select-none bg-[#F8F9FA] text-[#17181C]"
       style={{
-        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+        minHeight: '100vh', width: '100%',
+        display: 'flex',
+        background: 'var(--canvas)',
+        color: 'var(--ink)',
+        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
       }}
     >
-      {/* ── Enterprise Sidebar Navigation across all roles ── */}
+      {/* ── Navigation Rail ── */}
       <Sidebar
         user={user}
         notifications={notifications}
@@ -406,8 +410,8 @@ export function App() {
         onLogout={handleLogout}
       />
 
-      {/* ── Main Page Workspace ── */}
-      <main className="flex-1 w-full min-w-0 h-screen overflow-y-auto bg-[#F8F9FA]">
+      {/* ── Main Content Area ── */}
+      <main style={{ flex: 1, minWidth: 0, height: '100vh', overflowY: 'auto', background: 'var(--canvas)' }}>
         {currentTab === 'overview' && (
           <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
         )}

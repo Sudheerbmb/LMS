@@ -19,7 +19,8 @@ import {
   Loader2,
   BookOpen,
   Layers,
-  X
+  X,
+  Sparkles
 } from 'lucide-react'
 
 type AssignmentsPageProps = {
@@ -290,144 +291,336 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
     setGradingInProgress(false)
   }
 
+  const activeAdminCourse = adminCourses.find(c => c.id === selectedCourse)
+
   return (
-    <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-xs">
-              <FileText className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
-              Coursework & Assignments
-            </h1>
+    <div style={{ minHeight: '100vh', background: 'var(--canvas)', fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+      {/* EDITORIAL HERO */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 340px',
+        minHeight: 280,
+        borderBottom: '1px solid var(--border)'
+      }}>
+        <div style={{
+          padding: '40px 48px',
+          background: 'var(--canvas-warm)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--saffron)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            marginBottom: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <Sparkles style={{ width: 14, height: 14 }} />
+            Academic Coursework • Studio Atelier
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
+          <h1 style={{
+            margin: 0,
+            marginBottom: 12,
+            fontSize: 36,
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontWeight: 400,
+            lineHeight: 1.15,
+            color: 'var(--ink)',
+            letterSpacing: '-0.02em'
+          }}>
+            Coursework & proofs,<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--saffron)' }}>rigorously delivered.</em>
+          </h1>
+          <p style={{
+            margin: 0,
+            fontSize: 14,
+            color: 'var(--ink-3)',
+            lineHeight: 1.6,
+            maxWidth: 520
+          }}>
             {isTeacher
-              ? 'Publish homework challenges, review student derivations, and record qualitative feedback.'
-              : 'Submit your solution steps, receive graded feedback, and build your cognitive portfolio.'}
+              ? 'Publish academic challenges, review analytical derivations, and record qualitative formative feedback for your cohort.'
+              : 'Submit structured solution steps, trace faculty revisions, and build your certified cognitive portfolio.'}
           </p>
+        </div>
+
+        <div style={{ position: 'relative', overflow: 'hidden' }}>
+          <img
+            src="/assets/assessment.jpg"
+            alt="Assessments & Coursework"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to right, rgba(247,245,240,0.3) 0%, transparent 40%)'
+          }} />
+        </div>
+      </div>
+
+      {/* FILTER & ACTIONS BAR */}
+      <div style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '24px 48px 0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+          background: 'white',
+          padding: '8px 16px',
+          borderRadius: 14,
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BookOpen style={{ width: 15, height: 15, color: 'var(--saffron)' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-3)' }}>
+              Course
+            </span>
+            <select
+              value={selectedCourse}
+              onChange={(e) => {
+                setSelectedCourse(e.target.value)
+                setSelectedSubjectCode('')
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--ink)',
+                cursor: 'pointer',
+                outline: 'none',
+                padding: '4px 6px'
+              }}
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {activeAdminCourse && activeAdminCourse.subjects && activeAdminCourse.subjects.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 12, borderLeft: '1px solid var(--border)' }}>
+              <Layers style={{ width: 15, height: 15, color: 'var(--ink-2)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-3)' }}>
+                Subject
+              </span>
+              <select
+                value={selectedSubjectCode}
+                onChange={(e) => setSelectedSubjectCode(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  padding: '4px 6px'
+                }}
+              >
+                <option value="">All Subjects</option>
+                {activeAdminCourse.subjects.map(s => (
+                  <option key={s.id} value={s.code}>
+                    {s.code} • {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {isTeacher && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 12,
+              background: 'var(--ink)',
+              color: 'white',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <Plus className="w-4 h-4" />
-            <span>New Assignment</span>
+            <Plus style={{ width: 15, height: 15 }} />
+            New Assignment
           </button>
         )}
       </div>
 
-      {/* Course & Subject Module Filters */}
-      <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-amber-600" />
-          <label className="text-xs uppercase font-bold tracking-wider text-slate-500">Course:</label>
-          <select
-            value={selectedCourse}
-            onChange={(e) => {
-              setSelectedCourse(e.target.value)
-              setSelectedSubjectCode('')
-            }}
-            className="bg-slate-50 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-amber-400"
-          >
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {(() => {
-          const activeAdminCourse = adminCourses.find(c => c.id === selectedCourse)
-          if (!activeAdminCourse || !activeAdminCourse.subjects || activeAdminCourse.subjects.length === 0) return null
-          return (
-            <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
-              <Layers className="w-4 h-4 text-sky-600" />
-              <label className="text-xs uppercase font-bold tracking-wider text-slate-500">Subject:</label>
-              <select
-                value={selectedSubjectCode}
-                onChange={(e) => setSelectedSubjectCode(e.target.value)}
-                className="bg-slate-50 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-amber-400"
-              >
-                <option value="">All Subjects in Course</option>
-                {activeAdminCourse.subjects.map(s => (
-                  <option key={s.id} value={s.code}>
-                    {s.code} - {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )
-        })()}
-      </div>
-
-      {/* Assignments List */}
-      <div className="space-y-4">
+      {/* ASSIGNMENTS LEDGER */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 48px 64px' }}>
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-600 mb-2" />
-            <span>Loading course assignments...</span>
+          <div style={{ padding: '64px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+            <Loader2 style={{ width: 24, height: 24, animation: 'spin 1s linear infinite', margin: '0 auto 12px', color: 'var(--saffron)' }} />
+            <span>Synchronizing coursework data...</span>
           </div>
         ) : assignments.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
-            <FileText className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800">No assignments created yet</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Assignments will appear here for students to submit work and faculty to grade.
+          <div style={{
+            background: 'white',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '48px 24px',
+            textAlign: 'center'
+          }}>
+            <FileText style={{ width: 40, height: 40, color: 'var(--ink-3)', margin: '0 auto 12px', opacity: 0.6 }} />
+            <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>No assignments registered</h3>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>
+              Coursework assignments for this curriculum will appear here once released.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {assignments.map((item) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {assignments.map((item, idx) => {
               const mySub = mySubmissionsMap[item.id]
               return (
                 <div
                   key={item.id}
-                  className="bg-white border border-slate-200 hover:border-amber-300 hover:shadow-md rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs transition-all"
+                  style={{
+                    background: 'white',
+                    border: '1px solid var(--border)',
+                    borderRadius: 16,
+                    padding: '24px 28px',
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                    alignItems: 'center',
+                    gap: 24,
+                    transition: 'all 0.15s ease'
+                  }}
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200 font-mono">
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: 'var(--saffron)',
+                        background: 'var(--saffron-bg)',
+                        padding: '3px 8px',
+                        borderRadius: 6
+                      }}>
+                        Milestone {idx + 1}
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        color: 'var(--ink-2)',
+                        background: 'var(--canvas-warm)',
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        border: '1px solid var(--border)'
+                      }}>
                         Max: {item.max_score} Pts
                       </span>
                       {item.due_date && (
-                        <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
-                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span style={{ fontSize: 12, color: 'var(--ink-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Clock style={{ width: 13, height: 13, color: 'var(--saffron)' }} />
                           Due: {new Date(item.due_date).toLocaleDateString()}
                         </span>
                       )}
                     </div>
 
-                    <h3 className="font-bold text-slate-900 text-base">{item.title}</h3>
-                    <p className="text-slate-600 text-xs line-clamp-2 leading-relaxed">{item.description || item.instructions}</p>
+                    <h3 style={{
+                      margin: '0 0 8px',
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: 'var(--ink)',
+                      letterSpacing: '-0.01em',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif"
+                    }}>
+                      {item.title}
+                    </h3>
+
+                    <p style={{
+                      margin: 0,
+                      fontSize: 13,
+                      color: 'var(--ink-2)',
+                      lineHeight: 1.6,
+                      maxWidth: 780
+                    }}>
+                      {item.description || item.instructions}
+                    </p>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                     {isTeacher ? (
                       <button
                         onClick={() => handleOpenTeacherSubmissions(item)}
-                        className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '10px 16px',
+                          borderRadius: 10,
+                          background: 'var(--canvas-warm)',
+                          border: '1px solid var(--border-med)',
+                          color: 'var(--ink)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
                       >
-                        <Eye className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Review Submissions & Grade</span>
+                        <Eye style={{ width: 14, height: 14, color: 'var(--saffron)' }} />
+                        Review Submissions
                       </button>
                     ) : mySub ? (
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Submitted • Under Review</span>
-                      </span>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 14px',
+                        borderRadius: 10,
+                        background: '#ECFDF5',
+                        border: '1px solid #A7F3D0',
+                        color: '#065F46',
+                        fontSize: 12,
+                        fontWeight: 700
+                      }}>
+                        <CheckCircle2 style={{ width: 14, height: 14 }} />
+                        Submitted • Under Review
+                      </div>
                     ) : (
                       <button
                         onClick={() => setActiveAssignment(item)}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '10px 18px',
+                          borderRadius: 10,
+                          background: 'var(--saffron)',
+                          color: 'var(--ink)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
                       >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Submit Work &rarr;</span>
+                        <Upload style={{ width: 14, height: 14 }} />
+                        Submit Proof &rarr;
                       </button>
                     )}
                   </div>
@@ -438,83 +631,115 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         )}
       </div>
 
-      {/* Create Assignment Modal */}
+      {/* CREATE MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Create New Course Assignment</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
-                <X className="w-4 h-4" />
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 520,
+            width: '100%',
+            padding: 32,
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                Commission New Assignment
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
-            <form onSubmit={handleCreateAssignment} className="space-y-3.5 text-xs">
+
+            <form onSubmit={handleCreateAssignment} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Title *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Title *
+                </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Lab 3: Matrix Transformations"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
+                  placeholder="e.g. Lab 3: Matrix Transformations & Projections"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Subject Tag (Optional)</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Subject Tag (Optional)
+                </label>
                 <input
                   type="text"
                   value={assignmentSubject}
                   onChange={(e) => setAssignmentSubject(e.target.value)}
                   placeholder="e.g. PY-101"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400 font-mono"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', fontFamily: 'monospace' }}
                 />
               </div>
 
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Instructions / Description *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Instructions & Guidelines *
+                </label>
                 <textarea
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detailed guidelines and expected solution format..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400 h-24"
+                  placeholder="Provide rigorous problem context, derivation instructions, and rubrics..."
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', resize: 'vertical' }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Max Score (Points)</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Max Score
+                  </label>
                   <input
                     type="number"
                     value={maxScore}
                     onChange={(e) => setMaxScore(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                   />
                 </div>
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Due Date</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Due Date
+                  </label>
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-semibold cursor-pointer"
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer"
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--ink)', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
                 >
                   Create Assignment
                 </button>
@@ -524,57 +749,82 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         </div>
       )}
 
-      {/* Submit Assignment Modal */}
+      {/* SUBMIT WORK MODAL */}
       {activeAssignment && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 540,
+            width: '100%',
+            padding: 32,
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Submit Solution</h3>
-                <p className="text-xs text-slate-500">{activeAssignment.title}</p>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                  Submit Assignment Solution
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>{activeAssignment.title}</p>
               </div>
-              <button onClick={() => setActiveAssignment(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
-                <X className="w-4 h-4" />
+              <button onClick={() => setActiveAssignment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitWork} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSubmitWork} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Solution Derivation / Steps *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Solution Derivation & Steps *
+                </label>
                 <textarea
                   required
                   value={subContent}
                   onChange={(e) => setSubContent(e.target.value)}
-                  placeholder="Paste your solution steps, mathematical derivation, or code walkthrough here..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-amber-400 h-32"
+                  placeholder="Paste mathematical steps, code walkthrough, or proof derivation here..."
+                  rows={6}
+                  style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'monospace' }}
                 />
               </div>
 
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">GitHub / Cloudinary File URL (Optional)</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Artifact URL (GitHub / Cloudinary, Optional)
+                </label>
                 <input
                   type="url"
                   value={subFileUrl}
                   onChange={(e) => setSubFileUrl(e.target.value)}
-                  placeholder="https://github.com/... or https://res.cloudinary.com/..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
+                  placeholder="https://github.com/..."
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
                 <button
                   type="button"
                   onClick={() => setActiveAssignment(null)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-semibold cursor-pointer"
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer"
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--saffron)', color: 'var(--ink)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
                 >
-                  {submitting ? 'Submitting...' : 'Confirm Submission'}
+                  {submitting ? 'Transmitting...' : 'Confirm Submission'}
                 </button>
               </div>
             </form>
@@ -582,67 +832,128 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         </div>
       )}
 
-      {/* Teacher Grade Submissions Modal */}
+      {/* TEACHER SUBMISSIONS REVIEW MODAL */}
       {gradingAssignment && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 680,
+            width: '100%',
+            padding: 32,
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Review & Grade Submissions</h3>
-                <p className="text-xs text-slate-500">{gradingAssignment.title}</p>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                  Submissions & Qualitative Feedback
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>{gradingAssignment.title}</p>
               </div>
-              <button onClick={() => setGradingAssignment(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
-                <X className="w-4 h-4" />
+              <button onClick={() => setGradingAssignment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
             {loadingSubmissions ? (
-              <div className="py-8 text-center text-xs text-slate-500">
-                <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-600 mb-2" />
-                <span>Loading submissions...</span>
+              <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+                <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite', margin: '0 auto 8px', color: 'var(--saffron)' }} />
+                <span>Fetching student submissions...</span>
               </div>
             ) : submissions.length === 0 ? (
-              <p className="text-xs text-slate-500 py-8 text-center">No student submissions received yet.</p>
+              <p style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'var(--ink-3)' }}>
+                No student submissions uploaded yet.
+              </p>
             ) : (
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {submissions.map((sub) => (
                   <div
                     key={sub.id}
-                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs"
+                    style={{
+                      padding: 18,
+                      borderRadius: 12,
+                      background: 'var(--canvas-warm)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10
+                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">Student Submission ({sub.user_id})</span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          sub.status === 'graded'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
+                        Candidate ID: {sub.user_id}
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background: sub.status === 'graded' ? '#ECFDF5' : 'var(--saffron-bg)',
+                        color: sub.status === 'graded' ? '#065F46' : 'var(--saffron)'
+                      }}>
                         {(sub.status || 'submitted').toUpperCase()} {sub.score !== null && sub.score !== undefined && `• ${sub.score} Pts`}
                       </span>
                     </div>
 
-                    <p className="text-slate-700 bg-white p-3 rounded-lg border border-slate-200 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+                    <div style={{
+                      background: 'white',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      color: 'var(--ink-1)',
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap'
+                    }}>
                       {sub.content}
-                    </p>
+                    </div>
 
                     {sub.feedback && (
-                      <p className="text-[11px] text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-200">
-                        <span className="font-bold">Faculty Feedback:</span> {sub.feedback}
-                      </p>
+                      <div style={{
+                        background: 'var(--saffron-bg)',
+                        border: '1px solid rgba(224, 159, 62, 0.3)',
+                        borderRadius: 8,
+                        padding: 10,
+                        fontSize: 12,
+                        color: 'var(--ink)'
+                      }}>
+                        <strong>Faculty Evaluation:</strong> {sub.feedback}
+                      </div>
                     )}
 
-                    <div className="pt-2 flex justify-end">
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
                       <button
                         onClick={() => {
                           setSelectedSubForGrade(sub)
                           setGradeInput(sub.score || 85)
                           setFeedbackInput(sub.feedback || '')
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs cursor-pointer shadow-xs"
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          background: 'var(--ink)',
+                          color: 'white',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
                       >
-                        {sub.status === 'graded' ? 'Update Grade' : 'Grade Submission'}
+                        {sub.status === 'graded' ? 'Revise Evaluation' : 'Grade Submission'}
                       </button>
                     </div>
                   </div>
@@ -650,44 +961,56 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
               </div>
             )}
 
-            {/* Sub-modal: Input Grade */}
+            {/* SUB-MODAL: INPUT GRADE */}
             {selectedSubForGrade && (
-              <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-3 mt-4 text-xs">
-                <h4 className="font-bold text-slate-900">Award Grade & Feedback</h4>
-                <div className="grid grid-cols-2 gap-3">
+              <div style={{
+                marginTop: 20,
+                padding: 18,
+                borderRadius: 12,
+                background: 'white',
+                border: '2px solid var(--saffron)'
+              }}>
+                <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>
+                  Record Score & Qualitative Notes
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, marginBottom: 12 }}>
                   <div>
-                    <label className="text-slate-700 font-semibold block mb-1">Score (out of {gradingAssignment.max_score})</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                      Score (/ {gradingAssignment.max_score})
+                    </label>
                     <input
                       type="number"
                       max={gradingAssignment.max_score}
                       value={gradeInput}
                       onChange={(e) => setGradeInput(Number(e.target.value))}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900 focus:outline-none focus:border-amber-400"
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                     />
                   </div>
                   <div>
-                    <label className="text-slate-700 font-semibold block mb-1">Qualitative Feedback</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                      Qualitative Feedback
+                    </label>
                     <input
                       type="text"
                       value={feedbackInput}
                       onChange={(e) => setFeedbackInput(e.target.value)}
-                      placeholder="e.g. Excellent algebraic precision!"
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900 focus:outline-none focus:border-amber-400"
+                      placeholder="e.g. Elegant mathematical rigor and correct bounds."
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-1">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <button
                     onClick={() => setSelectedSubForGrade(null)}
-                    className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer"
+                    style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 12 }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleGradeSubmit}
                     disabled={gradingInProgress}
-                    className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold cursor-pointer shadow-xs"
+                    style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--saffron)', color: 'var(--ink)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                   >
                     {gradingInProgress ? 'Saving...' : 'Save Grade'}
                   </button>
@@ -697,6 +1020,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
           </div>
         </div>
       )}
+
     </div>
   )
 }

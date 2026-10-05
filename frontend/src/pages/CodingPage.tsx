@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import type { CodingExercise, Course, User } from '../lib/api'
 import { getCourses, getCodingExercises, createCodingExercise, submitCodingSolution } from '../lib/api'
-import { Code2, Play, Plus, Terminal, CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { Play, Plus, Terminal, CheckCircle2, AlertCircle, X, Sparkles, BookOpen } from 'lucide-react'
 
 type CodingPageProps = {
   user: User
@@ -102,207 +102,481 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
   }
 
   return (
-    <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-xs">
-              <Code2 className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
-              Coding Playground & Sandbox
-            </h1>
+    <div style={{ minHeight: '100vh', background: 'var(--canvas)', fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+      {/* EDITORIAL HERO */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 340px',
+        minHeight: 280,
+        borderBottom: '1px solid var(--border)'
+      }}>
+        <div style={{
+          padding: '40px 48px',
+          background: 'var(--canvas-warm)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--saffron)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            marginBottom: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <Sparkles style={{ width: 14, height: 14 }} />
+            Developer Sandbox • Computational Lab
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
-            Solve algorithms, test code snippets, and receive automated test results.
+          <h1 style={{
+            margin: 0,
+            marginBottom: 12,
+            fontSize: 36,
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontWeight: 400,
+            lineHeight: 1.15,
+            color: 'var(--ink)',
+            letterSpacing: '-0.02em'
+          }}>
+            Algorithms & kernels,<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--saffron)' }}>executed live.</em>
+          </h1>
+          <p style={{
+            margin: 0,
+            fontSize: 14,
+            color: 'var(--ink-3)',
+            lineHeight: 1.6,
+            maxWidth: 520
+          }}>
+            Solve algorithms, test code snippets, and receive automated test results with instant runtime verification.
           </p>
+        </div>
+
+        <div style={{ position: 'relative', overflow: 'hidden' }}>
+          <img
+            src="/assets/coding.jpg"
+            alt="Computational Lab"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to right, rgba(247,245,240,0.3) 0%, transparent 40%)'
+          }} />
+        </div>
+      </div>
+
+      {/* FILTER & ACTIONS BAR */}
+      <div style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '24px 48px 0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          background: 'white',
+          padding: '8px 16px',
+          borderRadius: 14,
+          border: '1px solid var(--border)'
+        }}>
+          <BookOpen style={{ width: 15, height: 15, color: 'var(--saffron)' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-3)' }}>
+            Course
+          </span>
+          <select
+            value={selectedCourseId}
+            onChange={(e) => setSelectedCourseId(e.target.value)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              outline: 'none',
+              padding: '4px 6px'
+            }}
+          >
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         {user.role !== 'student' && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all text-xs sm:text-sm cursor-pointer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 12,
+              background: 'var(--ink)',
+              color: 'white',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <Plus className="w-4 h-4" />
-            <span>New Problem</span>
+            <Plus style={{ width: 15, height: 15 }} />
+            New Problem
           </button>
         )}
       </div>
 
-      {/* Course Filter */}
-      <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-        <label className="text-xs uppercase font-bold tracking-wider text-slate-500">Select Course:</label>
-        <select
-          value={selectedCourseId}
-          onChange={(e) => setSelectedCourseId(e.target.value)}
-          className="bg-slate-50 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-amber-400"
-        >
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* LAB INTERFACE */}
+      <div style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '24px 48px 64px',
+        display: 'grid',
+        gridTemplateColumns: '320px minmax(0, 1fr)',
+        gap: 24
+      }}>
+        {/* EXERCISE ROSTER */}
+        <div style={{
+          background: 'white',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          height: 'fit-content'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Exercises
+            </h3>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'var(--canvas-warm)', color: 'var(--ink-2)', border: '1px solid var(--border)' }}>
+              {exercises.length} Total
+            </span>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Problems Menu */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
-          <h3 className="font-bold text-slate-900 text-sm flex items-center justify-between">
-            <span>Exercises</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">{exercises.length} Total</span>
-          </h3>
-
-          <div className="space-y-2">
-            {exercises.map((ex) => (
-              <button
-                key={ex.id}
-                onClick={() => {
-                  setSelectedEx(ex)
-                  setCode(ex.starter_code || '')
-                  setOutput(null)
-                  setPassed(null)
-                }}
-                className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
-                  selectedEx?.id === ex.id
-                    ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-xs'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <p className="font-bold text-xs sm:text-sm">{ex.title}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5 font-mono">{ex.language}</p>
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {exercises.length === 0 ? (
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-3)', padding: '16px 0', textAlign: 'center' }}>
+                No challenges available for this track.
+              </p>
+            ) : (
+              exercises.map((ex) => {
+                const isActive = selectedEx?.id === ex.id
+                return (
+                  <button
+                    key={ex.id}
+                    onClick={() => {
+                      setSelectedEx(ex)
+                      setCode(ex.starter_code || '')
+                      setOutput(null)
+                      setPassed(null)
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      background: isActive ? 'var(--saffron-bg)' : 'transparent',
+                      border: isActive ? '1px solid var(--saffron)' : '1px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? 'var(--ink)' : 'var(--ink-1)' }}>
+                      {ex.title}
+                    </div>
+                    <div style={{ fontSize: 10, fontFamily: 'monospace', color: isActive ? 'var(--saffron)' : 'var(--ink-3)', marginTop: 4, textTransform: 'uppercase' }}>
+                      {ex.language}
+                    </div>
+                  </button>
+                )
+              })
+            )}
           </div>
         </div>
 
-        {/* Code Editor & Execution Panel */}
-        <div className="lg:col-span-2 space-y-5">
+        {/* WORKBENCH & TERMINAL */}
+        <div>
           {selectedEx ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
-                  {selectedEx.language}
-                </span>
-                <h3 className="text-lg font-bold text-slate-900 mt-2">{selectedEx.title}</h3>
-                <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Problem Statement Card */}
+              <div style={{
+                background: 'white',
+                border: '1px solid var(--border)',
+                borderRadius: 16,
+                padding: '24px 28px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--saffron)',
+                    background: 'var(--saffron-bg)',
+                    padding: '2px 8px',
+                    borderRadius: 6
+                  }}>
+                    {selectedEx.language}
+                  </span>
+                </div>
+                <h2 style={{
+                  margin: '0 0 12px',
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif"
+                }}>
+                  {selectedEx.title}
+                </h2>
+                <div style={{
+                  fontSize: 13,
+                  color: 'var(--ink-2)',
+                  lineHeight: 1.6,
+                  background: 'var(--canvas-warm)',
+                  padding: 16,
+                  borderRadius: 10,
+                  border: '1px solid var(--border)'
+                }}>
                   {selectedEx.prompt}
-                </p>
+                </div>
               </div>
 
               {/* Code Editor */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-slate-600 font-mono font-bold">Solution Editor</label>
+              <div style={{
+                background: '#0d1117',
+                borderRadius: 16,
+                border: '1px solid #30363d',
+                overflow: 'hidden',
+                boxShadow: '0 12px 32px -8px rgba(0,0,0,0.3)'
+              }}>
+                <div style={{
+                  padding: '12px 20px',
+                  background: '#161b22',
+                  borderBottom: '1px solid #30363d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
+                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#8b949e', marginLeft: 8 }}>
+                      solution.{selectedEx.language === 'python' ? 'py' : 'txt'}
+                    </span>
+                  </div>
+
                   <button
                     onClick={handleRunCode}
                     disabled={evaluating}
-                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow-xs text-xs transition-all cursor-pointer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'var(--saffron)',
+                      color: '#0d1117',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
-                    <Play className="w-3.5 h-3.5 fill-current" /> {evaluating ? 'Running...' : 'Run Code'}
+                    <Play style={{ width: 13, height: 13, fill: 'currentColor' }} />
+                    {evaluating ? 'Executing...' : 'Run Kernel'}
                   </button>
                 </div>
 
                 <textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  className="w-full bg-[#111726] border border-slate-800 text-emerald-300 rounded-xl p-4 text-xs font-mono focus:outline-none focus:border-amber-400 h-64 resize-none leading-relaxed"
+                  style={{
+                    width: '100%',
+                    height: 280,
+                    background: '#0d1117',
+                    color: '#e6edf3',
+                    border: 'none',
+                    padding: 20,
+                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, monospace",
+                    lineHeight: 1.6,
+                    resize: 'none',
+                    outline: 'none'
+                  }}
                   spellCheck={false}
                 />
               </div>
 
               {/* Terminal Output */}
               {output && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 font-mono">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-2">
-                      <Terminal className="w-3.5 h-3.5 text-amber-400" /> Terminal Output
+                <div style={{
+                  background: '#090d13',
+                  borderRadius: 14,
+                  border: '1px solid #30363d',
+                  padding: 18,
+                  fontFamily: 'monospace'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #21262d',
+                    paddingBottom: 10,
+                    marginBottom: 12
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#c9d1d9', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Terminal style={{ width: 14, height: 14, color: 'var(--saffron)' }} />
+                      Runtime Console
                     </span>
                     {passed !== null && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
-                        passed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                      }`}>
-                        {passed ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                        {passed ? 'PASSED' : 'FAILED'}
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: passed ? 'rgba(46, 160, 67, 0.2)' : 'rgba(248, 81, 73, 0.2)',
+                        color: passed ? '#3fb950' : '#f85149'
+                      }}>
+                        {passed ? <CheckCircle2 style={{ width: 12, height: 12 }} /> : <AlertCircle style={{ width: 12, height: 12 }} />}
+                        {passed ? 'PASSED TEST SUITE' : 'FAILED CHECKS'}
                       </span>
                     )}
                   </div>
-                  <pre className="text-xs text-slate-200 whitespace-pre-wrap">{output}</pre>
+                  <pre style={{ margin: 0, fontSize: 12, color: '#e6edf3', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {output}
+                  </pre>
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 text-xs shadow-xs">
-              Select an exercise from the list to start coding.
+            <div style={{
+              background: 'white',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              padding: 64,
+              textAlign: 'center',
+              color: 'var(--ink-3)',
+              fontSize: 13
+            }}>
+              Select a coding exercise from the index to begin execution.
             </div>
           )}
         </div>
       </div>
 
-      {/* Create Exercise Modal */}
+      {/* CREATE EXERCISE MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Create Coding Exercise</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-900">
-                <X className="w-4 h-4" />
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 520,
+            width: '100%',
+            padding: 32,
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                Formulate Coding Exercise
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
-            <form onSubmit={handleCreateExercise} className="space-y-3.5 text-xs">
+
+            <form onSubmit={handleCreateExercise} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Title</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Problem Title *
+                </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Reverse Binary Tree"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400"
+                  placeholder="e.g. Invert Binary Tree in Linear Time"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Prompt Instructions</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Prompt & Constraints *
+                </label>
                 <textarea
                   required
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Problem description and expected input/output..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-amber-400 h-20"
+                  placeholder="Describe inputs, outputs, time complexity bounds, and sample cases..."
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', resize: 'vertical' }}
                 />
               </div>
 
               <div>
-                <label className="text-slate-700 font-semibold block mb-1">Starter Code Boilerplate</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Starter Code Template
+                </label>
                 <textarea
                   value={starterCode}
                   onChange={(e) => setStarterCode(e.target.value)}
-                  placeholder="def solution(n): pass"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono text-slate-900 focus:outline-none focus:border-amber-400 h-24"
+                  placeholder="def solve(nums: list[int]) -> int:&#10;    pass"
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 12, outline: 'none', fontFamily: 'monospace' }}
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-semibold cursor-pointer"
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer"
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--ink)', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
                 >
-                  Save Exercise
+                  Publish Exercise
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   )
 }

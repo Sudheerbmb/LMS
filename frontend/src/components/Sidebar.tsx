@@ -24,9 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Flame,
-  Layers,
-  GraduationCap
+  Flame
 } from 'lucide-react'
 
 type SidebarProps = {
@@ -36,27 +34,6 @@ type SidebarProps = {
   setCurrentTab: (tab: string) => void
   onRefreshNotifications?: () => void
   onLogout: () => void
-}
-
-const ROLE_CONFIG: Record<string, { label: string; badgeBg: string; badgeText: string; border: string }> = {
-  admin: {
-    label: 'Administrator',
-    badgeBg: 'bg-amber-50',
-    badgeText: 'text-amber-800',
-    border: 'border-amber-200',
-  },
-  teacher: {
-    label: 'Faculty Member',
-    badgeBg: 'bg-orange-50',
-    badgeText: 'text-orange-800',
-    border: 'border-orange-200',
-  },
-  student: {
-    label: 'Student Scholar',
-    badgeBg: 'bg-yellow-50',
-    badgeText: 'text-yellow-800',
-    border: 'border-yellow-200',
-  },
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -77,78 +54,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [initialNotifications])
 
   const unreadCount = localNotifications.filter((n) => !n.read_at).length
-  const roleCfg = ROLE_CONFIG[user.role] ?? ROLE_CONFIG.student
 
-  const timetableLabel =
-    user.role === 'admin'
-      ? 'Timetable Engine'
-      : user.role === 'teacher'
-      ? 'Faculty Schedule'
-      : 'Batch Timetable'
+  // Dynamic labels per role
+  const timetableLabel = user.role === 'admin' ? 'Timetable Engine' : user.role === 'teacher' ? 'My Schedule' : 'Timetable'
+  const coursesLabel   = user.role === 'teacher' ? 'My Courses' : user.role === 'admin' ? 'Courses' : 'My Courses'
+  const classroomLabel = user.role === 'teacher' ? 'Live Training' : user.role === 'admin' ? 'Live Classrooms' : 'Live Classes'
 
-  const coursesLabel =
-    user.role === 'teacher'
-      ? 'Courses Handled'
-      : user.role === 'admin'
-      ? 'Courses & Subjects'
-      : 'Courses & Roadmap'
-
-  const liveSessionLabel =
-    user.role === 'teacher'
-      ? 'Live Training'
-      : user.role === 'admin'
-      ? 'Live Classrooms'
-      : 'Live Classes'
-
-  const mainNavItems = [
-    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'courses', label: coursesLabel, icon: BookOpen },
-    { id: 'classroom', label: liveSessionLabel, icon: Video },
-    { id: 'timetable', label: timetableLabel, icon: CalendarDays },
+  const learnGroup = [
+    { id: 'overview',   label: 'Home',         icon: LayoutDashboard },
+    { id: 'courses',    label: coursesLabel,    icon: BookOpen },
+    { id: 'classroom',  label: classroomLabel,  icon: Video },
+    { id: 'timetable',  label: timetableLabel,  icon: CalendarDays },
   ]
 
-  const toolNavItems = [
-    ...(user.role !== 'admin'
-      ? [{ id: 'coding', label: 'Coding Playground', icon: Code2 }]
-      : []),
-    ...(user.role !== 'admin'
-      ? [{ id: 'assignments', label: 'Assignments', icon: FileText }]
-      : []),
-    ...(user.role !== 'admin'
-      ? [{ id: 'assessments', label: 'Assessments', icon: CheckSquare }]
-      : []),
-    ...(user.role === 'student'
-      ? [{ id: 'certificates', label: 'Certificates', icon: Award }]
-      : []),
-    ...(user.role === 'admin'
-      ? [{ id: 'admin', label: 'Institute Admin', icon: Users }]
-      : []),
+  const practiceGroup = [
+    ...(user.role !== 'admin' ? [{ id: 'coding',       label: 'Coding Playground', icon: Code2 }] : []),
+    ...(user.role !== 'admin' ? [{ id: 'assignments',   label: 'Assignments',       icon: FileText }] : []),
+    ...(user.role !== 'admin' ? [{ id: 'assessments',   label: 'Assessments',       icon: CheckSquare }] : []),
+  ]
+
+  const progressGroup = [
+    ...(user.role === 'student' ? [{ id: 'certificates', label: 'Certificates', icon: Award }] : []),
+    ...(user.role === 'admin'   ? [{ id: 'admin',         label: 'Institute Admin', icon: Users }] : []),
   ]
 
   const handleDeleteSingle = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     try {
-      setLocalNotifications((prev) => prev.filter((n) => n.id !== id))
+      setLocalNotifications(prev => prev.filter(n => n.id !== id))
       await deleteNotification(id)
       onRefreshNotifications?.()
-    } catch (err) {
-      console.error('Failed to delete notification:', err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleMarkAllRead = async () => {
     setActionLoading(true)
     try {
       await markAllNotificationsRead()
-      setLocalNotifications((prev) =>
-        prev.map((n) => ({ ...n, read_at: new Date().toISOString() }))
-      )
+      setLocalNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })))
       onRefreshNotifications?.()
-    } catch (err) {
-      console.error('Failed to mark notifications read:', err)
-    } finally {
-      setActionLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setActionLoading(false) }
   }
 
   const handleFlushAll = async () => {
@@ -158,277 +104,353 @@ export const Sidebar: React.FC<SidebarProps> = ({
       await flushAllNotifications()
       setLocalNotifications([])
       onRefreshNotifications?.()
-    } catch (err) {
-      console.error('Failed to clear notifications:', err)
-    } finally {
-      setActionLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setActionLoading(false) }
+  }
+
+  const NavItem = ({ item }: { item: { id: string; label: string; icon: React.ElementType } }) => {
+    const Icon = item.icon
+    const isActive = currentTab === item.id
+    return (
+      <button
+        onClick={() => setCurrentTab(item.id)}
+        className={`nav-item ${isActive ? 'active' : ''}`}
+        title={collapsed ? item.label : undefined}
+        style={{ overflow: collapsed ? 'hidden' : 'visible' }}
+      >
+        <Icon
+          style={{
+            width: 16, height: 16, flexShrink: 0,
+            color: isActive ? 'var(--saffron)' : 'var(--ink-3)'
+          }}
+        />
+        {!collapsed && (
+          <span style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {item.label}
+          </span>
+        )}
+      </button>
+    )
   }
 
   return (
     <>
       <aside
-        className={`sticky top-0 h-screen bg-white border-r border-slate-200/80 flex flex-col justify-between transition-all duration-300 z-30 shrink-0 select-none shadow-xs ${
-          collapsed ? 'w-20' : 'w-60'
-        }`}
+        className={`nav-rail ${collapsed ? 'collapsed' : ''}`}
+        style={{ justifyContent: 'space-between' }}
       >
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
-          <div
-            onClick={() => setCurrentTab('overview')}
-            className="flex items-center gap-3 cursor-pointer overflow-hidden group"
-          >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
-              <Flame className="w-5 h-5 fill-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold tracking-tight text-slate-900 truncate">
-                    Acharya LMS
-                  </span>
-                  <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
-                </div>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border w-fit mt-0.5 ${roleCfg.badgeBg} ${roleCfg.badgeText} ${roleCfg.border}`}>
-                  {user.role}
-                </span>
+        {/* ── Brand Header ── */}
+        <div style={{ padding: '20px 14px 12px', borderBottom: '1px solid var(--nav-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <button
+              onClick={() => setCurrentTab('overview')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: 0, overflow: 'hidden', flexShrink: 1, minWidth: 0
+              }}
+            >
+              <div style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                background: 'linear-gradient(135deg, #E8820C 0%, #F59E0B 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(232,130,12,0.3)'
+              }}>
+                <Flame style={{ width: 18, height: 18, color: 'white' }} />
               </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
-            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* Navigation Section */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
-          {/* Main Academics */}
-          <div className="space-y-1">
-            {!collapsed && (
-              <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <Layers className="w-3 h-3" />
-                <span>Academic Modules</span>
-              </p>
-            )}
-            {mainNavItems.map((item) => {
-              const Icon = item.icon
-              const isActive = currentTab === item.id
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer group relative ${
-                    isActive
-                      ? 'bg-amber-50 text-amber-900 border border-amber-200/70 font-bold shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
-                  }`}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-amber-600' : 'text-slate-400 group-hover:text-slate-700'}`} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                  {isActive && !collapsed && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Tools & Workspace */}
-          {toolNavItems.length > 0 && (
-            <div className="space-y-1 pt-3 border-t border-slate-100">
               {!collapsed && (
-                <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <GraduationCap className="w-3 h-3" />
-                  <span>Interactive Tools</span>
-                </p>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 800, color: 'var(--ink)',
+                    letterSpacing: '-0.02em', lineHeight: 1.2,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    Acharya
+                  </div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 600, color: 'var(--saffron)',
+                    letterSpacing: '0.05em', textTransform: 'uppercase'
+                  }}>
+                    {user.role === 'admin' ? 'Admin Console' : user.role === 'teacher' ? 'Teaching Studio' : 'Learning Portal'}
+                  </div>
+                </div>
               )}
-              {toolNavItems.map((item) => {
-                const Icon = item.icon
-                const isActive = currentTab === item.id
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer group relative ${
-                      isActive
-                        ? 'bg-amber-50 text-amber-900 border border-amber-200/70 font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
-                    }`}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-amber-600' : 'text-slate-400 group-hover:text-slate-700'}`} />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                    {isActive && !collapsed && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+            </button>
+
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              style={{
+                width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)',
+                background: 'var(--surface-2)', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--ink-3)'
+              }}
+              title={collapsed ? 'Expand' : 'Collapse'}
+            >
+              {collapsed
+                ? <ChevronRight style={{ width: 13, height: 13 }} />
+                : <ChevronLeft  style={{ width: 13, height: 13 }} />
+              }
+            </button>
+          </div>
         </div>
 
-        {/* User Profile & Actions Footer */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/60 flex flex-col gap-2">
-          {/* Notification Button */}
+        {/* ── Navigation ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+          {/* Learn group */}
+          {!collapsed && <div className="nav-section-label">Learn</div>}
+          {collapsed && <div style={{ height: 12 }} />}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {learnGroup.map(item => <NavItem key={item.id} item={item} />)}
+          </div>
+
+          {/* Practice group */}
+          {practiceGroup.length > 0 && (
+            <>
+              {!collapsed
+                ? <div className="nav-section-label" style={{ marginTop: 20 }}>Practice</div>
+                : <div style={{ height: 16, borderTop: '1px solid var(--border)', margin: '12px 4px' }} />
+              }
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {practiceGroup.map(item => <NavItem key={item.id} item={item} />)}
+              </div>
+            </>
+          )}
+
+          {/* Progress / Admin group */}
+          {progressGroup.length > 0 && (
+            <>
+              {!collapsed
+                ? <div className="nav-section-label" style={{ marginTop: 20 }}>Progress</div>
+                : <div style={{ height: 16, borderTop: '1px solid var(--border)', margin: '12px 4px' }} />
+              }
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {progressGroup.map(item => <NavItem key={item.id} item={item} />)}
+              </div>
+            </>
+          )}
+
+          {/* AI Copilot shortcut */}
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #FFF8EE 0%, #FFFDF8 100%)',
+                border: '1px solid rgba(232, 130, 12, 0.2)',
+                borderRadius: 10, padding: collapsed ? '10px 8px' : '10px 12px',
+                display: 'flex', alignItems: 'center', gap: 8,
+                cursor: 'default'
+              }}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, #F59E0B, #E8820C)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
+              </div>
+              {!collapsed && (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--saffron-d)', letterSpacing: '0.02em' }}>
+                    Ask Acharya
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>AI Learning Assistant</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer: Notifications + Profile ── */}
+        <div style={{ padding: '10px', borderTop: '1px solid var(--nav-border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {/* Notification */}
           <button
             onClick={() => setShowNotifs(!showNotifs)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200 transition cursor-pointer relative shadow-2xs ${
-              showNotifs ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold' : 'bg-white'
-            }`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 10px', borderRadius: 9, border: 'none',
+              background: showNotifs ? 'var(--saffron-bg)' : 'transparent',
+              cursor: 'pointer', color: 'var(--ink-3)', width: '100%',
+              transition: 'background 0.15s ease'
+            }}
             title="Notifications"
           >
-            <div className="relative shrink-0">
-              <Bell className="w-4 h-4 text-slate-500" />
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <Bell style={{ width: 16, height: 16 }} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                <span style={{
+                  position: 'absolute', top: -6, right: -6,
+                  width: 15, height: 15, borderRadius: '50%',
+                  background: '#EF4444', color: 'white',
+                  fontSize: 9, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </div>
             {!collapsed && (
-              <span className="truncate">
-                {unreadCount > 0 ? `${unreadCount} Alerts` : 'Notifications'}
+              <span style={{ fontSize: 12, fontWeight: 500 }}>
+                {unreadCount > 0 ? `${unreadCount} new` : 'Notifications'}
               </span>
             )}
           </button>
 
-          {/* User Profile Card */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
-                {(user.display_name || user.email || 'U')[0].toUpperCase()}
-              </div>
-              {!collapsed && (
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-slate-800 truncate">
-                    {user.display_name || 'Academic User'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 truncate">
-                    {roleCfg.label}
-                  </span>
-                </div>
-              )}
+          {/* Profile */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 8px', borderRadius: 9, background: 'var(--surface-2)'
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+              background: 'linear-gradient(135deg, #E8820C, #F59E0B)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: 11, fontWeight: 800
+            }}>
+              {(user.display_name || user.email || 'U')[0].toUpperCase()}
             </div>
-
             {!collapsed && (
-              <button
-                onClick={onLogout}
-                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                title="Sign Out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              <>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.display_name || 'User'}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)', textTransform: 'capitalize' }}>
+                    {user.role}
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  style={{
+                    padding: 4, borderRadius: 6, border: 'none',
+                    background: 'none', cursor: 'pointer', color: 'var(--ink-muted)',
+                    display: 'flex', alignItems: 'center', flexShrink: 0
+                  }}
+                  title="Sign Out"
+                >
+                  <LogOut style={{ width: 13, height: 13 }} />
+                </button>
+              </>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Notification Drawer Modal */}
+      {/* ── Notification Drawer ── */}
       {showNotifs && (
-        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-start p-4 md:pl-20 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-amber-600" />
-                <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)'
+          }}
+          onClick={() => setShowNotifs(false)}
+        >
+          <div
+            style={{
+              position: 'absolute', left: collapsed ? 76 : 228, top: 16, bottom: 16,
+              width: 360, background: 'white',
+              borderRadius: 16, boxShadow: 'var(--shadow-xl)',
+              border: '1px solid var(--border)',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div style={{
+              padding: '16px 20px', borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Bell style={{ width: 16, height: 16, color: 'var(--saffron)' }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Notifications</span>
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200">
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 99,
+                    background: 'var(--saffron-bg)', color: 'var(--saffron-d)',
+                    fontSize: 11, fontWeight: 700
+                  }}>
                     {unreadCount} new
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {localNotifications.length > 0 && (
                   <>
                     <button
-                      onClick={handleMarkAllRead}
-                      disabled={actionLoading}
-                      className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 transition"
-                      title="Mark all as read"
+                      onClick={handleMarkAllRead} disabled={actionLoading}
+                      style={{ fontSize: 11, fontWeight: 600, color: 'var(--saffron)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}
                     >
-                      <CheckCheck className="w-3.5 h-3.5" />
-                      <span>Read All</span>
+                      <CheckCheck style={{ width: 12, height: 12 }} /> Read all
                     </button>
                     <button
-                      onClick={handleFlushAll}
-                      disabled={actionLoading}
-                      className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition"
-                      title="Clear all notifications"
+                      onClick={handleFlushAll} disabled={actionLoading}
+                      style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Clear</span>
+                      <Trash2 style={{ width: 12, height: 12 }} /> Clear
                     </button>
                   </>
                 )}
                 <button
                   onClick={() => setShowNotifs(false)}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                  style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)' }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: 14, height: 14 }} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 divide-y divide-slate-100">
+            {/* Notification List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
               {localNotifications.length === 0 ? (
-                <div className="p-8 text-center space-y-2">
-                  <Bell className="w-8 h-8 text-slate-300 mx-auto" />
-                  <p className="text-xs font-semibold text-slate-500">No notifications yet</p>
-                  <p className="text-[11px] text-slate-400">Class announcements, timetable alerts, and submissions will appear here.</p>
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <Bell style={{ width: 32, height: 32, color: 'var(--ink-muted)', margin: '0 auto 12px' }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>No notifications</p>
+                  <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
+                    Class updates and announcements will appear here.
+                  </p>
                 </div>
               ) : (
-                localNotifications.map((notif) => (
+                localNotifications.map(notif => (
                   <div
                     key={notif.id}
                     onClick={async () => {
                       if (!notif.read_at) {
                         try {
                           await markNotificationRead(notif.id)
-                          setLocalNotifications((prev) =>
-                            prev.map((n) =>
-                              n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n
-                            )
+                          setLocalNotifications(prev =>
+                            prev.map(n => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n)
                           )
                           onRefreshNotifications?.()
-                        } catch (err) {
-                          console.error(err)
-                        }
+                        } catch (err) { console.error(err) }
                       }
                     }}
-                    className={`p-3 rounded-xl transition cursor-pointer flex items-start justify-between gap-3 ${
-                      !notif.read_at ? 'bg-amber-50/60 border border-amber-100' : 'hover:bg-slate-50'
-                    }`}
+                    style={{
+                      padding: '12px 12px', borderRadius: 10, cursor: 'pointer', marginBottom: 4,
+                      background: !notif.read_at ? 'var(--saffron-bg)' : 'transparent',
+                      border: !notif.read_at ? '1px solid rgba(232,130,12,0.15)' : '1px solid transparent',
+                      display: 'flex', alignItems: 'flex-start', gap: 10,
+                      transition: 'background 0.15s ease'
+                    }}
                   >
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-1.5">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                         {!notif.read_at && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--saffron)', flexShrink: 0 }} />
                         )}
-                        <h4 className="text-xs font-bold text-slate-800 truncate">
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {notif.title}
-                        </h4>
+                        </span>
                       </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">
+                      <p style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {notif.body}
                       </p>
-                      <span className="text-[10px] text-slate-400 block">
-                        {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull; {new Date(notif.created_at).toLocaleDateString()}
+                      <span style={{ fontSize: 10, color: 'var(--ink-muted)', display: 'block', marginTop: 4 }}>
+                        {new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-
                     <button
-                      onClick={(e) => handleDeleteSingle(e, notif.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 rounded-md shrink-0 transition"
-                      title="Delete"
+                      onClick={e => handleDeleteSingle(e, notif.id)}
+                      style={{ padding: 4, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ink-muted)', flexShrink: 0 }}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 style={{ width: 12, height: 12 }} />
                     </button>
                   </div>
                 ))

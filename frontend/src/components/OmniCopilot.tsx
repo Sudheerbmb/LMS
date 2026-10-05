@@ -253,77 +253,132 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
   return (
     <>
       {/* ── Floating AI Trigger Button ────────────────────────────────────────── */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 990 }}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-amber-400"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 20px',
+            borderRadius: 9999,
+            background: 'var(--ink, #1C1917)',
+            color: '#FAF8F5',
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.02em',
+            boxShadow: '0 12px 28px -6px rgba(0, 0, 0, 0.25)',
+            border: '1px solid rgba(224, 159, 62, 0.4)',
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
           title="Ask Acharya AI Assistant"
         >
-          <Sparkles className="w-4 h-4 fill-current" />
+          <Sparkles style={{ width: 14, height: 14, color: 'var(--saffron, #E09F3E)' }} />
           <span>Ask Acharya</span>
         </button>
       </div>
 
       {/* ── Contextual Glass AI Panel ───────────────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom-5 duration-300">
+        <div style={{
+          position: 'fixed',
+          bottom: 76,
+          right: 24,
+          zIndex: 999,
+          width: 380,
+          maxWidth: 'calc(100vw - 32px)',
+          background: 'rgba(255, 255, 255, 0.96)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid var(--border-med, #E7E5E4)',
+          borderRadius: 20,
+          padding: 20,
+          boxShadow: '0 24px 48px -12px rgba(15, 23, 42, 0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          fontFamily: "'Inter', system-ui, sans-serif"
+        }}>
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
-                <Brain className="w-4 h-4" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid var(--border, #F5F5F4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: 'var(--saffron-bg, #FEF3C7)',
+                color: 'var(--saffron, #B45309)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Brain style={{ width: 16, height: 16 }} />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--ink, #1C1917)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>Ask Acharya</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                    AI Copilot
+                  <span style={{ fontSize: 9, fontFamily: 'monospace', padding: '1px 6px', borderRadius: 4, background: 'var(--saffron-bg, #FEF3C7)', color: 'var(--saffron, #B45309)' }}>
+                    Copilot
                   </span>
                 </h3>
-                <p className="text-[10px] text-slate-500">Context: /{currentTab}</p>
+                <p style={{ margin: 0, fontSize: 10, color: 'var(--ink-3, #78716C)' }}>Context: /{currentTab}</p>
               </div>
             </div>
 
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              style={{ background: 'none', border: 'none', color: 'var(--ink-3, #78716C)', cursor: 'pointer', padding: 4 }}
             >
-              <X className="w-4 h-4" />
+              <X style={{ width: 16, height: 16 }} />
             </button>
           </div>
 
           {/* Agent Response Stream */}
           {lastAgentMessage && (
-            <div className="p-3.5 rounded-2xl bg-amber-50/40 border border-amber-200 text-xs text-slate-800 leading-relaxed space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-amber-600" />
-                <span>Copilot Assistant</span>
+            <div style={{
+              padding: 12,
+              borderRadius: 12,
+              background: 'var(--canvas-warm, #FAF8F5)',
+              border: '1px solid var(--border-med, #E7E5E4)',
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: 'var(--ink, #1C1917)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: 'var(--saffron, #B45309)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+                <Sparkles style={{ width: 12, height: 12 }} />
+                <span>Guidance Stream</span>
               </div>
-              <p className="text-slate-700 text-xs leading-relaxed">{lastAgentMessage}</p>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-1, #292524)' }}>{lastAgentMessage}</p>
             </div>
           )}
 
           {/* Action Step-by-Step Visualization */}
           {actionSteps.length > 0 && (
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-[11px] font-mono">
+            <div style={{
+              padding: 10,
+              borderRadius: 10,
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              fontSize: 11,
+              fontFamily: 'monospace',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6
+            }}>
               {actionSteps.map((step: ActionStep, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 text-slate-700">
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {step.status === 'done' ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <CheckCircle2 style={{ width: 14, height: 14, color: '#10B981', flexShrink: 0 }} />
                   ) : step.status === 'restricted' ? (
-                    <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <ShieldAlert style={{ width: 14, height: 14, color: '#EF4444', flexShrink: 0 }} />
                   ) : (
-                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                    <Loader2 style={{ width: 14, height: 14, color: '#F59E0B', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
                   )}
-                  <span
-                    className={
-                      step.status === 'active'
-                        ? 'text-amber-700 font-bold'
-                        : step.status === 'restricted'
-                        ? 'text-rose-700 font-bold'
-                        : ''
-                    }
-                  >
+                  <span style={{
+                    color: step.status === 'active' ? '#B45309' : step.status === 'restricted' ? '#B91C1C' : '#334155',
+                    fontWeight: step.status === 'active' || step.status === 'restricted' ? 700 : 500
+                  }}>
                     {step.text}
                   </span>
                 </div>
@@ -332,49 +387,49 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
           )}
 
           {/* Role-Specific Quick Action Chips */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-3, #78716C)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {isStudent && 'Suggested Actions:'}
-              {isTeacher && 'Faculty Quick Actions:'}
-              {isAdmin && 'Governance Quick Actions:'}
+              {isTeacher && 'Faculty Actions:'}
+              {isAdmin && 'Governance Actions:'}
             </span>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {/* STUDENT CHIPS */}
               {isStudent && (
                 <>
                   <button
                     type="button"
                     onClick={() => handleExecute(`Join my Class ${studentGrade} live class`)}
-                    className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Join Class Lecture
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('What should I study today?')}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Study Plan Today
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Start AutoGen Oral Viva')}
-                    className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     AutoGen Viva
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Open python coding playground')}
-                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Coding Lab
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('View pending assignments')}
-                    className="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Homework Desk
                   </button>
@@ -387,30 +442,30 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
                   <button
                     type="button"
                     onClick={() => handleExecute('Go to live classes and start class for 6th A at 4:45')}
-                    className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Start Live Session
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Launch CrewAI Curriculum Studio')}
-                    className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     CrewAI Studio
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Grade homework desk submissions')}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Grade Submissions
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('View AI timetable and substitution')}
-                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Timetable & Schedule
+                    Timetable
                   </button>
                 </>
               )}
@@ -421,28 +476,28 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
                   <button
                     type="button"
                     onClick={() => handleExecute('Show high risk students across institute')}
-                    className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     High Risk Audit
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Generate master timetable')}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Master Timetable
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Manage organization tenancy')}
-                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Institute Tenancy
                   </button>
                   <button
                     type="button"
                     onClick={() => handleExecute('Launch CrewAI Curriculum Studio')}
-                    className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-[10px] font-semibold transition-all cursor-pointer"
+                    style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--canvas-warm, #FAF8F5)', border: '1px solid var(--border-med, #E7E5E4)', color: 'var(--ink, #1C1917)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     CrewAI Studio
                   </button>
@@ -457,19 +512,22 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
               e.preventDefault()
               handleExecute()
             }}
-            className="flex items-center gap-2 pt-2 border-t border-slate-100"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6, borderTop: '1px solid var(--border, #F5F5F4)' }}
           >
             <button
               type="button"
               onClick={toggleSpeech}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                isListening
-                  ? 'bg-rose-50 border-rose-300 text-rose-700 animate-pulse'
-                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900'
-              }`}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border-med, #E7E5E4)',
+                background: isListening ? '#FEE2E2' : 'var(--canvas-warm, #FAF8F5)',
+                color: isListening ? '#DC2626' : 'var(--ink-3, #78716C)',
+                cursor: 'pointer'
+              }}
               title="Click to speak command"
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening ? <MicOff style={{ width: 14, height: 14 }} /> : <Mic style={{ width: 14, height: 14 }} />}
             </button>
 
             <input
@@ -484,15 +542,32 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
                   ? `e.g. Start class, open studio...`
                   : `e.g. Audit high risk students...`
               }
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-400"
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: '1px solid var(--border-med, #E7E5E4)',
+                background: 'white',
+                fontSize: 12,
+                color: 'var(--ink, #1C1917)',
+                outline: 'none'
+              }}
             />
 
             <button
               type="submit"
               disabled={isProcessing || !query.trim()}
-              className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs disabled:opacity-40 transition cursor-pointer shadow-xs"
+              style={{
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: 'var(--saffron, #E09F3E)',
+                color: 'var(--ink, #1C1917)',
+                border: 'none',
+                cursor: query.trim() && !isProcessing ? 'pointer' : 'not-allowed',
+                opacity: query.trim() && !isProcessing ? 1 : 0.4
+              }}
             >
-              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isProcessing ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
             </button>
           </form>
         </div>
