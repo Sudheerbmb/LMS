@@ -27,7 +27,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -622,16 +622,18 @@ async def get_class_transcript_endpoint(
 @router.get("/classes/{class_id}/video-stream")
 async def get_class_video_stream_endpoint(
     class_id: UUID,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
     """
     Directly streams or redirects to the authenticated MP4 video stream for inline LMS playback.
+    Proxies authenticated Zoom MP4 video directly to browser to eliminate CORS and authentication issues.
     """
     live_class = await session.scalar(select(LiveClass).where(LiveClass.id == class_id))
     if not live_class:
         raise HTTPException(status_code=404, detail="Live class not found")
 
-    # 1. Check ClassRecording table for Vimeo URL or direct MP4 download_url
+    # 1. Check ClassRecording table for Vimeo URL
     rec = await session.scalar(
         select(ClassRecording).where(
             ClassRecording.class_id == class_id,
@@ -641,20 +643,48 @@ async def get_class_video_stream_endpoint(
     if rec and rec.vimeo_url:
         return RedirectResponse(url=rec.vimeo_url)
 
-    if rec and rec.download_url and zoom_service.is_configured():
-        try:
-            bearer_token = await zoom_service.client.auth.get_access_token()
-            separator = "&" if "?" in rec.download_url else "?"
-            return RedirectResponse(url=f"{rec.download_url}{separator}access_token={bearer_token}")
-        except Exception:
-            return RedirectResponse(url=rec.download_url)
-
-    # 2. Check Zoom directly for MP4 stream URL
-    if live_class.zoom_meeting_id and zoom_service.is_configured():
+    # 2. Proxy direct MP4 download stream from Zoom
+    target_download_url = rec.download_url if rec and rec.download_url else None
+    if not target_download_url and live_class.zoom_meeting_id and zoom_service.is_configured():
         from app.integrations.zoom.recordings import zoom_recordings_service
-        mp4_stream = await zoom_recordings_service.get_mp4_video_stream_url(live_class.zoom_meeting_id)
-        if mp4_stream:
-            return RedirectResponse(url=mp4_stream)
+        target_download_url = await zoom_recordings_service.get_mp4_video_stream_url(live_class.zoom_meeting_id)
+
+    if target_download_url and zoom_service.is_configured():
+        try:
+            import httpx
+            bearer_token = await zoom_service.client.auth.get_access_token()
+            req_headers = {"Authorization": f"Bearer {bearer_token}"}
+            range_header = request.headers.get("range")
+            if range_header:
+                req_headers["Range"] = range_header
+
+            client = httpx.AsyncClient(timeout=60.0, follow_redirects=True)
+            upstream_resp = await client.send(
+                client.build_request("GET", target_download_url, headers=req_headers),
+                stream=True,
+            )
+
+            async def iter_video():
+                try:
+                    async for chunk in upstream_resp.aiter_bytes(chunk_size=65536):
+                        yield chunk
+                finally:
+                    await upstream_resp.aclose()
+                    await client.aclose()
+
+            resp_headers = {
+                "Accept-Ranges": "bytes",
+                "Content-Type": upstream_resp.headers.get("Content-Type", "video/mp4"),
+            }
+            if "Content-Length" in upstream_resp.headers:
+                resp_headers["Content-Length"] = upstream_resp.headers["Content-Length"]
+            if "Content-Range" in upstream_resp.headers:
+                resp_headers["Content-Range"] = upstream_resp.headers["Content-Range"]
+
+            status_code = upstream_resp.status_code if upstream_resp.status_code in (200, 206) else 200
+            return StreamingResponse(iter_video(), status_code=status_code, headers=resp_headers)
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Proxy stream error from Zoom: %s", exc)
 
     # 3. Fallback to recording_url
     if live_class.recording_url:
