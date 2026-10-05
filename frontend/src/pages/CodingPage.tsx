@@ -105,11 +105,11 @@ export const CodingPage: React.FC<CodingPageProps> = ({ user }) => {
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <Code2 className="w-7 h-7 text-amber-400" />
+          <h2 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
+            <Code2 className="w-8 h-8 text-amber-400" />
             Coding Playground & Sandbox
           </h2>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-stone-400 text-xs sm:text-sm mt-1 font-light">
             Solve algorithms, test code snippets, and receive automated test results.
           </p>
         </div>

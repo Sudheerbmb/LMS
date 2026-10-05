@@ -643,23 +643,23 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Header Banner - Role Customized */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 p-8 rounded-2xl border border-amber-500/30 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold uppercase tracking-wider shadow-sm">
             {isAdmin && <Sparkles className="w-3.5 h-3.5" />}
             {isTeacher && <GraduationCap className="w-3.5 h-3.5" />}
             {isStudent && <BookOpen className="w-3.5 h-3.5" />}
             {isAdmin ? 'Institute AI Timetable Engine' : isTeacher ? 'Faculty Teaching Schedule' : 'Batch Class Schedule'}
           </div>
 
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
             {isAdmin && 'Batch Schedule & Timetable Engine'}
             {isTeacher && (myTeacherProfile ? `${myTeacherProfile.display_name} - Faculty Schedule` : 'Faculty Teaching Schedule')}
             {isStudent && `${currentGrade?.name || 'Course'} - Weekly Batch Schedule`}
           </h1>
 
-          <p className="text-slate-400 text-sm max-w-2xl">
+          <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
             {isAdmin && 'Automated timetable generator for institute courses with Zoom scheduling integration.'}
             {isTeacher && `Assigned technical lectures across institute batches. Daily maximum workload capped at ${myTeacherProfile?.max_daily_periods || 5} sessions.`}
             {isStudent && 'Your weekly training schedule (09:00 AM - 06:00 PM). Click any session to join Zoom live or submit course feedback.'}

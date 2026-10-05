@@ -334,19 +334,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   Institutional Command Center
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-0.5 rounded-full border border-emerald-500/30">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live Platform Operational
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
                 Welcome, Administrator {user.display_name}
               </h1>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
                 Manage academy operations, trigger autonomous timetable scheduling, oversee faculty assignments, and broadcast institutional announcements.
               </p>
             </div>
@@ -383,18 +383,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="px-3.5 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                   <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
                   Faculty Instructor Desk
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-stone-400">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
                 Welcome back, {user.display_name}
               </h1>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
                 Review your assigned technical batch schedule for today, initiate live Zoom classroom video streams with cloud recording, and manage your students.
               </p>
             </div>
@@ -426,16 +426,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                   <Award className="w-3.5 h-3.5 text-amber-400" />
                   Candidate Training Portal
                 </span>
-                <span className="text-xs text-slate-400">Professional Course Program</span>
+                <span className="text-xs text-stone-400">Professional Course Program</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-editorial tracking-tight text-white font-normal">
                 Hello, {user.display_name}
               </h1>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              <p className="text-stone-300 text-xs sm:text-sm max-w-2xl leading-relaxed font-light">
                 Track your course milestones, attend live Zoom interactive lectures, download faculty learning resources, and review past class recordings.
               </p>
             </div>

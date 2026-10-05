@@ -481,17 +481,16 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
-            <Shield className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-sm">
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
             {isTeacher ? 'Teacher Examination & Security Studio' : `Secure Examination Portal • Enrolled in ${studentEnrolledCourse}`}
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
             {isTeacher ? 'Assessment Scheduling & AI Proctoring' : 'My Scheduled Tests & Security Hub'}
           </h1>
-          <p className="text-slate-400 text-sm max-w-2xl">
+          <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
             {isTeacher
               ? 'Schedule high-precision tests for your institute courses with syllabus-grounded AI generation, code evaluation, and anti-cheat telemetry.'
               : `Access your scheduled examinations for ${studentEnrolledCourse}. One attempt per assessment with active camera and screen security.`}

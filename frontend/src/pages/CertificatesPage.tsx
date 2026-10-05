@@ -65,11 +65,11 @@ export const CertificatesPage: React.FC<CertificatesPageProps> = ({ user }) => {
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-          <Award className="w-7 h-7 text-amber-400" />
+        <h2 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
+          <Award className="w-8 h-8 text-amber-400" />
           Certificates & Credentials
         </h2>
-        <p className="text-slate-400 text-sm mt-1">
+        <p className="text-stone-400 text-xs sm:text-sm mt-1 font-light">
           Issue verifiable course completion certificates and validate student credentials.
         </p>
       </div>

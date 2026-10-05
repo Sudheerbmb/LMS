@@ -314,16 +314,16 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
-            <FileText className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-sm">
+            <FileText className="w-3.5 h-3.5 text-amber-400" />
             {isTeacher ? 'Faculty Coursework Desk & Grading Hub' : 'My Coursework & Assignment Desk'}
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
             Coursework & Assignments
           </h1>
-          <p className="text-slate-400 text-sm max-w-2xl">
+          <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
             {isTeacher
               ? 'Publish homework challenges, review student derivations, and record qualitative feedback.'
               : 'Submit your solution steps, receive graded feedback, and build your cognitive portfolio.'}
@@ -333,7 +333,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         {isTeacher && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all hover:scale-105"
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>New Assignment</span>

@@ -11,6 +11,7 @@ import {
   BookOpen,
   Video,
   CalendarDays,
+  Code2,
   FileText,
   CheckSquare,
   Award,
@@ -110,6 +111,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ]
 
   const toolNavItems = [
+    ...(user.role !== 'admin'
+      ? [{ id: 'coding', label: 'Coding Playground', icon: Code2 }]
+      : []),
     ...(user.role !== 'admin'
       ? [{ id: 'assignments', label: 'Assignments', icon: FileText }]
       : []),

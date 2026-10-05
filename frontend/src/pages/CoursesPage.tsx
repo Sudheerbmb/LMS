@@ -305,13 +305,13 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
       {/* ── Top Header & Actions ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-amber-500/10">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
               {isTeacher ? <Layers className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
             </span>
-            <h1 className="text-2xl font-black text-white tracking-tight">{pageTitle}</h1>
+            <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight">{pageTitle}</h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-3xl">
+          <p className="text-xs sm:text-sm text-stone-400 max-w-3xl font-light leading-relaxed">
             {pageSubtitle}
           </p>
         </div>
