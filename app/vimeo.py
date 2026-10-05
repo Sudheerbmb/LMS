@@ -36,19 +36,17 @@ async def upload_zoom_recording(recording: dict) -> str | None:
 
     async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
         # Stream download into disk chunk-by-chunk to prevent OOM
-        with NamedTemporaryFile(prefix="zoom-recording-", suffix=".mp4", delete=False) as temp_file:
-            temp_path = Path(temp_file.name)
+        temp_file = NamedTemporaryFile(prefix="zoom-recording-", suffix=".mp4", delete=False)
+        temp_path = Path(temp_file.name)
+        try:
             try:
                 async with client.stream("GET", download_url) as stream_resp:
                     stream_resp.raise_for_status()
                     async for chunk in stream_resp.aiter_bytes(chunk_size=65536):
                         temp_file.write(chunk)
-            except Exception as e:
-                logger.error("Failed to stream download Zoom recording: %s", e)
-                temp_path.unlink(missing_ok=True)
-                raise
+            finally:
+                temp_file.close()
 
-        try:
             file_size = temp_path.stat().st_size
             logger.info("Uploading %s (%.2f MB) to Vimeo...", name, file_size / (1024 * 1024))
             
