@@ -84,7 +84,9 @@ import {
 
   Grid,
   Loader2,
-  Trash2
+  Trash2,
+  Search,
+  Play
 } from 'lucide-react'
 
 import {
@@ -951,6 +953,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
   const [filterGrade, setFilterGrade] = useState<number | 'all'>('all')
   const [filterRecordingOnly, setFilterRecordingOnly] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Helper to send WebSocket message safely
 
@@ -6456,138 +6459,241 @@ const handleTriggerTeacherCopilot = async (
   // ==========================================
 
   return (
-
-    <div className="space-y-8 animate-in fade-in duration-300">
-
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-10 animate-in fade-in duration-200">
       {alertMessage && (
-
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-amber-200 text-xs">
-
+        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-amber-900 text-xs">
           <div className="flex items-center gap-2">
-
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{alertMessage}</span>
-
           </div>
-
           <button
-
             onClick={() => setAlertMessage(null)}
-
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-
+            className="p-1 rounded-lg text-amber-700 hover:bg-amber-100"
           >
-
             <X className="w-4 h-4" />
-
           </button>
-
         </div>
-
       )}
 
-      {/* Top Banner Header */}
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 shadow-xl">
-
+      {/* ── 1. MINIMAL HEADER (80-100px) ── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-black/[0.06]">
         <div>
-
-          <div className="flex items-center gap-2 mb-1">
-
-            <span className="p-2 rounded-xl bg-cyan-500/10 text-amber-400 border border-cyan-500/20">
-
-              <Video className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl font-black text-white tracking-tight">Live Interactive Training Sessions</h1>
+          <div className="text-[11px] font-bold text-[#F28C28] tracking-widest uppercase mb-1">
+            Live Classroom
           </div>
-          <p className="text-sm text-slate-400">
-            Enterprise-grade live video training synchronized with batch schedules, interactive screen sharing, AI live transcripts, and technical whiteboard.
+          <h1 className="text-2xl sm:text-3xl font-normal text-neutral-900 tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+            Live sessions and recordings, all in one place.
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+            Synchronized with timetable schedules, Zoom cloud recordings, and AI tutor support.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {user?.role === 'admin' && (
             <button
               onClick={handleFlushAllClasses}
               disabled={flushingClasses}
-              className="px-4 py-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-              title="Flush all live and ended class sessions to test fresh"
+              className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-rose-50 text-neutral-600 hover:text-rose-600 border border-black/[0.06] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              title="Flush all live and ended class sessions"
             >
-              <Trash2 className="w-4 h-4 text-rose-400" />
-              <span>{flushingClasses ? 'Flushing...' : 'Flush Live Classes'}</span>
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{flushingClasses ? 'Flushing...' : 'Flush Sessions'}</span>
             </button>
           )}
 
           {isHost && (
             <button
               onClick={() => setShowScheduleModal(true)}
-              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-[#171717] hover:bg-neutral-800 text-white text-xs font-semibold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
-              <Zap className="w-4 h-4 fill-slate-950" />
-              Launch Instant Live Class
+              <Zap className="w-3.5 h-3.5 text-[#F28C28] fill-[#F28C28]" />
+              <span>Launch Live Class</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── 2. FILTER & SEARCH BAR ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 max-w-md">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search recordings & classes..."
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#F28C28] transition-colors"
+            />
+          </div>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="p-2 text-xs text-neutral-400 hover:text-neutral-700"
+            >
+              Clear
             </button>
           )}
         </div>
 
-      </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <select
+            value={filterGrade}
+            onChange={e => {
+              const val = e.target.value
+              setFilterGrade(val === 'all' ? 'all' : (val as any))
+              if (val !== 'all') {
+                const crs = availableCourses.find(c => String(c.id) === val || c.slug === val)
+                if (crs) setSelectedCourseSlug(crs.slug)
+              }
+            }}
+            className="px-3 py-2 rounded-xl bg-white border border-black/[0.08] text-xs font-medium text-neutral-700 focus:outline-none focus:border-[#F28C28] cursor-pointer"
+          >
+            <option value="all">All Courses ({classes.length})</option>
+            {availableCourses.map(crs => (
+              <option key={crs.id} value={crs.id}>
+                {crs.title}
+              </option>
+            ))}
+          </select>
 
-      {/* Dynamic Course Filter Tabs & Recording Switcher */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {isStudent && availableCourses.length > 0 && (
-          <span className="px-3 py-2 rounded-xl text-xs font-black bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            Enrolled: {availableCourses[0].title}
-          </span>
-        )}
-        <button
-          onClick={() => { setFilterGrade('all'); setFilterRecordingOnly(false); }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            filterGrade === 'all' && !filterRecordingOnly
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          All Modules ({classes.length})
-        </button>
-        <button
-          onClick={() => setFilterRecordingOnly(prev => !prev)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-            filterRecordingOnly
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
-              : 'bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30'
-          }`}
-        >
-          <Video className="w-3.5 h-3.5 text-amber-400" />
-          <span>Watch Recordings ({classes.filter(c => !!c.recording_url || c.status === 'ended').length})</span>
-        </button>
-        {availableCourses.map((crs) => (
           <button
-            key={crs.id}
-            onClick={() => { setSelectedCourseSlug(crs.slug); setFilterGrade(crs.id as any); setFilterRecordingOnly(false); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              filterGrade === (crs.id as any) && !filterRecordingOnly
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            onClick={() => setFilterRecordingOnly(prev => !prev)}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0 ${
+              filterRecordingOnly
+                ? 'bg-[#F28C28] text-white shadow-sm'
+                : 'bg-white text-neutral-600 hover:text-neutral-900 border border-black/[0.08]'
             }`}
           >
-            {crs.title.length > 28 ? crs.title.substring(0, 26) + '...' : crs.title}
+            <Video className="w-3.5 h-3.5" />
+            <span>Recordings ({classes.filter(c => !!c.recording_url || c.status === 'ended').length})</span>
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* Live & Scheduled Classes Grid (Subject-Wise Grouped) */}
+      {/* ── 3. UP NEXT (HORIZONTAL SESSION ROW) ── */}
+      {(() => {
+        const upcomingClasses = classes.filter(cls => {
+          if (cls.status === 'ended') return false
+          if (filterGrade !== 'all') {
+            const targetCourse = availableCourses.find(c => String(c.id) === String(filterGrade) || c.slug === String(filterGrade))
+            if (targetCourse) {
+              const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
+              const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
+              const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
+              const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
+                               (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
+              return titleMatch || subMatch || cls.course_id === targetCourse.id
+            }
+          }
+          return true
+        })
+
+        if (upcomingClasses.length === 0) {
+          return null
+        }
+
+        return (
+          <div className="space-y-3">
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+              Up Next
+            </div>
+            <div className="space-y-2.5">
+              {upcomingClasses.map(cls => {
+                const isLive = cls.status === 'live'
+                const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name || 'A'}`
+                const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
+                const cleanSubject = cls.subject_name || 'Technical Module'
+
+                return (
+                  <div
+                    key={cls.id}
+                    className={`p-5 rounded-2xl bg-white border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      isLive
+                        ? 'border-red-200 shadow-sm bg-gradient-to-r from-red-50/40 via-white to-white'
+                        : 'border-black/[0.06] hover:border-black/[0.12]'
+                    }`}
+                  >
+                    <div className="flex items-start md:items-center gap-4">
+                      {/* Time / Live indicator */}
+                      <div className="shrink-0">
+                        {isLive ? (
+                          <div className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span>LIVE NOW</span>
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold">
+                            {cls.starts_at ? new Date(cls.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Scheduled'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="text-base font-semibold text-neutral-900 leading-snug">
+                          {cleanTitle}
+                        </h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          {cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'Faculty'} &bull; {cleanSubject} &bull; {cleanBatch}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                      {isHost && isLive && (
+                        <button
+                          onClick={() => handleEndClassDirectly(cls.id)}
+                          className="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          End Class
+                        </button>
+                      )}
+
+                      {isHost && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteClass(cls.id)
+                          }}
+                          className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Delete class session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleJoinClass(cls)}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+                          isLive
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-[#171717] hover:bg-neutral-800 text-white'
+                        }`}
+                      >
+                        <span>{isLive ? 'Join class →' : isHost ? 'Start class →' : 'Join class →'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── 4. RECENT RECORDINGS & CATALOG ── */}
       <div className="space-y-8">
         {loading ? (
-          <div className="py-16 text-center text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-amber-400 mb-3" />
-            <p className="text-sm font-semibold">Loading live classes & recordings...</p>
+          <div className="py-20 text-center text-neutral-400">
+            <RefreshCw className="w-7 h-7 animate-spin mx-auto text-[#F28C28] mb-3" />
+            <p className="text-xs font-medium">Loading classroom recordings...</p>
           </div>
         ) : (() => {
-          const filtered = classes.filter(cls => {
-            if (filterRecordingOnly) return !!cls.recording_url || cls.status === 'ended'
+          let filtered = classes.filter(cls => {
+            if (filterRecordingOnly && !(cls.recording_url || cls.status === 'ended')) return false
             if (filterGrade !== 'all') {
-              const targetCourse = availableCourses.find(c => c.id === (filterGrade as any) || c.slug === (filterGrade as any))
+              const targetCourse = availableCourses.find(c => String(c.id) === String(filterGrade) || c.slug === String(filterGrade))
               if (targetCourse) {
                 const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
                 const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
@@ -6600,207 +6706,157 @@ const handleTriggerTeacherCopilot = async (
             return true
           })
 
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase()
+            filtered = filtered.filter(c =>
+              c.title.toLowerCase().includes(q) ||
+              (c.subject_name && c.subject_name.toLowerCase().includes(q)) ||
+              (c.teacher_name && c.teacher_name.toLowerCase().includes(q)) ||
+              (c.section_name && c.section_name.toLowerCase().includes(q))
+            )
+          }
+
           if (filtered.length === 0) {
             return (
-              <div className="py-16 text-center rounded-3xl bg-slate-900/50 border border-amber-500/15">
-                <Calendar className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-                <h3 className="text-base font-bold text-slate-300">
-                  {filterRecordingOnly ? 'No Subject Recordings Found' : 'No Live Classes Scheduled'}
+              <div className="py-16 text-center rounded-2xl bg-white border border-black/[0.06] p-8">
+                <Calendar className="w-10 h-10 mx-auto text-neutral-300 mb-3" />
+                <h3 className="text-sm font-semibold text-neutral-800">
+                  {filterRecordingOnly ? 'No Recordings Found' : 'No Classes Scheduled'}
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
                   {isHost
-                    ? 'Click "Schedule / Launch Class" above to create an instant session or schedule from your timetable.'
-                    : 'Check back when your instructors launch their scheduled live sessions.'}
+                    ? 'Click "Launch Live Class" above to start an instant video session or broadcast from your timetable.'
+                    : 'Check back when your instructors launch their live sessions or upload recordings.'}
                 </p>
               </div>
             )
           }
 
-          // Group by Subject
+          // Group by Subject/Course
           const groups: Record<string, typeof filtered> = {}
           filtered.forEach(cls => {
-            const key = cls.subject_name || cls.subject_code || 'General Technical Modules'
+            const key = cls.subject_name || cls.subject_code || 'Technical Modules'
             if (!groups[key]) groups[key] = []
             groups[key].push(cls)
           })
 
           return Object.entries(groups).map(([subjName, subjClasses]) => (
             <div key={subjName} className="space-y-4">
-              {/* Subject Group Header */}
-              <div className="flex items-center justify-between p-4 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-[#0B0F19] border border-amber-500/20 shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold shadow-inner">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white flex items-center gap-2">
-                      <span>{subjName}</span>
-                      {subjClasses[0]?.subject_code && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 border border-slate-700">
-                          {subjClasses[0].subject_code}
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-[11px] text-slate-400">
-                      {subjClasses.length} {subjClasses.length === 1 ? 'Class Session / Recording' : 'Class Sessions / Recordings'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/25">
-                    {subjClasses.filter(c => c.status === 'live').length > 0
-                      ? `🔴 ${subjClasses.filter(c => c.status === 'live').length} Live Now`
-                      : `${subjClasses.filter(c => !!c.recording_url || c.status === 'ended').length} Recorded`}
+              {/* Clean Subject Heading (Typography, not container) */}
+              <div className="flex items-baseline justify-between pt-2">
+                <div className="flex items-baseline gap-2">
+                  <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
+                    {subjName}
+                  </h2>
+                  <span className="text-xs text-neutral-400 font-normal">
+                    &bull; {subjClasses.length} {subjClasses.length === 1 ? 'recording' : 'recordings'}
                   </span>
                 </div>
+                <button
+                  onClick={() => {
+                    const match = availableCourses.find(c => c.subjects?.some(s => s.name === subjName || s.code === subjName))
+                    if (match) {
+                      setFilterGrade(match.id as any)
+                      setSelectedCourseSlug(match.slug)
+                    }
+                  }}
+                  className="text-xs font-semibold text-[#F28C28] hover:underline"
+                >
+                  View all →
+                </button>
               </div>
 
-              {/* Subject Class Cards Grid */}
+              {/* 3-Column Media Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {subjClasses.map(cls => {
                   const isLive = cls.status === 'live'
                   const isEnded = cls.status === 'ended'
-                  const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name}`
+                  const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name || 'A'}`
                   const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
-                  const cleanSubject = cls.subject_name || 'Technical Module'
 
                   return (
                     <div
                       key={cls.id}
-                      className={`rounded-3xl border p-5 flex flex-col justify-between transition-all hover:shadow-2xl ${
-                        isLive
-                          ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/30 border-cyan-500/40 shadow-cyan-500/10'
-                          : 'bg-slate-900 border-slate-800'
-                      }`}
+                      onClick={() => {
+                        if (cls.recording_url) {
+                          setSelectedRecordingUrl(cls.recording_url)
+                          setSelectedRecordingClass(cls)
+                        } else if (isLive || !isEnded) {
+                          handleJoinClass(cls)
+                        }
+                      }}
+                      className="group flex flex-col justify-between bg-white rounded-2xl border border-black/[0.06] p-3.5 hover:border-black/[0.14] hover:shadow-sm transition-all cursor-pointer"
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                            {cls.subject_code ? `${cls.subject_code} • ${cleanBatch}` : cleanBatch}
-                          </span>
-
-                          <div className="flex items-center gap-2">
-                            {isLive && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
-                                <Radio className="w-3 h-3 text-red-500" />
-                                LIVE NOW
-                              </span>
-                            )}
-
-                            {isEnded && (
-                              <span className="text-[11px] font-medium text-slate-500">Ended</span>
-                            )}
-
-                            {!isLive && !isEnded && (
-                              <span className="text-[11px] font-medium text-amber-400">Scheduled</span>
-                            )}
-
-                            {isHost && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteClass(cls.id)
-                                }}
-                                className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                                title="Delete class session"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                        {/* 16:9 Thumbnail Box */}
+                        <div className="aspect-video w-full rounded-xl bg-neutral-100 relative overflow-hidden mb-3">
+                          <img
+                            src="/assets/classroom.jpg"
+                            alt={cleanTitle}
+                            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-white/95 shadow-md flex items-center justify-center text-neutral-900 transition-transform group-hover:scale-110">
+                              <Play className="w-4 h-4 fill-current ml-0.5 text-neutral-900" />
+                            </div>
                           </div>
-                        </div>
 
-                        <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{cleanTitle}</h3>
-                        <p className="text-xs text-slate-400 mb-4">{cleanSubject} &bull; Period {cls.period_number || 1}</p>
-
-                        <div className="space-y-1.5 text-xs text-slate-300 mb-6 bg-slate-950/40 p-3 rounded-2xl border border-slate-800">
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Instructor:</span>
-                            <span className="font-semibold text-white">{cls.teacher_name || 'Assigned Faculty'}</span>
+                          {/* Duration / Status overlay */}
+                          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-mono font-medium backdrop-blur-sm">
+                            {isLive ? 'LIVE' : isEnded ? '45 min' : 'Scheduled'}
                           </div>
-                          {cls.room_number && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Campus Venue:</span>
-                              <span className="font-semibold text-white">{cls.room_number}</span>
+
+                          {cls.subject_code && (
+                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-white/90 text-neutral-800 text-[10px] font-bold shadow-sm">
+                              {cls.subject_code}
                             </div>
                           )}
                         </div>
 
-                        {cls.zoom_meeting_id && (
-                          <div className="mt-3 p-2 rounded-xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 text-blue-300">
-                              <Video className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                              <span className="font-semibold">Zoom ID:</span>
-                              <span className="font-mono text-white tracking-wider">{cls.zoom_meeting_id}</span>
-                            </div>
-                            {cls.zoom_password && (
-                              <div className="text-[10px] text-slate-400">
-                                Pass: <span className="font-mono text-white font-bold">{cls.zoom_password}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        {/* Card Info */}
+                        <h4 className="text-sm font-semibold text-neutral-900 group-hover:text-[#F28C28] transition-colors line-clamp-1">
+                          {cleanTitle}
+                        </h4>
+                        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                          {cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'Faculty'} &bull; {cleanBatch}
+                        </p>
                       </div>
 
-                      <div className="mt-4">
+                      {/* Card Action Link */}
+                      <div className="mt-3 pt-2.5 border-t border-black/[0.04] flex items-center justify-between">
                         {cls.recording_url ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => { setSelectedRecordingUrl(cls.recording_url!); setSelectedRecordingClass(cls); }}
-                              className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-                            >
-                              <Video className="w-4 h-4 text-white" />
-                              <span>Watch Zoom Recording</span>
-                            </button>
-                          </div>
+                          <span className="text-xs font-semibold text-[#F28C28] inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            Watch recording →
+                          </span>
                         ) : isEnded ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSyncClassRecording(cls)}
-                              disabled={syncingRecordingId === cls.id}
-                              className="flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 cursor-pointer"
-                              title="Fetch recording from Zoom Cloud"
-                            >
-                              <RefreshCw className={`w-4 h-4 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
-                              <span>{syncingRecordingId === cls.id ? 'Syncing...' : '🔄 Sync / Play Zoom Recording'}</span>
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSyncClassRecording(cls)
+                            }}
+                            disabled={syncingRecordingId === cls.id}
+                            className="text-xs font-semibold text-teal-600 hover:underline flex items-center gap-1"
+                          >
+                            <RefreshCw className={`w-3 h-3 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
+                            <span>{syncingRecordingId === cls.id ? 'Syncing...' : 'Sync Zoom recording'}</span>
+                          </button>
                         ) : (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleJoinClass(cls)}
-                              disabled={isEnded}
-                              className={`flex-1 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                                isEnded
-                                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                  : isLive
-                                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 hover:scale-[1.02] active:scale-95'
-                                  : isHost
-                                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 hover:scale-[1.02] active:scale-95'
-                                  : 'bg-slate-800 hover:bg-slate-700 text-white'
-                              }`}
-                            >
-                              <Video className="w-4 h-4" />
-                              <span>
-                                {isLive
-                                  ? 'Join Zoom Meeting'
-                                  : isHost
-                                  ? 'Start Zoom Class'
-                                  : 'Join Zoom Meeting'}
-                              </span>
-                            </button>
+                          <span className="text-xs font-semibold text-neutral-900 inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            {isLive ? 'Join live session →' : 'Join class →'}
+                          </span>
+                        )}
 
-                            {isLive && isHost && (
-                              <button
-                                onClick={() => handleEndClassDirectly(cls.id)}
-                                className="px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                                title="Conclude live lecture"
-                              >
-                                <span>End Class</span>
-                              </button>
-                            )}
-                          </div>
+                        {isHost && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteClass(cls.id)
+                            }}
+                            className="p-1 rounded-lg text-neutral-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Delete session"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -6812,49 +6868,47 @@ const handleTriggerTeacherCopilot = async (
         })()}
       </div>
 
-      {/* SCHEDULE MODAL */}
-
+      {/* ── 5. MINIMAL SCHEDULE MODAL ── */}
       {showScheduleModal && (
-
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-black/[0.08] rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-150 text-neutral-900">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-400 fill-amber-400" />
-                Launch Instant Live Class
+              <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#F28C28] fill-[#F28C28]" />
+                Launch Live Class
               </h2>
               <button
                 onClick={() => setShowScheduleModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-lg font-bold cursor-pointer"
+                className="text-neutral-400 hover:text-neutral-700 text-lg font-bold cursor-pointer"
               >
                 &times;
               </button>
             </div>
-            <p className="text-xs text-slate-400 mb-4">
-              Start an instant live Zoom video lecture. Status will immediately sync across student timetables.
+            <p className="text-xs text-neutral-500 mb-5">
+              Start an instant live Zoom video lecture. Status automatically syncs with student timetables.
             </p>
 
             {/* Mode Switcher */}
-            <div className="grid grid-cols-2 gap-2 mb-4 p-1 rounded-2xl bg-slate-900 border border-slate-800">
+            <div className="grid grid-cols-2 gap-1.5 mb-4 p-1 rounded-xl bg-neutral-100">
               <button
                 type="button"
                 onClick={() => setScheduleMode('instant')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   scheduleMode === 'instant'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-900'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>Instant Subject Module</span>
+                <span>Instant Module</span>
               </button>
               <button
                 type="button"
                 onClick={() => setScheduleMode('timetable')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   scheduleMode === 'timetable'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-900'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -6872,25 +6926,25 @@ const handleTriggerTeacherCopilot = async (
 
                 return (
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Select Assigned Timetable Slot to Broadcast Now:
+                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                      Select Assigned Timetable Slot:
                     </label>
                     {allSlots.length === 0 ? (
-                      <div className="text-xs text-amber-300 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20 space-y-1.5">
-                        <p className="font-bold">No timetable slots assigned yet.</p>
-                        <p className="text-[11px] text-slate-400">
-                          Switch to <strong>Instant Subject Module</strong> tab above to launch an instant lecture for any course module.
+                      <div className="text-xs text-amber-900 bg-amber-50 p-3 rounded-xl border border-amber-200">
+                        <p className="font-semibold">No timetable slots assigned yet.</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">
+                          Switch to <strong>Instant Module</strong> to broadcast any subject.
                         </p>
                       </div>
                     ) : (
                       <select
                         value={selectedSlotIndex}
                         onChange={e => setSelectedSlotIndex(Number(e.target.value))}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
                       >
                         {allSlots.map((s, idx) => (
                           <option key={idx} value={idx}>
-                            {s.day_of_week} Period {s.period_number} &bull; {s.subject_name} ({s.start_time} - {s.end_time}, Batch {s.section_name})
+                            {s.day_of_week} P{s.period_number} &bull; {s.subject_name} ({s.start_time} - {s.end_time}, Batch {s.section_name})
                           </option>
                         ))}
                       </select>
@@ -6898,11 +6952,11 @@ const handleTriggerTeacherCopilot = async (
                   </div>
                 )
               })() : (
-                <div className="space-y-3 p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/20">
+                <div className="space-y-3 p-3.5 rounded-xl bg-neutral-50 border border-black/[0.06]">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                        Select Course
+                      <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                        Course
                       </label>
                       <select
                         value={selectedCourseSlug || availableCourses[0]?.slug || ''}
@@ -6923,7 +6977,7 @@ const handleTriggerTeacherCopilot = async (
                             }
                           }
                         }}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
                       >
                         {availableCourses.map((c) => (
                           <option key={c.id} value={c.slug}>
@@ -6933,24 +6987,24 @@ const handleTriggerTeacherCopilot = async (
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                        Cohort / Batch
+                      <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                        Batch
                       </label>
                       <select
                         value={instantSection}
                         onChange={e => setInstantSection(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
                       >
-                        <option value="Batch-01">Batch-01 (Morning Session)</option>
-                        <option value="Batch-02">Batch-02 (Evening Session)</option>
-                        <option value="Weekend Batch">Weekend Intensive</option>
+                        <option value="Batch-01">Batch-01</option>
+                        <option value="Batch-02">Batch-02</option>
+                        <option value="Weekend Batch">Weekend Batch</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                      Technical Subject Module
+                    <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                      Subject Module
                     </label>
                     <select
                       value={instantSubjectCode || availableSubjectsForCourse[0]?.code || ''}
@@ -6960,7 +7014,7 @@ const handleTriggerTeacherCopilot = async (
                         const found = availableSubjectsForCourse.find(s => s.code === code)
                         if (found) setInstantSubject(found.name)
                       }}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
                     >
                       {availableSubjectsForCourse.map((s) => (
                         <option key={s.id || s.code} value={s.code}>
@@ -6973,33 +7027,33 @@ const handleTriggerTeacherCopilot = async (
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Session Topic / Title (Optional)
+                <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  Session Topic (Optional)
                 </label>
                 <input
                   type="text"
                   value={customTitle}
                   onChange={e => setCustomTitle(e.target.value)}
-                  placeholder="e.g. Chapter 4: Live Discussion, Lab Practice & Q&A"
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  placeholder="e.g. Chapter 4: Live Discussion & Lab Practice"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-black/[0.1] text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-500 hover:text-neutral-800 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingSchedule}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#171717] hover:bg-neutral-800 text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <Video className="w-4 h-4 fill-slate-950" />
-                  <span>{submittingSchedule ? 'Provisioning Zoom Stream...' : '🚀 Launch Live Zoom Classroom Broadcast'}</span>
+                  <Video className="w-3.5 h-3.5 text-[#F28C28]" />
+                  <span>{submittingSchedule ? 'Launching Zoom...' : 'Launch Zoom Classroom'}</span>
                 </button>
               </div>
             </form>
