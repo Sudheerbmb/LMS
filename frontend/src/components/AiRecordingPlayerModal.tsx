@@ -14,7 +14,7 @@ import {
   AlignLeft,
   Copy
 } from 'lucide-react'
-import { askClassAiDoubt, getClassAiSummary, getClassTranscript } from '../lib/api'
+import { askClassAiDoubt, getClassAiSummary, getClassTranscript, getApiBaseUrl } from '../lib/api'
 import type { ClassAiSummaryData, AgentAction } from '../lib/api'
 
 export interface ClassInfo {
@@ -70,6 +70,12 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   }
 
   const isZoom = !!(recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('zoomgov.com')))
+  const isDirectVideo = !!(recordingUrl && (
+    recordingUrl.includes('.mp4') ||
+    recordingUrl.includes('.webm') ||
+    recordingUrl.includes('cloudinary.com') ||
+    recordingUrl.startsWith('blob:')
+  ))
   const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript'>('doubt')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputQuery, setInputQuery] = useState('')
@@ -93,7 +99,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   const classSubject = classInfo?.subject || classInfo?.subject_name || 'Academic Class'
   const classGrade = classInfo?.grade_number || classInfo?.grade || ''
   const classId = classInfo?.id || 'demo_class_id'
-  const authenticatedEmbedUrl = `/api/v1/classroom/classes/${classId}/video-embed`
+  const backendStreamUrl = classInfo?.id ? `${getApiBaseUrl()}/api/v1/classroom/classes/${classId}/video-stream` : ''
 
   useEffect(() => {
     const greeting: ChatMessage = {
@@ -216,16 +222,18 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={recordingUrl || authenticatedEmbedUrl}
-              target="_blank"
-              rel="noreferrer"
-              title="Open video in new tab"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 shadow-xs transition"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
-              <span>{isVimeo ? 'Open Vimeo' : 'Open Video'}</span>
-            </a>
+            {recordingUrl && (
+              <a
+                href={recordingUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Open video in new tab"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 shadow-xs transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
+                <span>{isVimeo ? 'Open Vimeo' : isZoom ? 'Open Zoom' : 'Open Video'}</span>
+              </a>
+            )}
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
@@ -242,14 +250,48 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
           <div className="lg:col-span-7 flex flex-col bg-slate-950 overflow-y-auto">
             <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
-              {(isVimeo || isZoom) && (authenticatedEmbedUrl || vimeoEmbedUrl) ? (
+              {isVimeo && vimeoEmbedUrl ? (
                 <iframe
-                  src={isVimeo ? (vimeoEmbedUrl || recordingUrl) : authenticatedEmbedUrl}
-                  title={isVimeo ? "Vimeo Recording Player" : "Cloud Recording Video"}
+                  src={vimeoEmbedUrl}
+                  title="Vimeo Recording Player"
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   allowFullScreen
                 />
+              ) : isDirectVideo ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                  src={recordingUrl}
+                >
+                  Your browser does not support HTML5 video playback.
+                </video>
+              ) : isZoom ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 p-6 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center shadow-lg">
+                    <Video className="w-8 h-8 text-[#FF7A18]" />
+                  </div>
+                  <div className="max-w-md space-y-1.5">
+                    <h3 className="text-base font-bold text-white">Zoom Cloud Recording</h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      This lecture recording is securely hosted on Zoom Cloud. You can open and stream it in a new tab or use our interactive AI Doubt Solver & Lecture Notes on the right.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <a
+                      href={recordingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF7A18] to-[#FF9138] hover:from-[#EA6C0A] hover:to-[#FF7A18] text-white font-bold text-xs shadow-md shadow-[#FF7A18]/25 flex items-center gap-2 transition hover:scale-[1.02] cursor-pointer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Watch on Zoom Cloud →</span>
+                    </a>
+                  </div>
+                </div>
               ) : (
                 <video
                   ref={videoRef}
@@ -257,7 +299,7 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
                   autoPlay
                   playsInline
                   className="w-full h-full object-contain"
-                  src={recordingUrl?.endsWith('.mp4') ? recordingUrl : `/api/v1/classroom/classes/${classId}/video-stream`}
+                  src={backendStreamUrl || recordingUrl}
                   onError={(e) => {
                     const target = e.currentTarget
                     if (recordingUrl && target.src !== recordingUrl) {
