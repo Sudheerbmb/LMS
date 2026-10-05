@@ -481,16 +481,16 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-[#FFF5EE] via-[#FFF0E6] to-[#F5EEFF] p-8 rounded-3xl border border-black/[0.06] shadow-xs relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-sm">
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold uppercase tracking-wider shadow-xs">
+            <Shield className="w-3.5 h-3.5 text-[#FF7A18]" />
             {isTeacher ? 'Teacher Examination & Security Studio' : `Secure Examination Portal • Enrolled in ${studentEnrolledCourse}`}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-serif text-[#111827] tracking-tight flex items-center gap-3">
             {isTeacher ? 'Assessment Scheduling & AI Proctoring' : 'My Scheduled Tests & Security Hub'}
           </h1>
-          <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
+          <p className="text-[#64748B] text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
             {isTeacher
               ? 'Schedule high-precision tests for your institute courses with syllabus-grounded AI generation, code evaluation, and anti-cheat telemetry.'
               : `Access your scheduled examinations for ${studentEnrolledCourse}. One attempt per assessment with active camera and screen security.`}
@@ -506,7 +506,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                 setQuestionItems([])
                 setDocumentContent('')
               }}
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-3 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-[#FF7A18]/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Schedule New Test</span>
@@ -517,13 +517,13 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
       {/* Tabs */}
       {isTeacher && (
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+        <div className="flex items-center gap-2 border-b border-black/[0.06] pb-2">
           <button
             onClick={() => setActiveTab('assessments')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'assessments'
-                ? 'bg-cyan-500/20 text-amber-400 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]'
+                : 'text-[#64748B] hover:text-[#111827]'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -531,10 +531,10 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
           </button>
           <button
             onClick={() => setActiveTab('submissions')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'submissions'
-                ? 'bg-cyan-500/20 text-amber-400 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]'
+                : 'text-[#64748B] hover:text-[#111827]'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -547,18 +547,18 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
       {activeTab === 'assessments' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-base flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-400" />
+            <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+              <Award className="w-4 h-4 text-[#FF7A18]" />
               {isTeacher ? 'Active & Scheduled Tests Across Classes' : `Examinations for ${studentEnrolledCourse}`}
             </h3>
-            <span className="text-xs text-slate-400 font-mono">Total: {assessmentsList.length} Tests</span>
+            <span className="text-xs text-[#64748B] font-mono">Total: {assessmentsList.length} Tests</span>
           </div>
 
           {assessmentsList.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-slate-900/50 border border-slate-800 space-y-3">
-              <BookOpen className="w-12 h-12 text-slate-600 mx-auto" />
-              <h4 className="text-white font-bold">No Scheduled Assessments Found</h4>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <div className="p-12 text-center rounded-3xl bg-white border border-black/[0.06] space-y-3 shadow-xs">
+              <BookOpen className="w-12 h-12 text-[#94A3B8] mx-auto" />
+              <h4 className="text-[#111827] font-bold">No Scheduled Assessments Found</h4>
+              <p className="text-xs text-[#64748B] max-w-sm mx-auto">
                 {isTeacher
                   ? 'Click "Schedule New Test" to create an AI-powered or custom test for your students.'
                   : `There are currently no scheduled tests for ${studentEnrolledCourse}. Check back shortly!`}
@@ -574,62 +574,62 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                 return (
                   <div
                     key={asmt.id}
-                    className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between space-y-4 shadow-xl relative overflow-hidden group"
+                    className="p-6 rounded-3xl bg-white border border-black/[0.06] hover:border-[#FF7A18]/40 transition-all flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md relative overflow-hidden group"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-amber-400 border border-cyan-500/20">
+                        <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-lg bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]">
                           {asmt.target_grade} &bull; {asmt.subject}
                         </span>
                         {isCompleted ? (
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1">
                             <FileCheck className="w-3 h-3" />
                             Completed ({pastSub?.score_percent}%)
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase flex items-center gap-1">
-                            <Shield className="w-3 h-3" />
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 uppercase flex items-center gap-1">
+                            <Shield className="w-3 h-3 text-amber-500" />
                             Proctored
                           </span>
                         )}
                       </div>
 
                       <div>
-                        <h4 className="text-base font-bold text-white group-hover:text-yellow-300 transition-colors">
+                        <h4 className="text-base font-bold text-[#111827] group-hover:text-[#FF7A18] transition-colors">
                           {asmt.title}
                         </h4>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{asmt.description}</p>
+                        <p className="text-xs text-[#64748B] mt-1 line-clamp-2">{asmt.description}</p>
                       </div>
 
-                      <div className="p-3 rounded-2xl bg-slate-950/80 border border-amber-500/15 space-y-1.5 text-xs text-slate-300">
+                      <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] space-y-1.5 text-xs text-[#334155]">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500">Topic:</span>
-                          <span className="font-semibold text-slate-200">{asmt.topic_syllabus}</span>
+                          <span className="text-[#64748B]">Topic:</span>
+                          <span className="font-semibold text-[#111827]">{asmt.topic_syllabus}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500">Duration:</span>
-                          <span className="font-mono text-amber-400">{asmt.duration_minutes} Mins</span>
+                          <span className="text-[#64748B]">Duration:</span>
+                          <span className="font-mono font-bold text-[#FF7A18]">{asmt.duration_minutes} Mins</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500">Passing Score:</span>
-                          <span className="font-mono text-emerald-400">{asmt.passing_score}%</span>
+                          <span className="text-[#64748B]">Passing Score:</span>
+                          <span className="font-mono font-bold text-emerald-600">{asmt.passing_score}%</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500">Questions:</span>
-                          <span className="font-mono text-slate-200">{totalQs} Items ({asmt.total_points} Pts)</span>
+                          <span className="text-[#64748B]">Questions:</span>
+                          <span className="font-mono text-[#334155]">{totalQs} Items ({asmt.total_points} Pts)</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-amber-500/15 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-black/[0.04] flex items-center justify-between gap-2">
                       {isTeacher ? (
                         <>
-                          <div className="text-[11px] text-slate-400">
-                            Submissions: <strong className="text-white font-mono">{asmt.submissions_count}</strong>
+                          <div className="text-[11px] text-[#64748B]">
+                            Submissions: <strong className="text-[#111827] font-mono">{asmt.submissions_count}</strong>
                           </div>
                           <button
                             onClick={() => handleDelete(asmt.id)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            className="p-2 rounded-xl text-[#94A3B8] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -637,7 +637,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                       ) : isCompleted ? (
                         <button
                           onClick={() => setViewingPastSubmission(pastSub)}
-                          className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                          className="w-full py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-emerald-700 border border-emerald-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                         >
                           <Eye className="w-4 h-4" />
                           <span>View Completed Submission ({pastSub?.score_percent}%)</span>
@@ -645,7 +645,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                       ) : (
                         <button
                           onClick={() => handleStartTest(asmt)}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-cyan-500/10 hover:scale-105"
+                          className="w-full py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[#FF7A18]/25 hover:scale-[1.02] cursor-pointer"
                         >
                           <Shield className="w-4 h-4" />
                           <span>Start Proctored Exam &rarr;</span>
@@ -662,71 +662,71 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
       {/* ── Submissions & Anti-Cheat Audit Tab (For Teachers) ───────────────── */}
       {isTeacher && activeTab === 'submissions' && (
-        <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 space-y-4">
+        <div className="bg-white border border-black/[0.06] rounded-3xl p-6 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Users className="w-4 h-4 text-amber-400" />
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#FF7A18]" />
                 Live Student Test Submissions & Anti-Cheat Audit Telemetry
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#64748B]">
                 Live inspection of student submissions, cognitive state adjustments, and automated proctoring violation alerts.
               </p>
             </div>
           </div>
 
           {submissionsList.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">No submissions recorded yet.</div>
+            <div className="p-8 text-center text-xs text-[#64748B]">No submissions recorded yet.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-2xl border border-black/[0.06]">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[11px]">
-                    <th className="pb-3">Student & Grade</th>
-                    <th className="pb-3">Assessment Title</th>
-                    <th className="pb-3 text-center">Score</th>
-                    <th className="pb-3 text-center">Security Status</th>
-                    <th className="pb-3 text-center">Violations</th>
-                    <th className="pb-3 text-right">Timestamp</th>
+                  <tr className="bg-[#FAF9F6] border-b border-black/[0.06] text-[#64748B] font-bold uppercase tracking-wider text-[11px]">
+                    <th className="p-3.5">Student & Grade</th>
+                    <th className="p-3.5">Assessment Title</th>
+                    <th className="p-3.5 text-center">Score</th>
+                    <th className="p-3.5 text-center">Security Status</th>
+                    <th className="p-3.5 text-center">Violations</th>
+                    <th className="p-3.5 text-right">Timestamp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-black/[0.04]">
                   {submissionsList.map((sub) => (
-                    <tr key={sub.submission_id} className="hover:bg-slate-850/50 transition-colors">
-                      <td className="py-3">
-                        <div className="font-semibold text-white">{sub.student_name}</div>
-                        <div className="text-[10px] text-amber-400 font-mono">{sub.student_grade}</div>
+                    <tr key={sub.submission_id} className="hover:bg-neutral-50/60 transition-colors">
+                      <td className="p-3.5">
+                        <div className="font-semibold text-[#111827]">{sub.student_name}</div>
+                        <div className="text-[10px] text-[#FF7A18] font-mono">{sub.student_grade}</div>
                       </td>
-                      <td className="py-3 text-slate-300 font-medium">{sub.assessment_title}</td>
-                      <td className="py-3 text-center font-mono font-bold text-sm">
+                      <td className="p-3.5 text-[#334155] font-medium">{sub.assessment_title}</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-sm">
                         {sub.cheated ? (
-                          <span className="text-rose-400 font-black">0% (DQ)</span>
+                          <span className="text-rose-600 font-black">0% (DQ)</span>
                         ) : (
-                          <span className="text-emerald-400">{sub.score_percent}%</span>
+                          <span className="text-emerald-600">{sub.score_percent}%</span>
                         )}
                       </td>
-                      <td className="py-3 text-center">
+                      <td className="p-3.5 text-center">
                         {sub.cheated ? (
-                          <span className="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-extrabold text-[10px] flex items-center gap-1 justify-center">
+                          <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-extrabold text-[10px] flex items-center gap-1 justify-center">
                             <AlertTriangle className="w-3 h-3" />
                             FLAGGED CHEATING
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             PASSED SECURE
                           </span>
                         )}
                       </td>
-                      <td className="py-3 text-center">
+                      <td className="p-3.5 text-center">
                         {sub.cheated ? (
-                          <div className="text-[10px] text-rose-300 max-w-xs truncate mx-auto" title={sub.cheating_reasons?.join('; ')}>
+                          <div className="text-[10px] text-rose-700 max-w-xs truncate mx-auto" title={sub.cheating_reasons?.join('; ')}>
                             {sub.violation_count} Strikes: {sub.cheating_reasons?.[0] || 'Tab switch'}
                           </div>
                         ) : (
-                          <span className="text-slate-500 text-[10px]">0 Infractions</span>
+                          <span className="text-[#94A3B8] text-[10px]">0 Infractions</span>
                         )}
                       </td>
-                      <td className="py-3 text-right text-slate-500 text-[10px] font-mono">
+                      <td className="p-3.5 text-right text-[#64748B] text-[10px] font-mono">
                         {new Date(sub.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                     </tr>
@@ -740,21 +740,21 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
       {/* ── Teacher Create Assessment Modal ──────────────────────────────────── */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-amber-400 font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center text-[#FF7A18] font-bold">
                   <CheckSquare className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">Schedule New Class Assessment</h3>
-                  <p className="text-xs text-slate-400">Configure target grade, subject, timing window, and question sets</p>
+                  <h3 className="font-bold text-[#111827] text-base">Schedule New Class Assessment</h3>
+                  <p className="text-xs text-[#64748B]">Configure target grade, subject, timing window, and question sets</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-white text-xl p-1"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl p-1 cursor-pointer font-bold"
               >
                 &times;
               </button>
@@ -765,7 +765,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                 {/* Course & Subject Selector */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">Select Course:</label>
+                    <label className="text-xs font-bold text-[#334155]">Select Course:</label>
                     <select
                       value={selectedCourseSlug || activeCourse?.slug || ''}
                       onChange={(e) => {
@@ -785,7 +785,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                           }
                         }
                       }}
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                     >
                       {availableCourses.map((c) => (
                         <option key={c.id} value={c.slug}>
@@ -796,11 +796,11 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">Technical Module / Subject:</label>
+                    <label className="text-xs font-bold text-[#334155]">Technical Module / Subject:</label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                     >
                       {activeCourseSubjects.length === 0 ? (
                         <option value="">No subjects assigned</option>
@@ -817,31 +817,31 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                 {/* Topic Syllabus */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Topic / Syllabus Focus:</label>
+                  <label className="text-xs font-bold text-[#334155]">Topic / Syllabus Focus:</label>
                   <input
                     type="text"
                     value={topicSyllabus}
                     onChange={(e) => setTopicSyllabus(e.target.value)}
                     placeholder="e.g. Quadratic Equations, Photosynthesis, Fractions..."
-                    className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
 
                 {/* Title & Description */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Assessment Title:</label>
+                  <label className="text-xs font-bold text-[#334155]">Assessment Title:</label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder={`e.g. ${targetGrade} ${subject}: Diagnostic Benchmark`}
-                    className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
 
                 {/* Timing Window & Scheduling Options */}
-                <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-3">
-                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] space-y-3">
+                  <div className="text-xs font-bold text-[#FF7A18] uppercase tracking-wider flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5" />
                     Scheduling & Timing Options
                   </div>
@@ -856,10 +856,10 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                         key={opt.id}
                         type="button"
                         onClick={() => setScheduleType(opt.id as any)}
-                        className={`p-2 rounded-xl text-xs font-medium border transition-all ${
+                        className={`p-2.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                           scheduleType === opt.id
-                            ? 'bg-cyan-500/20 border-cyan-500 text-white font-bold'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-[#FFF3EA] border-[#FFDEC4] text-[#FF7A18] font-bold'
+                            : 'bg-white border-black/[0.08] text-[#64748B] hover:text-[#111827]'
                         }`}
                       >
                         {opt.label}
@@ -870,21 +870,21 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                   {scheduleType !== 'ALWAYS_AVAILABLE' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                       <div>
-                        <label className="text-[11px] text-slate-400">Start Time:</label>
+                        <label className="text-[11px] font-bold text-[#334155]">Start Time:</label>
                         <input
                           type="datetime-local"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
-                          className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white mt-1"
+                          className="w-full bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827] mt-1"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-400">End Time / Deadline:</label>
+                        <label className="text-[11px] font-bold text-[#334155]">End Time / Deadline:</label>
                         <input
                           type="datetime-local"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
-                          className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white mt-1"
+                          className="w-full bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827] mt-1"
                         />
                       </div>
                     </div>
@@ -892,21 +892,21 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div>
-                      <label className="text-[11px] text-slate-400">Duration (Minutes):</label>
+                      <label className="text-[11px] font-bold text-[#334155]">Duration (Minutes):</label>
                       <input
                         type="number"
                         value={durationMinutes}
                         onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                        className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white mt-1"
+                        className="w-full bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827] mt-1"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400">Passing Score (%):</label>
+                      <label className="text-[11px] font-bold text-[#334155]">Passing Score (%):</label>
                       <input
                         type="number"
                         value={passingScore}
                         onChange={(e) => setPassingScore(Number(e.target.value))}
-                        className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white mt-1"
+                        className="w-full bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827] mt-1"
                       />
                     </div>
                   </div>
@@ -920,7 +920,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                     }
                     setCreateStep('questions')
                   }}
-                  className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                  className="w-full py-3 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[#FF7A18]/25 cursor-pointer"
                 >
                   <span>Proceed to Question Paper Design</span>
                   <ArrowRight className="w-4 h-4" />
@@ -929,7 +929,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
             ) : (
               <div className="space-y-6">
                 {/* Question Creation Modes Selector */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
                   <div className="flex gap-2">
                     {[
                       { id: 'AI', label: 'AI Auto-Generate (Groq LPU)', icon: Sparkles },
@@ -940,10 +940,10 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                         key={mode.id}
                         type="button"
                         onClick={() => setCreationMode(mode.id as any)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                           creationMode === mode.id
-                            ? 'bg-cyan-500 text-slate-950 shadow'
-                            : 'bg-[#0B0F19] border border-amber-500/15 text-slate-400 hover:text-white'
+                            ? 'bg-[#FF7A18] text-white shadow-xs'
+                            : 'bg-[#FAF9F6] border border-black/[0.08] text-[#64748B] hover:text-[#111827]'
                         }`}
                       >
                         <mode.icon className="w-3.5 h-3.5" />
@@ -954,7 +954,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                   <button
                     onClick={() => setCreateStep('details')}
-                    className="text-xs text-slate-400 hover:text-white"
+                    className="text-xs text-[#64748B] hover:text-[#111827] font-semibold cursor-pointer"
                   >
                     &larr; Back to Details
                   </button>
@@ -962,13 +962,13 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                 {/* AI Generate View */}
                 {creationMode === 'AI' && (
-                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-amber-500/15 text-center space-y-4">
-                    <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
+                  <div className="p-6 rounded-3xl bg-[#FAF9F6] border border-black/[0.06] text-center space-y-4">
+                    <Sparkles className="w-8 h-8 text-[#FF7A18] mx-auto" />
                     <div className="space-y-1">
-                      <h4 className="font-bold text-white text-sm">
+                      <h4 className="font-bold text-[#111827] text-sm">
                         Synthesize Deeply Calibrated Examination Items for {targetGrade} {subject}
                       </h4>
-                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                      <p className="text-xs text-[#64748B] max-w-md mx-auto">
                         Groq Cloud LPU will generate high-precision mathematical derivations, scientific mechanisms, and misconception distractors for "{topicSyllabus}".
                       </p>
                     </div>
@@ -977,7 +977,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                       type="button"
                       disabled={isGeneratingAI}
                       onClick={handleAIGenerate}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 mx-auto disabled:opacity-50 transition-all hover:scale-105"
+                      className="px-6 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center justify-center gap-2 mx-auto disabled:opacity-50 transition-all shadow-md shadow-[#FF7A18]/25 cursor-pointer"
                     >
                       {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       <span>{isGeneratingAI ? 'Synthesizing Rigorous Items...' : 'Generate 5 Examination Questions with AI'}</span>
@@ -988,11 +988,11 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                 {/* PDF Drop View with Content Parsing */}
                 {creationMode === 'PDF' && (
                   <div className="space-y-3">
-                    <div className="p-6 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 hover:border-cyan-500/50 text-center space-y-3 transition-colors cursor-pointer">
-                      <Upload className="w-8 h-8 text-slate-500 mx-auto" />
+                    <div className="p-6 rounded-3xl bg-[#FAF9F6] border-2 border-dashed border-black/[0.12] hover:border-[#FF7A18]/50 text-center space-y-3 transition-colors cursor-pointer">
+                      <Upload className="w-8 h-8 text-[#94A3B8] mx-auto" />
                       <div className="space-y-1">
-                        <h4 className="font-bold text-white text-sm">Upload & Parse Syllabus Notes or Question Bank</h4>
-                        <p className="text-xs text-slate-400">
+                        <h4 className="font-bold text-[#111827] text-sm">Upload & Parse Syllabus Notes or Question Bank</h4>
+                        <p className="text-xs text-[#64748B]">
                           {pdfFileName ? `Parsed File: ${pdfFileName}` : 'Select a PDF, DOCX, or text file to extract exam questions with AI'}
                         </p>
                       </div>
@@ -1011,7 +1011,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                             reader.readAsText(file)
                           }
                         }}
-                        className="text-xs text-slate-400 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500 file:text-slate-950 hover:file:bg-cyan-400 cursor-pointer"
+                        className="text-xs text-[#64748B] file:mr-4 file:py-1.5 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#FF7A18] file:text-white hover:file:bg-[#EA6C0A] cursor-pointer"
                       />
                     </div>
 
@@ -1020,7 +1020,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                         type="button"
                         disabled={isGeneratingAI}
                         onClick={handleAIGenerate}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                        className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                       >
                         {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                         <span>Extract & Generate Questions from {pdfFileName}</span>
@@ -1031,34 +1031,34 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                 {/* Manual Builder View */}
                 {creationMode === 'MANUAL' && (
-                  <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-3">
-                    <div className="text-xs font-bold text-white">Add Individual Question</div>
+                  <div className="p-5 rounded-3xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
+                    <div className="text-xs font-bold text-[#111827]">Add Individual Question</div>
                     <input
                       type="text"
                       value={manQText}
                       onChange={(e) => setManQText(e.target.value)}
                       placeholder="Enter question text (e.g. Solve 2x² - 7x + 3 = 0)..."
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-white border border-black/[0.08] rounded-2xl px-3 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                     />
 
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="text-[10px] text-slate-400">Question Type:</label>
+                        <label className="text-[10px] font-bold text-[#64748B]">Question Type:</label>
                         <select
                           value={manQType}
                           onChange={(e) => setManQType(e.target.value as any)}
-                          className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-2 py-1.5 text-xs text-white mt-1"
+                          className="w-full bg-white border border-black/[0.08] rounded-xl px-2.5 py-2 text-xs text-[#111827] mt-1"
                         >
                           <option value="multiple_choice">Multiple Choice (MCQ)</option>
                           <option value="descriptive">Descriptive / Problem Solving</option>
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] text-slate-400">Cognitive Level:</label>
+                        <label className="text-[10px] font-bold text-[#64748B]">Cognitive Level:</label>
                         <select
                           value={manLevel}
                           onChange={(e) => setManLevel(e.target.value as any)}
-                          className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-2 py-1.5 text-xs text-white mt-1"
+                          className="w-full bg-white border border-black/[0.08] rounded-xl px-2.5 py-2 text-xs text-[#111827] mt-1"
                         >
                           <option value="FOUNDATION">FOUNDATION</option>
                           <option value="APPLICATION">APPLICATION</option>
@@ -1067,19 +1067,19 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] text-slate-400">Points:</label>
+                        <label className="text-[10px] font-bold text-[#64748B]">Points:</label>
                         <input
                           type="number"
                           value={manPoints}
                           onChange={(e) => setManPoints(Number(e.target.value))}
-                          className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-2 py-1.5 text-xs text-white mt-1"
+                          className="w-full bg-white border border-black/[0.08] rounded-xl px-2.5 py-2 text-xs text-[#111827] mt-1"
                         />
                       </div>
                     </div>
 
                     {manQType === 'multiple_choice' && (
                       <div className="space-y-2 pt-2">
-                        <label className="text-[10px] text-slate-400 font-bold">Options (Select correct radio):</label>
+                        <label className="text-[10px] text-[#64748B] font-bold">Options (Select correct radio):</label>
                         {manOptions.map((opt, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <input
@@ -1087,6 +1087,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                               name="correct_radio"
                               checked={manCorrect === idx}
                               onChange={() => setManCorrect(idx)}
+                              className="accent-[#FF7A18]"
                             />
                             <input
                               type="text"
@@ -1097,7 +1098,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                                 setManOptions(next)
                               }}
                               placeholder={`Option ${idx + 1}...`}
-                              className="flex-1 bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white"
+                              className="flex-1 bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827]"
                             />
                           </div>
                         ))}
@@ -1107,7 +1108,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                     <button
                       type="button"
                       onClick={handleAddManualQuestion}
-                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs"
+                      className="px-4 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-[#111827] font-bold text-xs cursor-pointer"
                     >
                       + Add to Question Paper
                     </button>
@@ -1116,27 +1117,27 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
                 {/* Display Current Question Paper */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold">
+                  <div className="flex items-center justify-between text-xs text-[#64748B] font-bold">
                     <span>Configured Questions ({questionItems.length}):</span>
                     <span>Total Points: {questionItems.reduce((a, b) => a + b.points, 0)} Pts</span>
                   </div>
 
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {questionItems.map((q, idx) => (
-                      <div key={q.id} className="p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15 flex items-start justify-between gap-3 text-xs">
+                      <div key={q.id} className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] flex items-start justify-between gap-3 text-xs">
                         <div>
-                          <div className="font-semibold text-white">
+                          <div className="font-semibold text-[#111827]">
                             {idx + 1}. {q.question_text}
                           </div>
-                          <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-900 text-amber-400">{q.question_type}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-slate-900 text-amber-400">{q.cognitive_level}</span>
+                          <div className="text-[10px] text-[#64748B] mt-1 flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-white border border-black/[0.06] text-[#FF7A18] font-bold">{q.question_type}</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white border border-black/[0.06] text-[#FF7A18] font-bold">{q.cognitive_level}</span>
                             <span>{q.points} Pts</span>
                           </div>
                         </div>
                         <button
                           onClick={() => setQuestionItems(questionItems.filter((item) => item.id !== q.id))}
-                          className="text-slate-500 hover:text-rose-400 p-1"
+                          className="text-[#94A3B8] hover:text-rose-600 p-1 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1145,18 +1146,18 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/[0.06]">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                    className="px-4 py-2 rounded-xl text-xs text-[#64748B] hover:text-[#111827] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handlePublishAssessment}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                    className="px-6 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-[#FF7A18]/25 cursor-pointer"
                   >
                     <CheckCircle className="w-4 h-4" />
                     <span>Publish Assessment to {targetGrade}</span>
@@ -1170,37 +1171,37 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
       {/* ── View Completed Submission Modal ──────────────────────────────────── */}
       {viewingPastSubmission && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center font-bold">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center font-bold">
               <CheckCircle className="w-8 h-8" />
             </div>
             <div className="space-y-1">
-              <h4 className="text-xl font-bold text-white">{viewingPastSubmission.assessment_title}</h4>
-              <p className="text-xs text-slate-400">
+              <h4 className="text-xl font-bold text-[#111827]">{viewingPastSubmission.assessment_title}</h4>
+              <p className="text-xs text-[#64748B]">
                 Submitted on {new Date(viewingPastSubmission.submitted_at).toLocaleString()}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-2">
-              <div className="text-3xl font-black text-emerald-400 font-mono">
+            <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] space-y-2">
+              <div className="text-3xl font-black text-emerald-600 font-mono">
                 {viewingPastSubmission.score_percent}%
               </div>
-              <div className="text-xs text-slate-300">
+              <div className="text-xs text-[#334155]">
                 Earned {viewingPastSubmission.total_points_earned} of {viewingPastSubmission.max_points} Points
               </div>
-              <p className="text-xs text-slate-400 pt-2 border-t border-amber-500/15">
+              <p className="text-xs text-[#64748B] pt-2 border-t border-black/[0.04]">
                 {viewingPastSubmission.feedback}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950 text-xs text-slate-400">
+            <div className="p-3 rounded-2xl bg-neutral-100 text-xs text-[#64748B]">
               <strong>Single-Attempt Policy:</strong> Assessment completed. Results have been recorded in your LENS state vector.
             </div>
 
             <button
               onClick={() => setViewingPastSubmission(null)}
-              className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+              className="w-full py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs cursor-pointer"
             >
               Close Summary
             </button>
@@ -1210,16 +1211,16 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
       {/* ── Student Taking Proctored Test Modal with Live HUD ────────────────── */}
       {takingTest && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between p-6 animate-in fade-in select-none">
+        <div className="fixed inset-0 z-50 bg-[#FAF9F6] flex flex-col justify-between p-6 animate-in fade-in select-none">
           {/* Top Proctoring Security Bar */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-black/[0.06] pb-4 bg-white p-4 rounded-3xl shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-amber-400 font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center text-[#FF7A18] font-bold">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">{takingTest.title}</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="font-bold text-[#111827] text-base">{takingTest.title}</h3>
+                <p className="text-xs text-[#64748B]">
                   Question {currentQIndex + 1} of {currentQuestions.length} &bull; Security Level: SECURE PROCTORED
                 </p>
               </div>
@@ -1227,16 +1228,16 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
             {/* Live Camera Feed & Status HUD */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-xs text-slate-300">
-                <Camera className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] text-xs text-[#334155]">
+                <Camera className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
                 <span>Cam Active</span>
-                <span className="text-slate-600">|</span>
-                <Mic className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-neutral-300">|</span>
+                <Mic className="w-3.5 h-3.5 text-[#FF7A18]" />
                 <span>Mic: {micVolumeLevel}%</span>
               </div>
 
               {/* Live Picture-in-Picture Video */}
-              <div className="w-24 h-16 rounded-xl bg-black border border-cyan-500/40 overflow-hidden relative shadow-lg">
+              <div className="w-24 h-16 rounded-xl bg-neutral-900 border border-[#FF7A18]/40 overflow-hidden relative shadow-md">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -1250,7 +1251,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
               </div>
 
               <div className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 ${
-                violationCount > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                violationCount > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               }`}>
                 <Shield className="w-3.5 h-3.5" />
                 <span>Strikes: {violationCount}/3</span>
@@ -1261,32 +1262,32 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
           {/* Center Question View */}
           <div className="max-w-3xl w-full mx-auto my-auto space-y-6">
             {testResult ? (
-              <div className="p-8 rounded-3xl bg-slate-900 border border-indigo-500/30 text-center space-y-5">
+              <div className="p-8 rounded-3xl bg-white border border-black/[0.08] shadow-2xl text-center space-y-5">
                 <div
                   className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center font-bold ${
                     testResult.cheated
-                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      ? 'bg-rose-50 text-rose-600 border border-rose-200'
                       : testResult.passed
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-amber-500/20 text-amber-400'
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : 'bg-amber-50 text-amber-600'
                   }`}
                 >
                   {testResult.cheated ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle className="w-8 h-8" />}
                 </div>
 
                 <div className="space-y-1">
-                  <h4 className="text-2xl font-bold text-white">
+                  <h4 className="text-2xl font-bold text-[#111827]">
                     {testResult.cheated ? 'DISQUALIFIED / FLAGGED FOR CHEATING' : 'Examination Submitted Successfully!'}
                   </h4>
-                  <p className="text-sm text-slate-300">
-                    Final Score: <strong className="text-emerald-400 text-xl">{testResult.score_percent}%</strong> (
+                  <p className="text-sm text-[#334155]">
+                    Final Score: <strong className="text-emerald-600 text-xl">{testResult.score_percent}%</strong> (
                     {testResult.total_points_earned}/{testResult.max_points} Points)
                   </p>
-                  <p className="text-xs text-slate-400 max-w-lg mx-auto pt-2">{testResult.feedback}</p>
+                  <p className="text-xs text-[#64748B] max-w-lg mx-auto pt-2">{testResult.feedback}</p>
                 </div>
 
                 {testResult.cheated && (
-                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-300 text-left">
+                  <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 text-left">
                     <strong>Recorded Infractions:</strong>
                     <ul className="list-disc pl-5 mt-1 space-y-1">
                       {testResult.cheating_reasons?.map((r, i) => (
@@ -1301,24 +1302,24 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                     setTakingTest(null)
                     stopProctoringSession()
                   }}
-                  className="px-8 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all"
+                  className="px-8 py-3 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs shadow-md shadow-[#FF7A18]/25 transition-all cursor-pointer"
                 >
                   Return to Examination Hub
                 </button>
               </div>
             ) : activeQ ? (
               <div className="space-y-6">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="px-3 py-1 rounded-lg bg-slate-900 text-yellow-300 font-bold border border-slate-800">
+                <div className="flex items-center justify-between text-xs text-[#64748B]">
+                  <span className="px-3 py-1 rounded-xl bg-white text-[#FF7A18] font-bold border border-black/[0.06] shadow-2xs">
                     Concept: {activeQ.concept_name}
                   </span>
-                  <span className="px-3 py-1 rounded-lg bg-slate-900 text-amber-300 font-bold border border-slate-800">
+                  <span className="px-3 py-1 rounded-xl bg-white text-[#FF7A18] font-bold border border-black/[0.06] shadow-2xs">
                     {activeQ.cognitive_level} &bull; {activeQ.points} Points
                   </span>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-[#0B0F19] border border-amber-500/15 shadow-xl">
-                  <p className="text-base font-semibold text-white leading-relaxed">{activeQ.question_text}</p>
+                <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
+                  <p className="text-base font-semibold text-[#111827] leading-relaxed">{activeQ.question_text}</p>
                 </div>
 
                 {activeQ.question_type === 'multiple_choice' && activeQ.options ? (
@@ -1329,27 +1330,27 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                         <button
                           key={optIdx}
                           onClick={() => setStudentAnswers((prev) => ({ ...prev, [activeQ.id]: optIdx }))}
-                          className={`w-full p-4 rounded-2xl border text-left text-xs font-medium flex items-center justify-between transition-all ${
+                          className={`w-full p-4 rounded-2xl border text-left text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-cyan-500/20 border-cyan-500 text-white shadow-lg shadow-cyan-500/10'
-                              : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:border-slate-700'
+                              ? 'bg-[#FFF3EA] border-[#FF7A18] text-[#FF7A18] shadow-xs font-bold'
+                              : 'bg-white border-black/[0.08] text-[#334155] hover:border-[#FF7A18]/50'
                           }`}
                         >
                           <span>{opt}</span>
-                          {isSelected && <Check className="w-4 h-4 text-amber-400" />}
+                          {isSelected && <Check className="w-4 h-4 text-[#FF7A18]" />}
                         </button>
                       )
                     })}
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-xs text-slate-400">Your Analytical Derivation:</label>
+                    <label className="text-xs font-bold text-[#334155]">Your Analytical Derivation:</label>
                     <textarea
                       rows={5}
                       value={(studentAnswers[activeQ.id] as string) || ''}
                       onChange={(e) => setStudentAnswers((prev) => ({ ...prev, [activeQ.id]: e.target.value }))}
                       placeholder="Type your derivation steps, formulas, and final answer..."
-                      className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-2xl p-4 text-xs text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-white border border-black/[0.08] rounded-2xl p-4 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                     />
                   </div>
                 )}
@@ -1359,12 +1360,12 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
           {/* Bottom Navigation */}
           {!testResult && activeQ && (
-            <div className="flex items-center justify-between pt-4 border-t border-slate-800 max-w-3xl w-full mx-auto">
+            <div className="flex items-center justify-between pt-4 border-t border-black/[0.06] max-w-3xl w-full mx-auto">
               <button
                 type="button"
                 disabled={currentQIndex === 0}
                 onClick={() => setCurrentQIndex((prev) => prev - 1)}
-                className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white disabled:opacity-40"
+                className="px-5 py-2.5 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] disabled:opacity-40 cursor-pointer"
               >
                 Previous
               </button>
@@ -1374,7 +1375,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                   type="button"
                   disabled={studentAnswers[activeQ.id] === undefined}
                   onClick={() => setCurrentQIndex((prev) => prev + 1)}
-                  className="px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-[#FF7A18]/25 cursor-pointer disabled:opacity-50"
                 >
                   <span>Next Question</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -1384,7 +1385,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
                   type="button"
                   disabled={submittingTest}
                   onClick={handleSubmitTest}
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+                  className="px-8 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer disabled:opacity-50"
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>{submittingTest ? 'Evaluating...' : 'Submit Proctored Exam'}</span>
@@ -1395,14 +1396,14 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
 
           {/* Warning Modal / Alert Overlay */}
           {showWarningModal && (
-            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in">
-              <div className="p-6 rounded-3xl bg-rose-950/90 border border-rose-500 max-w-md w-full text-center space-y-4 shadow-2xl">
-                <AlertTriangle className="w-12 h-12 text-rose-400 mx-auto animate-bounce" />
-                <h4 className="text-lg font-bold text-white">Examination Security Infraction</h4>
-                <p className="text-xs text-rose-200 leading-relaxed">{showWarningModal}</p>
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+              <div className="p-6 rounded-3xl bg-white border border-rose-200 max-w-md w-full text-center space-y-4 shadow-2xl">
+                <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto animate-bounce" />
+                <h4 className="text-lg font-bold text-[#111827]">Examination Security Infraction</h4>
+                <p className="text-xs text-rose-700 leading-relaxed">{showWarningModal}</p>
                 <button
                   onClick={() => setShowWarningModal(null)}
-                  className="w-full py-2.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-400"
+                  className="w-full py-2.5 rounded-2xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 cursor-pointer"
                 >
                   I Understand • Return to Examination
                 </button>

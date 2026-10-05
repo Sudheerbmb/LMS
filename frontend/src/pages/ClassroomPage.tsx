@@ -313,77 +313,42 @@ const PeerVideoCard: React.FC<PeerCardProps> = ({
   return (
 
     <div
-
-      className={`rounded-2xl sm:rounded-3xl bg-[#0B0F19] border border-amber-500/15 relative overflow-hidden shadow-xl flex flex-col transition-all duration-300 ${
-
+      className={`rounded-2xl sm:rounded-3xl bg-[#0F172A] border border-black/10 relative overflow-hidden shadow-md flex flex-col transition-all duration-300 ${
         isSpotlight ? 'h-full w-full' : 'min-h-[220px] sm:min-h-[260px]'
-
       }`}
-
     >
-
-      <div className="flex-1 flex items-center justify-center relative bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-
+      <div className="flex-1 flex items-center justify-center relative bg-gradient-to-tr from-[#0F172A] via-[#1E293B] to-[#0F172A] overflow-hidden">
         <video
-
           ref={videoRef}
-
           autoPlay
-
           playsInline
-
           muted={isLocal}
-
           className={`w-full h-full object-cover transition-opacity duration-300 ${
-
             hasVideoTrack ? 'opacity-100 block' : 'opacity-0 hidden'
-
           }`}
-
         />
-
         {!isLocal && (
-
           <audio
-
             ref={audioRef}
-
             autoPlay
-
             playsInline
-
           />
-
         )}
-
         {!hasVideoTrack && (
-
           <div className="flex flex-col items-center justify-center gap-3 p-4">
-
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-600 border-2 border-cyan-400 flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-cyan-500/20">
-
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-[#FF7A18] to-[#FF9E40] border-2 border-white/20 flex items-center justify-center text-3xl font-black text-white shadow-lg">
               {avatar || displayName.charAt(0).toUpperCase()}
-
             </div>
-
-            <span className="text-sm font-bold text-slate-300 truncate max-w-[180px]">{displayName}</span>
-
+            <span className="text-sm font-bold text-slate-200 truncate max-w-[180px]">{displayName}</span>
           </div>
-
         )}
-
       </div>
 
       <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-
-        <div className="px-3 py-1 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-xs font-bold text-white flex items-center gap-2 max-w-[80%] truncate">
-
+        <div className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-xs font-bold text-white flex items-center gap-2 max-w-[80%] truncate">
           <span className="truncate">{displayName} {isLocal && '(You)'}</span>
-
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-amber-400 border border-cyan-500/30 uppercase font-semibold">
-
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF7A18]/20 text-[#FF9E40] border border-[#FF7A18]/30 uppercase font-semibold">
             {role}
-
           </span>
 
           {!isMicOn && <MicOff className="w-3.5 h-3.5 text-red-400 shrink-0" />}

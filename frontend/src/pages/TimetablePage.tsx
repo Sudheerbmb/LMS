@@ -641,25 +641,24 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const activeLabCapacity = rules.find(r => r.rule_type === 'lab_capacity')?.parameters?.max_sections || 3
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300" style={{ background: '#FAF9F6' }}>
       {/* Header Banner - Role Customized */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-[#FFF5EE] via-[#FFF0E6] to-[#F5EEFF] p-6 md:p-8 rounded-3xl border border-[#FFDEC4]/80 shadow-xs relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold uppercase tracking-wider shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold uppercase tracking-wider shadow-xs">
             {isAdmin && <Sparkles className="w-3.5 h-3.5" />}
             {isTeacher && <GraduationCap className="w-3.5 h-3.5" />}
             {isStudent && <BookOpen className="w-3.5 h-3.5" />}
             {isAdmin ? 'Institute AI Timetable Engine' : isTeacher ? 'Faculty Teaching Schedule' : 'Batch Class Schedule'}
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#111827] tracking-tight flex items-center gap-3">
             {isAdmin && 'Batch Schedule & Timetable Engine'}
             {isTeacher && (myTeacherProfile ? `${myTeacherProfile.display_name} - Faculty Schedule` : 'Faculty Teaching Schedule')}
             {isStudent && `${currentGrade?.name || 'Course'} - Weekly Batch Schedule`}
           </h1>
 
-          <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
+          <p className="text-[#64748B] text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
             {isAdmin && 'Automated timetable generator for institute courses with Zoom scheduling integration.'}
             {isTeacher && `Assigned technical lectures across institute batches. Daily maximum workload capped at ${myTeacherProfile?.max_daily_periods || 5} sessions.`}
             {isStudent && 'Your weekly training schedule (09:00 AM - 06:00 PM). Click any session to join Zoom live or submit course feedback.'}
@@ -674,28 +673,28 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 if (teachers.length > 0) setLeaveTeacherId(teachers[0].id)
                 setShowLeaveModal(true)
               }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-black/[0.08] bg-white hover:bg-neutral-50 text-[#334155] text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <UserX className="w-4 h-4 text-amber-400" />
-              Log Faculty Leave
+              <UserX className="w-4 h-4 text-[#FF7A18]" />
+              <span>Log Faculty Leave</span>
             </button>
 
             <button
               onClick={handleSeed}
               disabled={seeding}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-black/[0.08] bg-white hover:bg-neutral-50 text-[#334155] text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
             >
-              <Database className={`w-4 h-4 ${seeding ? 'animate-spin text-amber-400' : ''}`} />
-              {seeding ? 'Seeding...' : 'Reset Defaults'}
+              <Database className={`w-4 h-4 text-[#64748B] ${seeding ? 'animate-spin text-[#FF7A18]' : ''}`} />
+              <span>{seeding ? 'Seeding...' : 'Reset Defaults'}</span>
             </button>
 
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-xs font-bold transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
-              {generating ? 'LangGraph Processing...' : 'Run AI Agent'}
+              <span>{generating ? 'LangGraph Processing...' : 'Run AI Agent'}</span>
             </button>
           </div>
         )}
@@ -703,85 +702,85 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Status Toast */}
       {statusMessage && (
-        <div className="p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-yellow-300 text-sm flex items-center justify-between gap-4 animate-in slide-in-from-top-2">
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center justify-between gap-4 animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>{statusMessage}</span>
           </div>
-          <button onClick={() => setStatusMessage(null)} className="text-amber-400 hover:text-cyan-200 text-xs font-bold">Dismiss</button>
+          <button onClick={() => setStatusMessage(null)} className="text-[#FF7A18] hover:underline text-xs font-bold">Dismiss</button>
         </div>
       )}
 
       {/* Admin KPI Stats Grid */}
       {isAdmin && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-[#64748B] text-xs font-medium">
               <span>Courses & Batches</span>
-              <Building className="w-4 h-4 text-amber-400" />
+              <Building className="w-4 h-4 text-[#FF7A18]" />
             </div>
-            <div className="text-2xl font-black text-white">{grades.length || 0} Courses &bull; {grades.reduce((acc, g) => acc + (g.sections?.length || 0), 0) || 'Active'} Batches</div>
-            <div className="text-xs text-slate-500">Curriculum-aligned database courses</div>
+            <div className="text-2xl font-black text-[#111827]">{grades.length || 0} Courses &bull; {grades.reduce((acc, g) => acc + (g.sections?.length || 0), 0) || 'Active'} Batches</div>
+            <div className="text-xs text-[#94A3B8]">Curriculum-aligned database courses</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-[#64748B] text-xs font-medium">
               <span>Concurrent Lab Limit</span>
-              <Activity className="w-4 h-4 text-amber-400" />
+              <Activity className="w-4 h-4 text-[#3B82F6]" />
             </div>
-            <div className="text-2xl font-black text-amber-400">{activeLabCapacity} Cohorts Max</div>
-            <div className="text-xs text-slate-500">Configurable in Policy Rules tab</div>
+            <div className="text-2xl font-black text-[#111827]">{activeLabCapacity} Cohorts Max</div>
+            <div className="text-xs text-[#94A3B8]">Configurable in Policy Rules tab</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-[#64748B] text-xs font-medium">
               <span>Active Policy Rules</span>
-              <Sliders className="w-4 h-4 text-orange-400" />
+              <Sliders className="w-4 h-4 text-[#8B5CF6]" />
             </div>
-            <div className="text-2xl font-black text-orange-400">{rules.filter(r => r.is_enabled).length} Enabled</div>
-            <div className="text-xs text-slate-500">{rules.length} total defined in Neon DB</div>
+            <div className="text-2xl font-black text-[#111827]">{rules.filter(r => r.is_enabled).length} Enabled</div>
+            <div className="text-xs text-[#94A3B8]">{rules.length} total defined in Neon DB</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/15 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-[#64748B] text-xs font-medium">
               <span>Active Constraints</span>
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
+              <ShieldAlert className="w-4 h-4 text-rose-500" />
             </div>
-            <div className="text-2xl font-black text-rose-400">{totalRestrictions} Exclusions</div>
-            <div className="text-xs text-slate-500">Auto-bypassed during scheduling</div>
+            <div className="text-2xl font-black text-rose-600">{totalRestrictions} Exclusions</div>
+            <div className="text-xs text-[#94A3B8]">Auto-bypassed during scheduling</div>
           </div>
         </div>
       )}
 
       {/* Navigation Sub-Tabs (Admin gets all tabs; Teachers/Students get their relevant views) */}
-      <div className="flex border-b border-slate-800 gap-6">
+      <div className="flex border-b border-black/[0.06] gap-6">
         <button
           onClick={() => setActiveTab('grid')}
-          className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${
-            activeTab === 'grid' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+            activeTab === 'grid' ? 'text-[#FF7A18]' : 'text-[#64748B] hover:text-[#111827]'
           }`}
         >
           <Calendar className="w-4 h-4" />
-          {isAdmin ? 'Master Timetable Grid' : isTeacher ? 'My Teaching Timetable' : 'Batch Weekly Grid'}
+          <span>{isAdmin ? 'Master Timetable Grid' : isTeacher ? 'My Teaching Timetable' : 'Batch Weekly Grid'}</span>
           {activeTab === 'grid' && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF7A18] rounded-full" />
           )}
         </button>
 
         {isAdmin && (
           <button
             onClick={() => setActiveTab('rules')}
-            className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${
-              activeTab === 'rules' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'rules' ? 'text-[#FF7A18]' : 'text-[#64748B] hover:text-[#111827]'
             }`}
           >
             <Settings2 className="w-4 h-4" />
-            Institute Policy Rules Engine
-            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-slate-300 font-mono">
+            <span>Institute Policy Rules Engine</span>
+            <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] text-[#64748B] font-mono font-bold">
               {rules.length}
             </span>
             {activeTab === 'rules' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF7A18] rounded-full" />
             )}
           </button>
         )}
@@ -789,17 +788,17 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         {isAdmin && (
           <button
             onClick={() => setActiveTab('teachers')}
-            className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${
-              activeTab === 'teachers' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'teachers' ? 'text-[#FF7A18]' : 'text-[#64748B] hover:text-[#111827]'
             }`}
           >
             <GraduationCap className="w-4 h-4" />
-            Faculty Directory & Reviews
-            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-slate-400 font-mono">
+            <span>Faculty Directory & Reviews</span>
+            <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] text-[#64748B] font-mono font-bold">
               {teachers.length}
             </span>
             {activeTab === 'teachers' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF7A18] rounded-full" />
             )}
           </button>
         )}
@@ -807,19 +806,19 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         {isAdmin && (
           <button
             onClick={() => setActiveTab('audit')}
-            className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${
-              activeTab === 'audit' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'audit' ? 'text-[#FF7A18]' : 'text-[#64748B] hover:text-[#111827]'
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            Agent Resolutions Log
+            <span>Agent Resolutions Log</span>
             {lastGenResult?.autonomous_decisions && (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold">
                 {lastGenResult.autonomous_decisions.length}
               </span>
             )}
             {activeTab === 'audit' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF7A18] rounded-full" />
             )}
           </button>
         )}
@@ -829,31 +828,31 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       {activeTab === 'grid' && (
         <div className="space-y-6">
           {/* Controls: Only Admin and Students can select Grade/Section; Teachers see their personal schedule */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-[#0B0F19] border border-amber-500/15">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
             {isTeacher ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-amber-400 font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center text-[#FF7A18] font-black text-sm">
                   {myTeacherProfile?.employee_id || 'T'}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">
+                  <div className="text-sm font-bold text-[#111827]">
                     {myTeacherProfile?.display_name || currentUser?.display_name} &bull; Teaching Load
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-[#64748B]">
                     Showing your allocated lectures across all classes (Monday to Friday)
                   </div>
                 </div>
               </div>
             ) : isStudent ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-amber-400 font-bold">
-                  <BookOpen className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center text-[#FF7A18] font-bold">
+                  <BookOpen className="w-5 h-5 text-[#FF7A18]" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">
+                  <div className="text-sm font-bold text-[#111827]">
                     {currentGrade?.name || 'Class'} &bull; Section {currentSection?.name || 'A'} ({currentSection?.room_number || 'Room 101'})
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-[#64748B]">
                     Your Official Class Weekly Timetable &bull; Click any subject period to rate your instructor
                   </div>
                 </div>
@@ -861,7 +860,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             ) : (
               <div className="flex flex-wrap items-center gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-[#64748B] uppercase tracking-wider mb-1">
                     Course
                   </label>
                   <select
@@ -873,7 +872,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         setSelectedSectionId(g.sections[0].id)
                       }
                     }}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-semibold"
+                    className="bg-white border border-black/[0.08] rounded-xl px-3.5 py-2 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] font-bold shadow-xs cursor-pointer"
                   >
                     {grades.map((g) => (
                       <option key={g.id} value={g.id}>
@@ -884,7 +883,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-[#64748B] uppercase tracking-wider mb-1">
                     Cohort / Batch
                   </label>
                   <div className="flex gap-2">
@@ -892,10 +891,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       <button
                         key={sec.id}
                         onClick={() => setSelectedSectionId(sec.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           selectedSectionId === sec.id
-                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
-                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25 font-bold'
+                            : 'bg-neutral-100 text-[#475569] hover:bg-neutral-200'
                         }`}
                       >
                         Batch {sec.name} ({sec.room_number || 'Tech Lab'})
@@ -914,19 +913,19 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     setSwapMode(!swapMode)
                     setSelectedSlotForSwap(null)
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
                     swapMode
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600'
+                      ? 'bg-[#FF7A18] text-white border-[#FF7A18] shadow-md shadow-[#FF7A18]/25'
+                      : 'bg-white text-[#334155] border-black/[0.08] hover:bg-neutral-50 shadow-xs'
                   }`}
                 >
                   <ArrowLeftRight className="w-3.5 h-3.5" />
-                  {swapMode ? 'Exit Swap Mode' : 'Quick Swap Mode'}
+                  <span>{swapMode ? 'Exit Swap Mode' : 'Quick Swap Mode'}</span>
                 </button>
 
-                <div className="text-right pl-3 border-l border-slate-800">
-                  <div className="text-[11px] text-slate-400">Course & Batch</div>
-                  <div className="text-sm font-bold text-slate-200">
+                <div className="text-right pl-3 border-l border-neutral-200">
+                  <div className="text-[10px] font-bold uppercase text-[#94A3B8]">Course & Batch</div>
+                  <div className="text-xs font-bold text-[#111827]">
                     {getTrackDisplayName(currentGrade)} &bull; Batch {currentSection?.name || 'A'}
                   </div>
                 </div>
@@ -935,12 +934,12 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           </div>
 
           {swapMode && (
-            <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
               <span>
                 <strong>Swap Mode Active:</strong> Click any slot to select it, then click another slot to swap them instantly!
               </span>
               {selectedSlotForSwap && (
-                <span className="font-mono bg-amber-500/20 px-2 py-0.5 rounded">
+                <span className="font-mono bg-amber-200/60 px-2 py-0.5 rounded font-bold">
                   Selected: {selectedSlotForSwap.day_of_week} Period {selectedSlotForSwap.period_number}
                 </span>
               )}
@@ -948,15 +947,15 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           )}
 
           {/* View Mode & Holiday Management Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0B0F19] p-3.5 rounded-2xl border border-amber-500/15">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-3xl border border-black/[0.06] shadow-xs">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">View Mode:</span>
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider mr-1">View Mode:</span>
               <button
                 onClick={() => setScheduleViewMode('daily')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   scheduleViewMode === 'daily'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
-                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25 font-bold'
+                    : 'bg-neutral-100 text-[#475569] hover:text-[#111827]'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -965,10 +964,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
               <button
                 onClick={() => setScheduleViewMode('grid')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   scheduleViewMode === 'grid'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
-                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25 font-bold'
+                    : 'bg-neutral-100 text-[#475569] hover:text-[#111827]'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -978,27 +977,27 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
             {scheduleViewMode === 'grid' && (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Days:</span>
+                <span className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider mr-1">Days:</span>
                 <button
                   onClick={() => setVisibleDaysCount(7)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    visibleDaysCount === 7 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    visibleDaysCount === 7 ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]' : 'bg-neutral-100 text-[#64748B]'
                   }`}
                 >
                   7 Days
                 </button>
                 <button
                   onClick={() => setVisibleDaysCount(6)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    visibleDaysCount === 6 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    visibleDaysCount === 6 ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]' : 'bg-neutral-100 text-[#64748B]'
                   }`}
                 >
                   6 Days
                 </button>
                 <button
                   onClick={() => setVisibleDaysCount(5)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    visibleDaysCount === 5 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    visibleDaysCount === 5 ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]' : 'bg-neutral-100 text-[#64748B]'
                   }`}
                 >
                   5 Days
@@ -1009,10 +1008,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             {isAdmin && (
               <button
                 onClick={() => setShowHolidayModal(true)}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition-all ml-auto"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold hover:bg-[#FFE8D6] transition-all ml-auto cursor-pointer"
               >
-                <Palmtree className="w-3.5 h-3.5 text-amber-400" />
-                Holidays ({Object.keys(holidays).length})
+                <Palmtree className="w-3.5 h-3.5 text-[#FF7A18]" />
+                <span>Holidays ({Object.keys(holidays).length})</span>
               </button>
             )}
           </div>
@@ -1021,7 +1020,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           {scheduleViewMode === 'daily' && (
             <div className="space-y-6">
               {/* Day Selector Pill Bar */}
-              <div className="flex flex-wrap items-center gap-2 p-2 bg-[#0B0F19] rounded-2xl border border-amber-500/15">
+              <div className="flex flex-wrap items-center gap-2 p-2 bg-white rounded-3xl border border-black/[0.06] shadow-xs">
                 {ALL_WEEKDAYS.map((day) => {
                   const daySlots = slots.filter((s) => s.day_of_week.toLowerCase() === day.toLowerCase())
                   const isSelected = selectedScheduleDay.toLowerCase() === day.toLowerCase()
@@ -1032,22 +1031,22 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     <button
                       key={day}
                       onClick={() => setSelectedScheduleDay(day)}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                         isSelected
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black scale-105'
-                          : 'bg-[#111726] text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
+                          ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25 font-bold scale-102'
+                          : 'bg-neutral-100 text-[#475569] hover:text-[#111827] hover:bg-neutral-200'
                       }`}
                     >
                       <span>{day}</span>
                       {isToday && (
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase ${isSelected ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300'}`}>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase ${isSelected ? 'bg-white text-[#FF7A18]' : 'bg-amber-100 text-amber-800'}`}>
                           Today
                         </span>
                       )}
                       {isHoliday ? (
-                        <span className="text-[10px] text-amber-400">🌴</span>
+                        <span className="text-[10px] text-amber-500">🌴</span>
                       ) : daySlots.length > 0 ? (
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-300'}`}>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-neutral-200 text-[#475569]'}`}>
                           {daySlots.length}
                         </span>
                       ) : null}
@@ -1065,28 +1064,28 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Scheduled Sessions</div>
-                      <div className="text-2xl font-black text-amber-400 mt-1">{teachingSlots.length} Masterclasses</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{selectedScheduleDay} Agenda</div>
+                    <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
+                      <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Scheduled Sessions</div>
+                      <div className="text-2xl font-black text-[#FF7A18] mt-1">{teachingSlots.length} Masterclasses</div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">{selectedScheduleDay} Agenda</div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Teaching Duration</div>
-                      <div className="text-2xl font-black text-emerald-400 mt-1">{(teachingSlots.length * 1.25).toFixed(1)} Hours</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Live Masterclass & Lab</div>
+                    <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
+                      <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Teaching Duration</div>
+                      <div className="text-2xl font-black text-emerald-600 mt-1">{(teachingSlots.length * 1.25).toFixed(1)} Hours</div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">Live Masterclass & Lab</div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Cohorts</div>
-                      <div className="text-2xl font-black text-white mt-1">{uniqueBatches.length || (isTeacher ? 2 : 1)} Batches</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Parallel Courses</div>
+                    <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
+                      <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Active Cohorts</div>
+                      <div className="text-2xl font-black text-[#111827] mt-1">{uniqueBatches.length || (isTeacher ? 2 : 1)} Batches</div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">Parallel Courses</div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Subjects Covered</div>
-                      <div className="text-2xl font-black text-amber-300 mt-1">{uniqueSubjects.length || (teachingSlots.length ? 1 : 0)} Modules</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Assigned Syllabus Focus</div>
+                    <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs">
+                      <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Subjects Covered</div>
+                      <div className="text-2xl font-black text-[#8B5CF6] mt-1">{uniqueSubjects.length || (teachingSlots.length ? 1 : 0)} Modules</div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">Assigned Syllabus Focus</div>
                     </div>
                   </div>
                 )
@@ -1094,9 +1093,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
               {/* Day Masterclasses Chronological List */}
               {loading ? (
-                <div className="h-64 flex items-center justify-center text-slate-400 gap-3 bg-[#0B0F19] rounded-2xl border border-amber-500/15">
-                  <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
-                  Loading {selectedScheduleDay}'s schedule...
+                <div className="h-64 flex items-center justify-center text-[#64748B] gap-3 bg-white rounded-3xl border border-black/[0.06]">
+                  <RefreshCw className="w-5 h-5 animate-spin text-[#FF7A18]" />
+                  <span>Loading {selectedScheduleDay}'s schedule...</span>
                 </div>
               ) : (() => {
                 const daySlots = slots
@@ -1107,13 +1106,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                 if (isHoliday) {
                   return (
-                    <div className="p-12 text-center bg-[#0B0F19] rounded-3xl border border-amber-500/20 space-y-3">
-                      <Palmtree className="w-12 h-12 text-amber-400 mx-auto" />
-                      <h3 className="text-lg font-bold text-white">{selectedScheduleDay} • Scheduled Institute Holiday</h3>
-                      <p className="text-xs text-slate-400 max-w-md mx-auto">{holidays[selectedScheduleDay]}</p>
+                    <div className="p-12 text-center bg-white rounded-3xl border border-black/[0.06] space-y-3 shadow-xs">
+                      <Palmtree className="w-12 h-12 text-amber-500 mx-auto" />
+                      <h3 className="text-lg font-bold text-[#111827]">{selectedScheduleDay} • Scheduled Institute Holiday</h3>
+                      <p className="text-xs text-[#64748B] max-w-md mx-auto">{holidays[selectedScheduleDay]}</p>
                       <button
                         onClick={() => setSelectedScheduleDay('Monday')}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all mt-2"
+                        className="px-4 py-2 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs transition-all mt-2 cursor-pointer shadow-sm"
                       >
                         View Monday's Masterclasses &rarr;
                       </button>
@@ -1123,17 +1122,17 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                 if (daySlots.length === 0) {
                   return (
-                    <div className="p-12 text-center bg-[#0B0F19] rounded-3xl border border-amber-500/15 space-y-3">
-                      <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
-                      <h3 className="text-base font-bold text-white">No Sessions Scheduled for {selectedScheduleDay}</h3>
-                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    <div className="p-12 text-center bg-white rounded-3xl border border-black/[0.06] space-y-3 shadow-xs">
+                      <Calendar className="w-12 h-12 text-[#94A3B8] mx-auto" />
+                      <h3 className="text-base font-bold text-[#111827]">No Sessions Scheduled for {selectedScheduleDay}</h3>
+                      <p className="text-xs text-[#64748B] max-w-md mx-auto">
                         {isTeacher
                           ? 'You have no assigned teaching periods on this day according to institute policy.'
                           : 'No batch lectures scheduled on this day. Check the full weekly grid.'}
                       </p>
                       <button
                         onClick={() => setSelectedScheduleDay('Monday')}
-                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all mt-2"
+                        className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-[#111827] font-bold text-xs transition-all mt-2 cursor-pointer"
                       >
                         Check Monday Schedule
                       </button>
@@ -1151,13 +1150,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         return (
                           <div
                             key={slot.id || `break_${slot.period_number}`}
-                            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-4 ${meta.bg || 'bg-slate-900/60 border-slate-800 text-slate-300'}`}
+                            className="p-4 rounded-2xl border border-[#FFDEC4] bg-[#FFF9EE] text-[#D97706] flex items-center justify-between gap-4"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-mono font-black opacity-80">{slot.start_time} - {slot.end_time}</span>
+                              <span className="text-xs font-mono font-black">{slot.start_time} - {slot.end_time}</span>
                               <span className="font-bold text-xs uppercase tracking-wider">{meta.label}</span>
                             </div>
-                            <span className="text-[11px] opacity-70">Institute Wide</span>
+                            <span className="text-[11px] font-semibold opacity-80">Institute Wide Break</span>
                           </div>
                         )
                       }
@@ -1169,26 +1168,26 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       return (
                         <div
                           key={slot.id}
-                          className={`p-5 rounded-2xl bg-[#0B0F19] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${
-                            isSlotLive ? 'border-rose-500/50 shadow-lg shadow-rose-500/10' : 'border-amber-500/15 hover:border-amber-500/40'
+                          className={`p-5 rounded-3xl bg-white border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:shadow-md ${
+                            isSlotLive ? 'border-rose-400 bg-rose-50/40 shadow-xs' : 'border-black/[0.06] hover:border-[#FF7A18]/40'
                           }`}
                         >
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-extrabold font-mono">
+                              <span className="px-2.5 py-1 rounded-lg bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] text-xs font-extrabold font-mono">
                                 Period {slot.period_number} &bull; {slot.start_time} - {slot.end_time}
                               </span>
                               <span
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                style={{ backgroundColor: `${norm.color}20`, color: norm.color }}
+                                style={{ backgroundColor: `${norm.color}15`, color: norm.color }}
                               >
                                 {norm.code}
                               </span>
-                              <span className="text-[11px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800">
+                              <span className="text-[11px] font-bold text-[#64748B] bg-neutral-100 px-2.5 py-0.5 rounded-md">
                                 {slot.slot_type === 'lab' ? 'Hands-On Lab' : 'Live Masterclass'}
                               </span>
                               {isSlotLive && (
-                                <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1.5">
+                                <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1.5">
                                   <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                                   LIVE BROADCAST
                                 </span>
@@ -1196,13 +1195,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             </div>
 
                             <div>
-                              <h3 className="text-base font-extrabold text-white group-hover:text-amber-300 transition-colors">
+                              <h3 className="text-base font-bold text-[#111827] group-hover:text-[#FF7A18] transition-colors">
                                 {norm.name}
                               </h3>
-                              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                              <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-2 flex-wrap">
                                 <span>{isTeacher ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}` : `Faculty: ${norm.teacher}`}</span>
                                 <span>&bull;</span>
-                                <span className="text-slate-500">Venue: {norm.room}</span>
+                                <span className="text-[#94A3B8]">Venue: {norm.room}</span>
                               </p>
                             </div>
                           </div>
@@ -1213,10 +1212,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <button
                                 onClick={() => handleLaunchLiveSession(slot)}
                                 disabled={launchingLiveClass}
-                                className={`px-4 py-2.5 rounded-xl text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+                                className={`px-4 py-2.5 rounded-2xl text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer ${
                                   isSlotLive
-                                    ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
-                                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 shadow-amber-500/20'
+                                    ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/25 animate-pulse'
+                                    : 'bg-[#FF7A18] hover:bg-[#EA6C0A] shadow-[#FF7A18]/25'
                                 }`}
                               >
                                 <Video className="w-4 h-4" />
@@ -1228,10 +1227,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <button
                                 onClick={() => handleLaunchLiveSession(slot)}
                                 disabled={launchingLiveClass}
-                                className={`px-4 py-2.5 rounded-xl text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+                                className={`px-4 py-2.5 rounded-2xl text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer ${
                                   isSlotLive
-                                    ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
-                                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-emerald-500/20'
+                                    ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/25 animate-pulse'
+                                    : 'bg-[#10B981] hover:bg-[#059669] shadow-emerald-500/20'
                                 }`}
                               >
                                 <Play className="w-4 h-4 fill-current" />
@@ -1248,10 +1247,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                 setEditingSlotType(slot.slot_type || 'lecture')
                                 setShowSlotViewerModal(true)
                               }}
-                              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-bold transition-all"
+                              className="p-2.5 rounded-xl bg-[#FAF9F6] hover:bg-[#FFF3EA] text-[#64748B] hover:text-[#FF7A18] border border-black/[0.08] text-xs font-bold transition-all"
                               title="View Session Details & Feedback"
                             >
-                              <Edit3 className="w-4 h-4 text-amber-400" />
+                              <Edit3 className="w-4 h-4 text-[#FF7A18]" />
                             </button>
                           </div>
                         </div>
@@ -1266,43 +1265,43 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
           {/* ── TIMETABLE WEEKLY MATRIX VIEW ── */}
           {scheduleViewMode === 'grid' && (
             loading ? (
-              <div className="h-96 flex items-center justify-center text-slate-400 gap-3">
-                <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+              <div className="h-96 flex items-center justify-center text-[#64748B] gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#FF7A18]" />
                 Loading Schedule Grid...
               </div>
             ) : slots.length === 0 ? (
-              <div className="h-80 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-3">
-                <Calendar className="w-10 h-10 text-slate-600" />
+              <div className="h-80 rounded-3xl border border-dashed border-black/[0.08] flex flex-col items-center justify-center text-[#64748B] space-y-3 bg-[#FAF9F6]">
+                <Calendar className="w-10 h-10 text-[#94A3B8]" />
                 <p className="text-sm font-medium">No timetable generated yet.</p>
                 {isAdmin && (
                   <button
                     onClick={handleGenerate}
-                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
+                    className="px-4 py-2 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs cursor-pointer shadow-xs"
                   >
                     Run AI Agent Generator
                   </button>
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-slate-800 shadow-xl bg-slate-950/60">
+              <div className="overflow-x-auto rounded-3xl border border-black/[0.06] shadow-sm bg-white">
                 <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead>
-                    <tr className="bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="p-4 w-44 border-r border-slate-800">Time & Period</th>
+                    <tr className="bg-[#FAF9F6] border-b border-black/[0.06] text-xs font-bold text-[#64748B] uppercase tracking-wider">
+                      <th className="p-4 w-44 border-r border-black/[0.06]">Time & Period</th>
                       {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
                         const isHoliday = !!holidays[day]
                         return (
-                          <th key={day} className="p-4 border-r border-slate-800 last:border-r-0 min-w-[170px]">
+                          <th key={day} className="p-4 border-r border-black/[0.06] last:border-r-0 min-w-[170px]">
                             <div className="flex items-center justify-between">
-                              <span className={isHoliday ? 'text-amber-400' : 'text-slate-200'}>{day}</span>
+                              <span className={isHoliday ? 'text-[#FF7A18]' : 'text-[#111827]'}>{day}</span>
                               {isHoliday && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] flex items-center gap-1">
                                   <Palmtree className="w-3 h-3" /> Holiday
                                 </span>
                               )}
                             </div>
                             {isHoliday && (
-                              <div className="text-[10px] text-amber-400/80 font-normal lowercase first-letter:uppercase truncate mt-0.5">
+                              <div className="text-[10px] text-[#FF7A18]/80 font-normal lowercase first-letter:uppercase truncate mt-0.5">
                                 {holidays[day]}
                               </div>
                             )}
@@ -1311,18 +1310,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       })}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-black/[0.04] text-sm">
                     {periodNumbers.map((pNum) => {
                       const meta = getPeriodMeta(pNum)
 
                       if (meta.isBreak) {
                         return (
-                          <tr key={pNum} className={meta.bg || 'bg-slate-900/40'}>
-                            <td className="p-4 font-mono text-xs border-r border-amber-500/15 font-bold">
+                          <tr key={pNum} className="bg-[#FFF9EE] text-[#D97706]">
+                            <td className="p-4 font-mono text-xs border-r border-[#FFDEC4] font-bold">
                               <div>{meta.time}</div>
                               <div className="text-[11px] opacity-80">{meta.label}</div>
                             </td>
-                            <td colSpan={visibleDaysCount} className="p-3 text-center text-xs font-semibold tracking-wider uppercase opacity-90">
+                            <td colSpan={visibleDaysCount} className="p-3 text-center text-xs font-bold tracking-wider uppercase">
                               {meta.label} &bull; All Batches (09:00 AM &ndash; 06:00 PM Schedule)
                             </td>
                           </tr>
@@ -1330,10 +1329,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       }
 
                       return (
-                        <tr key={pNum} className="hover:bg-slate-900/30 transition-colors">
-                          <td className="p-4 border-r border-slate-800 font-mono text-xs text-slate-400 bg-slate-900/30">
-                            <div className="font-bold text-slate-200">{meta.label}</div>
-                            <div className="text-slate-500">{meta.time}</div>
+                        <tr key={pNum} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="p-4 border-r border-black/[0.06] font-mono text-xs text-[#64748B] bg-[#FAFAF8]">
+                            <div className="font-bold text-[#111827]">{meta.label}</div>
+                            <div className="text-[#94A3B8]">{meta.time}</div>
                           </td>
                           {ALL_WEEKDAYS.slice(0, visibleDaysCount).map((day) => {
                             const isDayHoliday = !!holidays[day]
@@ -1343,11 +1342,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                             if (isDayHoliday || (slot?.slot_type as string) === 'holiday') {
                               return (
-                                <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 align-top">
-                                  <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-950/10 text-slate-300 h-full flex flex-col justify-center items-center text-center space-y-1 min-h-[90px]">
-                                    <Palmtree className="w-4 h-4 text-amber-400" />
-                                    <div className="text-[11px] font-bold text-amber-300">Holiday / Off-Day</div>
-                                    <div className="text-[10px] text-slate-400 line-clamp-1">{holidays[day] || 'Scheduled Off'}</div>
+                                <td key={day} className="p-3 border-r border-black/[0.06] last:border-r-0 align-top">
+                                  <div className="p-3 rounded-2xl border border-[#FFDEC4] bg-[#FFF9EE] text-[#D97706] h-full flex flex-col justify-center items-center text-center space-y-1 min-h-[90px]">
+                                    <Palmtree className="w-4 h-4 text-amber-500" />
+                                    <div className="text-[11px] font-bold text-[#D97706]">Holiday / Off-Day</div>
+                                    <div className="text-[10px] text-[#B45309] line-clamp-1">{holidays[day] || 'Scheduled Off'}</div>
                                   </div>
                                 </td>
                               )
@@ -1355,7 +1354,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                             if (!slot) {
                               return (
-                                <td key={day} className="p-3 border-r border-slate-800/60 last:border-r-0 text-slate-600 text-xs text-center">
+                                <td key={day} className="p-3 border-r border-black/[0.06] last:border-r-0 text-[#CBD5E1] text-xs text-center">
                                   -
                                 </td>
                               )
@@ -1370,16 +1369,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               <td
                                 key={day}
                                 onClick={() => handleSlotClick(slot)}
-                                className="p-3 border-r border-slate-800/60 last:border-r-0 align-top cursor-pointer group"
+                                className="p-3 border-r border-black/[0.06] last:border-r-0 align-top cursor-pointer group"
                                 title="Click for details, live class launching, or slot adjustment"
                               >
                                 <div
-                                  className={`p-3 rounded-xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
+                                  className={`p-3.5 rounded-2xl border transition-all h-full flex flex-col justify-between relative min-h-[90px] ${
                                     isSelectedForSwap
-                                      ? 'ring-2 ring-amber-400 bg-amber-950/40 border-amber-400 scale-[1.02]'
+                                      ? 'ring-2 ring-[#FF7A18] bg-[#FFF3EA] border-[#FF7A18] scale-[1.02]'
                                       : isSlotLive
-                                      ? 'bg-rose-950/30 border-rose-500/50 shadow-md shadow-rose-500/10'
-                                      : 'bg-slate-900/80 border-slate-800 text-slate-200 group-hover:border-amber-500/60 group-hover:bg-slate-850'
+                                      ? 'bg-rose-50 border-rose-300 shadow-sm'
+                                      : 'bg-white border-black/[0.08] text-[#111827] group-hover:border-[#FF7A18] group-hover:shadow-sm'
                                   }`}
                                 >
                                   <div>
@@ -1387,46 +1386,46 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                       <span
                                         className="font-bold text-xs px-2 py-0.5 rounded-md"
                                         style={{
-                                          backgroundColor: `${norm.color || '#f59e0b'}20`,
+                                          backgroundColor: `${norm.color || '#f59e0b'}15`,
                                           color: norm.color || '#f59e0b'
                                         }}
                                       >
                                         {norm.code}
                                       </span>
                                       {isSlotLive ? (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
                                           LIVE
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold uppercase tracking-wider">
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-[#64748B] font-bold uppercase tracking-wider">
                                           {slot.slot_type === 'lab' ? 'LAB' : 'LECTURE'}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs font-semibold text-slate-100 line-clamp-1">
+                                    <div className="text-xs font-bold text-[#111827] line-clamp-1">
                                       {norm.name}
                                     </div>
                                   </div>
 
-                                  <div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] space-y-0.5 text-slate-400">
-                                    <div className="truncate font-medium text-slate-300 flex items-center justify-between">
+                                  <div className="mt-2 pt-2 border-t border-black/[0.04] text-[11px] space-y-0.5 text-[#64748B]">
+                                    <div className="truncate font-semibold text-[#334155] flex items-center justify-between">
                                       <span className="truncate">
                                         {isTeacher
                                           ? `${getTrackDisplayName(currentGrade)} • Batch ${slot.section_name || 'A'}`
                                           : norm.teacher}
                                       </span>
                                       {isAdmin && (
-                                        <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                        <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#FF7A18] shrink-0 ml-1" />
                                       )}
                                       {isTeacher && (
-                                        <Video className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                        <Video className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#FF7A18] shrink-0 ml-1" />
                                       )}
                                       {isStudent && (
-                                        <Star className="w-3 h-3 opacity-0 group-hover:opacity-100 text-amber-400 shrink-0 ml-1" />
+                                        <Star className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#FF7A18] shrink-0 ml-1" />
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-slate-500 truncate">
+                                    <div className="text-[10px] text-[#94A3B8] truncate">
                                       {norm.room}
                                     </div>
                                   </div>
@@ -1450,20 +1449,20 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-orange-400" />
-                Live Policy Rules & Scheduling Constraints
+              <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-[#FF7A18]" />
+                <span>Live Policy Rules & Scheduling Constraints</span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#64748B]">
                 Modify, enable, or add institute rules dynamically without touching any code. LangGraph reads these rules live from Neon DB.
               </p>
             </div>
             <button
               onClick={() => setShowAddRuleModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-yellow-300 text-xs font-bold hover:bg-cyan-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold hover:bg-[#FFE8D6] transition-all cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4 text-amber-400" />
-              Add Custom Policy Rule
+              <PlusCircle className="w-4 h-4 text-[#FF7A18]" />
+              <span>Add Custom Policy Rule</span>
             </button>
           </div>
 
@@ -1471,27 +1470,27 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             {rules.map((r) => (
               <div
                 key={r.id}
-                className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                className={`p-5 rounded-3xl border transition-all space-y-4 ${
                   r.is_enabled
-                    ? 'bg-slate-900 border-slate-800 shadow-sm'
-                    : 'bg-slate-950/60 border-slate-900 opacity-60'
+                    ? 'bg-white border-black/[0.06] shadow-xs'
+                    : 'bg-neutral-50/80 border-black/[0.04] opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-indigo-500/10 text-orange-400 border border-indigo-500/20 uppercase tracking-wider">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-mono bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] uppercase tracking-wider font-bold">
                         {r.category}
                       </span>
-                      <h3 className="font-bold text-white text-sm">{r.name}</h3>
+                      <h3 className="font-bold text-[#111827] text-sm">{r.name}</h3>
                     </div>
-                    <p className="text-xs text-slate-400">{r.description}</p>
+                    <p className="text-xs text-[#64748B]">{r.description}</p>
                   </div>
 
                   <button
                     onClick={() => handleToggleRule(r.id)}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      r.is_enabled ? 'bg-cyan-500' : 'bg-slate-700'
+                      r.is_enabled ? 'bg-[#FF7A18]' : 'bg-neutral-300'
                     }`}
                   >
                     <span
@@ -1502,20 +1501,20 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   </button>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-500/15 space-y-2 text-xs">
-                  <div className="font-semibold text-slate-300">Live Parameters (Neon DB):</div>
+                <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] space-y-2 text-xs">
+                  <div className="font-bold text-[#334155]">Live Parameters (Neon DB):</div>
                   {r.rule_type === 'lab_capacity' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Cohorts in Cloud Sandbox Simultaneously:</span>
+                      <span className="text-[#64748B]">Max Cohorts in Cloud Sandbox Simultaneously:</span>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3, 4].map((cap) => (
                           <button
                             key={cap}
                             onClick={() => handleUpdateRuleParam(r.id, 'max_sections', cap)}
-                            className={`px-3 py-1 rounded-md font-bold text-xs ${
+                            className={`px-3 py-1 rounded-xl font-bold text-xs cursor-pointer ${
                               r.parameters?.max_sections === cap
-                                ? 'bg-cyan-500 text-slate-950 font-black'
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-[#FF7A18] text-white'
+                                : 'bg-white border border-black/[0.08] text-[#334155] hover:bg-neutral-100'
                             }`}
                           >
                             {cap} Cohorts
@@ -1527,16 +1526,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                   {r.rule_type === 'max_daily_teacher_periods' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Faculty Mentorship Daily Load:</span>
+                      <span className="text-[#64748B]">Max Faculty Mentorship Daily Load:</span>
                       <div className="flex items-center gap-2">
                         {[3, 4, 5, 6].map((p) => (
                           <button
                             key={p}
                             onClick={() => handleUpdateRuleParam(r.id, 'max_periods', p)}
-                            className={`px-3 py-1 rounded-md font-bold text-xs ${
+                            className={`px-3 py-1 rounded-xl font-bold text-xs cursor-pointer ${
                               r.parameters?.max_periods === p
-                                ? 'bg-cyan-500 text-slate-950 font-black'
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-[#FF7A18] text-white'
+                                : 'bg-white border border-black/[0.08] text-[#334155] hover:bg-neutral-100'
                             }`}
                           >
                             {p} Sessions
@@ -1548,16 +1547,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                   {r.rule_type === 'consecutive_lecture_limit' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Max Back-to-Back Theory Modules:</span>
+                      <span className="text-[#64748B]">Max Back-to-Back Theory Modules:</span>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3].map((m) => (
                           <button
                             key={m}
                             onClick={() => handleUpdateRuleParam(r.id, 'max_consecutive', m)}
-                            className={`px-3 py-1 rounded-md font-bold text-xs ${
+                            className={`px-3 py-1 rounded-xl font-bold text-xs cursor-pointer ${
                               r.parameters?.max_consecutive === m
-                                ? 'bg-cyan-500 text-slate-950 font-black'
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-[#FF7A18] text-white'
+                                : 'bg-white border border-black/[0.08] text-[#334155] hover:bg-neutral-100'
                             }`}
                           >
                             {m} Modules
@@ -1569,16 +1568,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                   {r.rule_type === 'rating_complaint_blacklist' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">Candidate Satisfaction Floor:</span>
+                      <span className="text-[#64748B]">Candidate Satisfaction Floor:</span>
                       <div className="flex items-center gap-2">
                         {[2.0, 2.5, 3.0].map((th) => (
                           <button
                             key={th}
                             onClick={() => handleUpdateRuleParam(r.id, 'threshold_rating', th)}
-                            className={`px-2.5 py-1 rounded-md font-bold text-xs ${
+                            className={`px-2.5 py-1 rounded-xl font-bold text-xs cursor-pointer ${
                               r.parameters?.threshold_rating === th
-                                ? 'bg-cyan-500 text-slate-950 font-black'
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-[#FF7A18] text-white'
+                                : 'bg-white border border-black/[0.08] text-[#334155] hover:bg-neutral-100'
                             }`}
                           >
                             &le; {th} Stars
@@ -1590,15 +1589,15 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
                   {r.rule_type === 'doubt_clearing_interval' && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-400">End-of-Day Code Review Mandate:</span>
-                      <span className="font-bold text-emerald-400">Enforced Daily (16:30 - 17:30)</span>
+                      <span className="text-[#64748B]">End-of-Day Code Review Mandate:</span>
+                      <span className="font-bold text-emerald-600">Enforced Daily (16:30 - 17:30)</span>
                     </div>
                   )}
 
                   {r.rule_type === 'weekend_sprint_schedule' && (
                     <div className="space-y-1">
-                      <span className="text-slate-400">Bootcamp Weekend Schedule Overrides:</span>
-                      <div className="font-mono text-[11px] text-orange-300">
+                      <span className="text-[#64748B]">Bootcamp Weekend Schedule Overrides:</span>
+                      <div className="font-mono text-[11px] text-[#FF7A18]">
                         {JSON.stringify(r.parameters?.overrides || {})}
                       </div>
                     </div>
@@ -1608,10 +1607,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 <div className="flex justify-end pt-1">
                   <button
                     onClick={() => handleDeleteRule(r.id)}
-                    className="text-[11px] text-slate-500 hover:text-rose-400 flex items-center gap-1"
+                    className="text-[11px] text-[#94A3B8] hover:text-rose-600 flex items-center gap-1 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Delete Rule
+                    <span>Delete Rule</span>
                   </button>
                 </div>
               </div>
@@ -1625,8 +1624,8 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white">Faculty Directory & Performance Reviews</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-[#111827]">Faculty Directory & Performance Reviews</h2>
+              <p className="text-xs text-[#64748B]">
                 Candidate review telemetry, verified technical specializations, and AI scheduling ratings.
               </p>
             </div>
@@ -1642,65 +1641,65 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               return (
                 <div
                   key={t.id}
-                  className={`p-5 rounded-2xl border transition-all ${
+                  className={`p-5 rounded-3xl border transition-all ${
                     hasComplaints
-                      ? 'bg-rose-950/10 border-rose-800/40 shadow-rose-950/20'
-                      : 'bg-slate-900 border-slate-800'
+                      ? 'bg-rose-50/40 border-rose-200 shadow-xs'
+                      : 'bg-white border-black/[0.06] shadow-xs'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-bold text-white">{t.display_name}</div>
-                      <div className="text-xs text-slate-400 font-mono">ID: {t.employee_id} &bull; {t.qualification}</div>
+                      <div className="text-sm font-bold text-[#111827]">{t.display_name}</div>
+                      <div className="text-xs text-[#64748B] font-mono">ID: {t.employee_id} &bull; {t.qualification}</div>
                     </div>
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 text-xs font-bold text-amber-400">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      {t.rating_avg.toFixed(1)}
+                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#FFF3EA] text-xs font-bold text-[#FF7A18]">
+                      <Star className="w-3.5 h-3.5 fill-[#FF7A18] text-[#FF7A18]" />
+                      <span>{t.rating_avg.toFixed(1)}</span>
                     </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {techSkills.map((sk) => (
-                      <span key={sk} className="text-[11px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
+                      <span key={sk} className="text-[11px] px-2.5 py-0.5 rounded-lg bg-neutral-100 text-[#334155] font-medium">
                         {sk}
                       </span>
                     ))}
                   </div>
 
                   {t.reviews && t.reviews.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="mt-4 pt-3 border-t border-black/[0.04] space-y-2">
+                      <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
                         Reviews for {t.display_name}
                       </div>
                       {t.reviews.map((review) => (
-                        <div key={review.id} className="p-2.5 rounded-lg bg-[#0B0F19] border border-amber-500/15 text-xs">
+                        <div key={review.id} className="p-3 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] text-xs">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold text-slate-200">{review.subject} &bull; {review.section}</span>
-                            <span className="shrink-0 text-amber-400 font-bold flex items-center gap-1">
+                            <span className="font-semibold text-[#111827]">{review.subject} &bull; {review.section}</span>
+                            <span className="shrink-0 text-[#FF7A18] font-bold flex items-center gap-1">
                               <Star className="w-3 h-3 fill-current" /> {review.rating}/5
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-1">{review.comments}</p>
+                          <p className="text-[11px] text-[#64748B] mt-1">{review.comments}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {t.active_restrictions && t.active_restrictions.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-rose-900/30 space-y-2">
-                      <div className="text-[11px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                    <div className="mt-4 pt-3 border-t border-rose-100 space-y-2">
+                      <div className="text-[11px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
                         Active Agent Blacklist Restriction
                       </div>
                       {t.active_restrictions.map((r) => (
-                        <div key={r.id} className="p-2 rounded-lg bg-rose-950/40 border border-rose-800/40 text-xs text-rose-200">
+                        <div key={r.id} className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900">
                           <div className="font-semibold">{r.section} &bull; {r.subject}</div>
-                          <div className="text-[11px] text-rose-300/80 mt-0.5">{r.reason}</div>
+                          <div className="text-[11px] text-rose-700/90 mt-0.5">{r.reason}</div>
                           {isAdmin && (
                             <div className="mt-2 flex justify-end">
                               <button
                                 onClick={() => handleToggleRestriction(r.id)}
-                                className="text-[10px] text-slate-400 hover:text-white underline"
+                                className="text-[11px] text-rose-700 hover:text-rose-900 underline font-semibold cursor-pointer"
                               >
                                 Toggle Restriction
                               </button>
@@ -1721,15 +1720,15 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
       {isAdmin && activeTab === 'audit' && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-white">LangGraph Autonomous Conflict Resolver Decisions</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-lg font-bold text-[#111827]">LangGraph Autonomous Conflict Resolver Decisions</h2>
+            <p className="text-xs text-[#64748B]">
               Traceability logs detailing how the agent handled teacher collisions, bypassed restricted teachers, and enforced ground limits.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span>Status: Zero Hard Clashes &bull; All 10 Technical Batches Satisfied</span>
             </div>
 
@@ -1742,9 +1741,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               ]).map((dec, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-xs text-slate-300 font-mono flex items-start gap-3"
+                  className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] text-xs text-[#334155] font-mono flex items-start gap-3"
                 >
-                  <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <ChevronRight className="w-4 h-4 text-[#FF7A18] shrink-0 mt-0.5" />
                   <span>{dec}</span>
                 </div>
               ))}
@@ -1755,21 +1754,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Period Management & Instant Substitute Finder Drawer (ADMIN ONLY) */}
       {isAdmin && activeSlotModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div>
-                <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <Edit3 className="w-4 h-4 text-amber-400" />
+                <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-[#FF7A18]" />
                   Period Management & Substitution Desk
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#64748B]">
                   {activeSlotModal.day_of_week} &bull; Period {activeSlotModal.period_number} ({activeSlotModal.start_time} - {activeSlotModal.end_time})
                 </p>
               </div>
               <button
                 onClick={() => setActiveSlotModal(null)}
-                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -1778,7 +1777,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             <div className="space-y-4">
               {/* Subject & Track Module */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Subject Module</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Subject Module</label>
                 <select
                   value={editingSubjectCode}
                   onChange={(e) => {
@@ -1789,7 +1788,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                       setEditingSubjectName(foundSub.name)
                     }
                   }}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white font-semibold"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] font-semibold focus:outline-none focus:border-[#FF7A18]"
                 >
                   <option value="">-- Select Technical Subject Module --</option>
                   {adminCourses.map(c => (
@@ -1816,7 +1815,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   )}
                 </select>
                 {editingSubjectName && (
-                  <div className="text-[11px] text-amber-400 font-semibold mt-1">
+                  <div className="text-[11px] text-[#FF7A18] font-bold mt-1.5">
                     Selected Module: {editingSubjectName}
                   </div>
                 )}
@@ -1824,11 +1823,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
               {/* Assigned Faculty Teacher */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Assigned Faculty Instructor</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Assigned Faculty Instructor</label>
                 <select
                   value={editingTeacherId}
                   onChange={(e) => setEditingTeacherId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   <option value="">-- Select Lead Faculty --</option>
                   {teachers.map(t => (
@@ -1842,22 +1841,22 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               {/* Venue & Slot Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Room / Venue</label>
+                  <label className="block text-[11px] font-bold text-[#334155] mb-1">Room / Venue</label>
                   <input
                     type="text"
                     value={editingRoom}
                     onChange={(e) => setEditingRoom(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl px-3 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                     placeholder="Tech Lab 101 / Virtual Zoom"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Slot Type</label>
+                  <label className="block text-[11px] font-bold text-[#334155] mb-1">Slot Type</label>
                   <select
                     value={editingSlotType}
                     onChange={(e) => setEditingSlotType(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl px-3 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   >
                     <option value="lecture">Technical Lecture</option>
                     <option value="lab">Hands-On Lab Sandbox</option>
@@ -1868,37 +1867,37 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
 
               {/* 1-Click Launch Live Class */}
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Video className="w-4 h-4 text-cyan-400" />
+                  <div className="text-xs font-bold text-[#111827] flex items-center gap-1.5">
+                    <Video className="w-4 h-4 text-[#FF7A18]" />
                     Live Video Classroom Stream
                   </div>
-                  <div className="text-[11px] text-slate-400">Launch live Zoom or WebRTC broadcast for this session.</div>
+                  <div className="text-[11px] text-[#64748B]">Launch live Zoom or WebRTC broadcast for this session.</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleLaunchLiveSession(activeSlotModal)}
                   disabled={launchingLiveClass}
-                  className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <Play className="w-3.5 h-3.5 fill-slate-950" />
+                  <Play className="w-3.5 h-3.5 fill-current" />
                   <span>{launchingLiveClass ? 'Launching...' : 'Launch Class'}</span>
                 </button>
               </div>
 
               {/* Substitutes Section */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
+              <div className="space-y-2 pt-2 border-t border-black/[0.06]">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-emerald-400" />
+                  <div className="text-xs font-bold text-[#334155] uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
                     Available Subject Qualified Substitutes
                   </div>
-                  {loadingSubstitutes && <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+                  {loadingSubstitutes && <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#FF7A18]" />}
                 </div>
 
                 {substitutes.length === 0 && !loadingSubstitutes ? (
-                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-400">
+                  <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] text-center text-xs text-[#64748B]">
                     No alternate teachers found with matching subject qualifications.
                   </div>
                 ) : (
@@ -1906,23 +1905,23 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     {substitutes.map((sub) => (
                       <div
                         key={sub.teacher_id}
-                        className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
+                        className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
                           sub.is_free
-                            ? 'bg-slate-950/80 border-slate-800 hover:border-emerald-500/50'
-                            : 'bg-slate-950/40 border-slate-900 opacity-60'
+                            ? 'bg-white border-black/[0.06] hover:border-emerald-500/50'
+                            : 'bg-neutral-50 border-black/[0.04] opacity-60'
                         }`}
                       >
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-white">{sub.display_name}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
+                            <span className="text-xs font-bold text-[#111827]">{sub.display_name}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-100 text-[#64748B] font-mono">
                               {sub.employee_id}
                             </span>
-                            <span className="text-[10px] flex items-center gap-0.5 text-amber-400 font-bold">
+                            <span className="text-[10px] flex items-center gap-0.5 text-[#FF7A18] font-bold">
                               <Star className="w-3 h-3 fill-current" /> {sub.rating_avg}
                             </span>
                           </div>
-                          <div className="text-[11px] text-slate-400">
+                          <div className="text-[11px] text-[#64748B]">
                             Load today: {sub.current_day_load}/{sub.max_daily_periods} periods
                           </div>
                         </div>
@@ -1931,10 +1930,10 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                           type="button"
                           onClick={() => handleAssignSubstitute(sub.teacher_id)}
                           disabled={!sub.is_free}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             sub.is_free
-                              ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
-                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                              : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                           }`}
                         >
                           Assign Sub
@@ -1946,18 +1945,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex justify-end gap-3 pt-3 border-t border-black/[0.06]">
               <button
                 type="button"
                 onClick={() => setActiveSlotModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] cursor-pointer"
               >
                 Close
               </button>
               <button
                 type="button"
                 onClick={handleSaveSlotEdits}
-                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-amber-500/20"
+                className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 cursor-pointer"
               >
                 Save Slot Details
               </button>
@@ -1968,21 +1967,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Slot Viewer & Live Launcher Modal (FACULTY & STUDENT) */}
       {showSlotViewerModal && selectedSlotForView && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div>
-                <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-400" />
+                <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#FF7A18]" />
                   {selectedSlotForView.day_of_week} &bull; Period {selectedSlotForView.period_number}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#64748B]">
                   {selectedSlotForView.start_time} - {selectedSlotForView.end_time} &bull; {selectedSlotForView.room_or_venue || 'Technical Lab Hall'}
                 </p>
               </div>
               <button
                 onClick={() => setShowSlotViewerModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -1998,35 +1997,35 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 <div className="space-y-4">
                   {/* Live Status Header */}
                   {isLive ? (
-                    <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs animate-pulse">
-                      <div className="flex items-center gap-2 text-rose-300 font-extrabold uppercase tracking-wider">
+                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs animate-pulse">
+                      <div className="flex items-center gap-2 text-rose-700 font-extrabold uppercase tracking-wider">
                         <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
                         🔴 LIVE BROADCAST ACTIVE
                       </div>
-                      <span className="text-[11px] text-rose-400 font-semibold bg-rose-500/20 px-2 py-0.5 rounded">
+                      <span className="text-[11px] text-rose-700 font-bold bg-rose-100 px-2 py-0.5 rounded-lg">
                         Zoom Connected
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-slate-400 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-slate-600" />
+                    <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-[#64748B] font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-neutral-400" />
                         Scheduled Timetable Period
                       </div>
-                      <span className="text-[11px] text-slate-500">Offline / Awaiting Broadcast</span>
+                      <span className="text-[11px] text-[#94A3B8]">Offline / Awaiting Broadcast</span>
                     </div>
                   )}
 
-                  <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                  <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${norm.color || '#f59e0b'}20`, color: norm.color || '#f59e0b' }}>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg" style={{ backgroundColor: `${norm.color || '#FF7A18'}15`, color: norm.color || '#FF7A18' }}>
                         {norm.code}
                       </span>
-                      <span className="text-xs font-bold text-white">{norm.name}</span>
+                      <span className="text-xs font-bold text-[#111827]">{norm.name}</span>
                     </div>
-                    <div className="text-xs text-slate-400 flex items-center justify-between">
-                      <span>Faculty: <strong className="text-slate-200">{norm.teacher}</strong></span>
-                      <span>Venue: <strong className="text-slate-200">{norm.room}</strong></span>
+                    <div className="text-xs text-[#64748B] flex items-center justify-between">
+                      <span>Faculty: <strong className="text-[#111827]">{norm.teacher}</strong></span>
+                      <span>Venue: <strong className="text-[#111827]">{norm.room}</strong></span>
                     </div>
                   </div>
 
@@ -2036,13 +2035,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         type="button"
                         onClick={() => handleLaunchLiveSession(selectedSlotForView)}
                         disabled={launchingLiveClass}
-                        className={`w-full py-3 rounded-xl text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                        className={`w-full py-3 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer ${
                           isLive
-                            ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse'
-                            : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 shadow-amber-500/20'
+                            ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/30 animate-pulse'
+                            : 'bg-[#FF7A18] hover:bg-[#EA6C0A] shadow-[#FF7A18]/25'
                         }`}
                       >
-                        {isLive ? <Video className="w-4 h-4" /> : <Play className="w-4 h-4 fill-slate-950" />}
+                        {isLive ? <Video className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
                         <span>
                           {launchingLiveClass
                             ? 'Connecting Stream...'
@@ -2058,13 +2057,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                         type="button"
                         onClick={() => handleLaunchLiveSession(selectedSlotForView)}
                         disabled={launchingLiveClass}
-                        className={`w-full py-3 rounded-xl text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                        className={`w-full py-3 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
                           isLive
-                            ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 shadow-rose-500/30 animate-pulse cursor-pointer'
-                            : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-600 cursor-pointer'
+                            ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/30 animate-pulse cursor-pointer'
+                            : 'bg-neutral-100 text-[#64748B] border border-black/[0.06] hover:bg-neutral-200 cursor-pointer'
                         }`}
                       >
-                        {isLive ? <Play className="w-4 h-4 fill-slate-950" /> : <Video className="w-4 h-4 text-slate-500" />}
+                        {isLive ? <Play className="w-4 h-4 fill-current" /> : <Video className="w-4 h-4 text-neutral-400" />}
                         <span>
                           {isLive
                             ? '🔴 Join Live Video Classroom'
@@ -2083,9 +2082,9 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                             setShowFeedbackModal(true)
                           }
                         }}
-                        className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="w-full py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-[#111827] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <Star className="w-3.5 h-3.5 text-amber-400" />
+                        <Star className="w-3.5 h-3.5 text-[#FF7A18]" />
                         Rate Faculty Instructor
                       </button>
                     )}
@@ -2099,21 +2098,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Manage Holidays & Off-Days Modal (ADMIN ONLY) */}
       {isAdmin && showHolidayModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/20 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div>
-                <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <Palmtree className="w-4 h-4 text-amber-400" />
+                <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                  <Palmtree className="w-4 h-4 text-[#FF7A18]" />
                   Institute Holiday & Off-Day Manager
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#64748B]">
                   Set institute-wide holidays, weekend off-days, hackathons, and custom breaks.
                 </p>
               </div>
               <button
                 onClick={() => setShowHolidayModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-lg font-bold"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -2122,11 +2121,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Select Day</label>
+                  <label className="block text-xs font-bold text-[#334155] mb-1">Select Day</label>
                   <select
                     value={holidayTargetDay}
                     onChange={(e) => setHolidayTargetDay(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   >
                     {ALL_WEEKDAYS.map(d => (
                       <option key={d} value={d}>{d}</option>
@@ -2135,13 +2134,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Holiday Reason / Tag</label>
+                  <label className="block text-xs font-bold text-[#334155] mb-1">Holiday Reason / Tag</label>
                   <input
                     type="text"
                     value={holidayReasonInput}
                     onChange={(e) => setHolidayReasonInput(e.target.value)}
                     placeholder="e.g. Sunday Weekend Off, Hackathon"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
               </div>
@@ -2152,20 +2151,20 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   onClick={() => {
                     handleToggleDayHoliday(holidayTargetDay, holidayReasonInput)
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-amber-500/20"
+                  className="px-4 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs transition-all shadow-md shadow-[#FF7A18]/25 cursor-pointer"
                 >
                   {holidays[holidayTargetDay] ? 'Update / Clear Holiday' : 'Mark as Holiday'}
                 </button>
               </div>
 
               {/* List of active holidays */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <div className="space-y-2 pt-2 border-t border-black/[0.06]">
+                <div className="text-xs font-bold text-[#334155] uppercase tracking-wider">
                   Active Institute Holidays ({Object.keys(holidays).length})
                 </div>
 
                 {Object.keys(holidays).length === 0 ? (
-                  <div className="p-3 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl">
+                  <div className="p-3.5 text-center text-xs text-[#64748B] bg-[#FAF9F6] rounded-2xl">
                     No holidays configured. All 7 days are active.
                   </div>
                 ) : (
@@ -2173,20 +2172,20 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                     {Object.entries(holidays).map(([day, reason]) => (
                       <div
                         key={day}
-                        className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/20 flex items-center justify-between"
+                        className="p-3 rounded-2xl bg-[#FFF9EE] border border-[#FFDEC4] flex items-center justify-between"
                       >
                         <div>
-                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                            <Palmtree className="w-3.5 h-3.5 text-amber-400" />
+                          <div className="text-xs font-bold text-[#111827] flex items-center gap-1.5">
+                            <Palmtree className="w-3.5 h-3.5 text-[#FF7A18]" />
                             {day}
                           </div>
-                          <div className="text-[11px] text-amber-300/90">{reason}</div>
+                          <div className="text-[11px] text-[#B45309] font-medium">{reason}</div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleToggleDayHoliday(day)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-[11px] transition-colors"
+                          className="px-3 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-[11px] transition-colors cursor-pointer"
                         >
                           Remove
                         </button>
@@ -2197,11 +2196,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-800">
+            <div className="flex justify-end pt-2 border-t border-black/[0.06]">
               <button
                 type="button"
                 onClick={() => setShowHolidayModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700"
+                className="px-5 py-2.5 rounded-2xl bg-neutral-100 text-[#111827] text-xs font-bold hover:bg-neutral-200 cursor-pointer"
               >
                 Done
               </button>
@@ -2212,16 +2211,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Add Custom Policy Rule Modal (ADMIN ONLY) */}
       {isAdmin && showAddRuleModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <PlusCircle className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-[#FF7A18]" />
                 Create New Scheduling Policy Rule
               </h3>
               <button
                 onClick={() => setShowAddRuleModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -2229,23 +2228,23 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
             <form onSubmit={handleCreateRule} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Rule Name</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Rule Name</label>
                 <input
                   required
                   type="text"
                   value={newRuleName}
                   onChange={(e) => setNewRuleName(e.target.value)}
                   placeholder="e.g. Wednesday Delayed Morning Start"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Rule Type</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Rule Type</label>
                 <select
                   value={newRuleType}
                   onChange={(e) => setNewRuleType(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   <option value="ground_capacity">Ground Concurrent Capacity Limit</option>
                   <option value="max_daily_teacher_periods">Teacher Daily Workload Cap</option>
@@ -2255,7 +2254,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">
+                <label className="block text-xs font-bold text-[#334155] mb-1">
                   Parameter Value (e.g. 3 classes, or "Wednesday")
                 </label>
                 <input
@@ -2264,18 +2263,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   value={newRuleParamVal}
                   onChange={(e) => setNewRuleParamVal(e.target.value)}
                   placeholder="e.g. 3"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Description</label>
                 <textarea
                   rows={2}
                   value={newRuleDesc}
                   onChange={(e) => setNewRuleDesc(e.target.value)}
                   placeholder="Explain why this rule exists..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
@@ -2283,13 +2282,13 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 <button
                   type="button"
                   onClick={() => setShowAddRuleModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 cursor-pointer"
                 >
                   Save Rule to Neon DB
                 </button>
@@ -2301,16 +2300,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* Log Teacher Leave Modal (ADMIN ONLY) */}
       {isAdmin && showLeaveModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <UserX className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <UserX className="w-4 h-4 text-[#FF7A18]" />
                 Simulate Faculty Leave & Absence
               </h3>
               <button
                 onClick={() => setShowLeaveModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -2318,11 +2317,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
             <form onSubmit={handleLeaveSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Select Absent Teacher</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Select Absent Teacher</label>
                 <select
                   value={leaveTeacherId}
                   onChange={(e) => setLeaveTeacherId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   {teachers.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -2333,11 +2332,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Day of Week</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Day of Week</label>
                 <select
                   value={leaveDay}
                   onChange={(e) => setLeaveDay(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   {ALL_WEEKDAYS.map((d) => (
                     <option key={d} value={d}>{d}</option>
@@ -2346,12 +2345,12 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Reason</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Reason</label>
                 <input
                   type="text"
                   value={leaveReason}
                   onChange={(e) => setLeaveReason(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 text-sm"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
@@ -2359,14 +2358,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 <button
                   type="button"
                   onClick={() => setShowLeaveModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingLeave}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingLeave ? 'Logging...' : 'Record Absence & Re-route'}
                 </button>
@@ -2378,16 +2377,16 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
       {/* File Student Review / Complaint Modal (Students & Admins) */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#0B0F19] border border-amber-500/15 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-500" />
                 {isStudent ? 'Rate Your Instructor' : 'Submit Teacher Review / Complaint'}
               </h3>
               <button
                 onClick={() => setShowFeedbackModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm"
+                className="text-[#94A3B8] hover:text-[#111827] text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
@@ -2395,11 +2394,11 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
 
             <form onSubmit={handleFeedbackSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Instructor</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Instructor</label>
                 <select
                   value={feedbackTeacherId}
                   onChange={(e) => setFeedbackTeacherId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   {teachers.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -2410,17 +2409,17 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Your Rating (1 to 5 Stars)</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Your Rating (1 to 5 Stars)</label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setFeedbackRating(star)}
-                      className={`flex-1 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 ${
+                      className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all ${
                         feedbackRating >= star
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-slate-800 text-slate-500'
+                          ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]'
+                          : 'bg-neutral-100 text-neutral-400 hover:bg-neutral-200'
                       }`}
                     >
                       <Star className="w-3.5 h-3.5 fill-current" />
@@ -2429,21 +2428,21 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                   ))}
                 </div>
                 {feedbackRating <= 2 && (
-                  <p className="text-[11px] text-rose-400 mt-1">
+                  <p className="text-[11px] text-rose-600 font-semibold mt-1">
                     Rating &le; 2 automatically triggers an AI blacklist restriction for this class.
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Feedback Comments / Feedback</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Feedback Comments / Feedback</label>
                 <textarea
                   required
                   rows={3}
                   value={feedbackComments}
                   onChange={(e) => setFeedbackComments(e.target.value)}
                   placeholder="Share your feedback on pace, concept clarity, or class engagement..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-rose-500"
+                  className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-2xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
@@ -2451,14 +2450,14 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 <button
                   type="button"
                   onClick={() => setShowFeedbackModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingFeedback}
-                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold transition-all shadow-md shadow-[#FF7A18]/25 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
                 </button>

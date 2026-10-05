@@ -292,20 +292,20 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
   // ═══════════════════════════════════════════════════════════════════════════
   if (isStaff) {
     return (
-      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 font-sans">
         {/* Top Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl border border-black/[0.06] shadow-xs relative overflow-hidden">
           <div className="space-y-2 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold uppercase tracking-wider">
               <Brain className="w-3.5 h-3.5" />
               {isAdmin
                 ? 'Institutional Administrator • Enterprise Cognitive Intelligence'
                 : 'Faculty Cognitive Intelligence • Technical Cohort Radar'}
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight font-serif flex items-center gap-3">
               {isAdmin ? 'Institute-Wide Learning Curves & Skill Mastery Radar' : 'Cohort Skill Mastery & Telemetry'}
             </h1>
-            <p className="text-slate-400 text-sm max-w-2xl">
+            <p className="text-[#64748B] text-sm max-w-2xl">
               {isAdmin
                 ? 'Comprehensive learning curves and skill state vectors for all candidates across technical tracks. Inspect code delivery bottlenecks, monitor skill baselines, and review candidate performance metrics.'
                 : 'Real-time skill state vectors across your assigned training tracks (Python with GenAI, Salesforce, ServiceNow, Web, DevOps). Monitor concept mastery and deploy targeted sprint unblocking sessions.'}
@@ -313,14 +313,14 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
           </div>
 
           {/* Technical Course Switcher */}
-          <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800 relative z-10">
+          <div className="flex flex-wrap items-center gap-2 bg-[#FAF9F6] p-2 rounded-2xl border border-black/[0.06] relative z-10">
             {isAdmin && (
               <button
                 onClick={() => handleClassSwitch(0)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   selectedClassGrade === 0
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#FF7A18] text-white shadow-xs font-black'
+                    : 'text-[#64748B] hover:text-[#111827]'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -341,10 +341,10 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <button
                 key={crs.id}
                 onClick={() => handleClassSwitch(crs.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedClassGrade === crs.id
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md font-extrabold'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#FF7A18] text-white shadow-xs font-extrabold'
+                    : 'text-[#64748B] hover:text-[#111827]'
                 }`}
               >
                 {crs.label}
@@ -355,51 +355,51 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
         {/* ── Macro Telemetry Metric Cards ────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#64748B] font-bold uppercase">
               <span>Students Evaluated</span>
-              <Users className="w-4 h-4 text-amber-400" />
+              <Users className="w-4 h-4 text-[#FF7A18]" />
             </div>
-            <div className="text-3xl font-black text-amber-400 font-mono">{cohortData.length}</div>
-            <div className="text-[11px] text-slate-500">
+            <div className="text-3xl font-black text-[#111827] font-mono">{cohortData.length}</div>
+            <div className="text-[11px] text-[#94A3B8]">
               {selectedClassGrade === 0 ? 'Across Entire Institute' : `Enrolled in Course ${selectedClassGrade}`}
             </div>
           </div>
 
-          <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#64748B] font-bold uppercase">
               <span>Mean Competency</span>
-              <TrendingUp className="w-4 h-4 text-amber-400" />
+              <TrendingUp className="w-4 h-4 text-[#FF7A18]" />
             </div>
-            <div className="text-3xl font-black text-amber-400 font-mono">{classAvgCompetency}%</div>
-            <div className="text-[11px] text-slate-500">Global C Index</div>
+            <div className="text-3xl font-black text-[#FF7A18] font-mono">{classAvgCompetency}%</div>
+            <div className="text-[11px] text-[#94A3B8]">Global C Index</div>
           </div>
 
-          <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#64748B] font-bold uppercase">
               <span>Bayesian Mastery</span>
-              <Award className="w-4 h-4 text-emerald-400" />
+              <Award className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="text-3xl font-black text-emerald-400 font-mono">{classAvgMastery}%</div>
-            <div className="text-[11px] text-slate-500">Average Knowledge Density</div>
+            <div className="text-3xl font-black text-emerald-600 font-mono">{classAvgMastery}%</div>
+            <div className="text-[11px] text-[#94A3B8]">Average Knowledge Density</div>
           </div>
 
-          <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#64748B] font-bold uppercase">
               <span>High Risk Candidates</span>
-              <AlertTriangle className="w-4 h-4 text-rose-400" />
+              <AlertTriangle className="w-4 h-4 text-rose-500" />
             </div>
-            <div className="text-3xl font-black text-rose-400 font-mono">{highRiskCount}</div>
-            <div className="text-[11px] text-slate-500">Require Direct Faculty Mentorship</div>
+            <div className="text-3xl font-black text-rose-600 font-mono">{highRiskCount}</div>
+            <div className="text-[11px] text-[#94A3B8]">Require Direct Faculty Mentorship</div>
           </div>
 
-          <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-2 shadow-xl">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
+          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#64748B] font-bold uppercase">
               <span>Active Misconceptions</span>
-              <Clock className="w-4 h-4 text-amber-400" />
+              <Clock className="w-4 h-4 text-[#FF7A18]" />
             </div>
-            <div className="text-3xl font-black text-amber-400 font-mono">{misconceptionCount}</div>
-            <div className="text-[11px] text-slate-500">
+            <div className="text-3xl font-black text-[#111827] font-mono">{misconceptionCount}</div>
+            <div className="text-[11px] text-[#94A3B8]">
               {isAdmin ? `${overriddenCount} Admin Overrides Active` : 'Code Delivery Bottlenecks'}
             </div>
           </div>
@@ -409,13 +409,13 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-400" />
+              <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#FF7A18]" />
                 {isAdmin && selectedClassGrade === 0
                   ? 'Institute-Wide Candidate Cognitive Directory (All Courses)'
                   : `Course ${selectedClassGrade} Candidate Cognitive Directory`}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#64748B]">
                 {isAdmin
                   ? 'As an Administrator, you can inspect each student and edit their cognitive risk level, bottleneck status, or competency baseline.'
                   : 'Click on any student to inspect their granular Bayesian concept radar and active learning roadmaps.'}
@@ -425,20 +425,20 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             {/* Filter & Search Bar */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#94A3B8]" />
                 <input
                   type="text"
                   value={cohortSearch}
                   onChange={(e) => setCohortSearch(e.target.value)}
                   placeholder="Search student or email..."
-                  className="bg-[#0B0F19] border border-amber-500/15 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="bg-white border border-black/[0.08] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#111827] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <select
                 value={filterRisk}
                 onChange={(e) => setFilterRisk(e.target.value)}
-                className="bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                className="bg-white border border-black/[0.08] rounded-xl px-3 py-1.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
               >
                 <option value="ALL">All Risk Levels</option>
                 <option value="HIGH">High Risk ({highRiskCount})</option>
@@ -449,7 +449,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <select
                 value={filterBottleneck}
                 onChange={(e) => setFilterBottleneck(e.target.value)}
-                className="bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                className="bg-white border border-black/[0.08] rounded-xl px-3 py-1.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
               >
                 <option value="ALL">All Bottlenecks</option>
                 <option value="MISCONCEPTION">Misconceptions ({misconceptionCount})</option>
@@ -467,42 +467,42 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               const mastPercent = Math.round(student.state.overall_mastery * 100)
               const bColor =
                 student.state.primary_bottleneck === 'MISCONCEPTION'
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
                   : student.state.primary_bottleneck === 'RETRIEVAL_DECAY'
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : student.state.primary_bottleneck === 'TRANSFER_DEFICIT'
-                  ? 'bg-purple-500/10 text-amber-400 border-purple-500/20'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
 
               return (
                 <div
                   key={student.student_id}
                   onClick={() => setSelectedStudentForModal(student)}
-                  className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 cursor-pointer transition-all flex flex-col justify-between space-y-4 shadow-xl group hover:scale-[1.02] relative"
+                  className="p-5 rounded-3xl bg-white border border-black/[0.06] hover:border-[#FF7A18]/40 cursor-pointer transition-all flex flex-col justify-between space-y-4 shadow-xs group hover:scale-[1.01] relative"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${student.avatar_color} text-white font-bold flex items-center justify-center shadow`}
+                          className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${student.avatar_color} text-white font-bold flex items-center justify-center shadow-xs`}
                         >
                           {student.student_name.charAt(0)}
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-white group-hover:text-yellow-300 transition-colors line-clamp-1">
+                          <h4 className="text-sm font-bold text-[#111827] group-hover:text-[#FF7A18] transition-colors line-clamp-1">
                             {student.student_name}
                           </h4>
-                          <span className="text-[10px] text-amber-400 font-mono font-bold">{student.grade_name}</span>
+                          <span className="text-[10px] text-[#64748B] font-mono font-bold">{student.grade_name}</span>
                         </div>
                       </div>
 
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                           student.risk_level === 'HIGH'
-                            ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
                             : student.risk_level === 'MEDIUM'
-                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}
                       >
                         {student.risk_level} RISK
@@ -510,55 +510,55 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     </div>
 
                     {student.admin_override && (
-                      <div className="px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-[10px] text-orange-300 flex items-center gap-1.5">
-                        <ShieldCheck className="w-3 h-3 text-orange-400" />
+                      <div className="px-2.5 py-1 rounded-xl bg-[#FFF3EA] border border-[#FFDEC4] text-[10px] text-[#FF7A18] flex items-center gap-1.5">
+                        <ShieldCheck className="w-3 h-3 text-[#FF7A18]" />
                         <span className="font-semibold">Admin Override Applied</span>
                       </div>
                     )}
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-amber-500/15 space-y-2">
+                    <div className="p-3 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Competency:</span>
-                        <span className="font-mono font-bold text-amber-400">{compPercent}%</span>
+                        <span className="text-[#64748B]">Competency:</span>
+                        <span className="font-mono font-bold text-[#FF7A18]">{compPercent}%</span>
                       </div>
-                      <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                         <div
-                          className="bg-cyan-500 h-full rounded-full transition-all"
+                          className="bg-[#FF7A18] h-full rounded-full transition-all"
                           style={{ width: `${compPercent}%` }}
                         />
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] pt-1">
-                        <span className="text-slate-500">Mastery:</span>
-                        <span className="font-mono text-emerald-400">{mastPercent}%</span>
+                        <span className="text-[#94A3B8]">Mastery:</span>
+                        <span className="font-mono text-emerald-600 font-bold">{mastPercent}%</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400">Bottleneck:</span>
-                      <span className={`px-2 py-0.5 rounded border font-semibold ${bColor}`}>
+                      <span className="text-[#64748B]">Bottleneck:</span>
+                      <span className={`px-2 py-0.5 rounded-md border font-semibold ${bColor}`}>
                         {student.state.primary_bottleneck}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-amber-500/15 flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-black/[0.06] flex items-center justify-between gap-2">
                     {isAdmin ? (
                       <>
                         <button
                           onClick={(e) => handleOpenEditModal(student, e)}
-                          className="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-orange-300 border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 transition-all hover:scale-105"
+                          className="px-2.5 py-1.5 rounded-xl bg-[#FFF3EA] hover:bg-[#FFE8D6] text-[#FF7A18] border border-[#FFDEC4] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Edit</span>
                         </button>
-                        <div className="flex items-center text-xs text-amber-400 font-bold group-hover:translate-x-1 transition-transform">
+                        <div className="flex items-center text-xs text-[#FF7A18] font-bold group-hover:translate-x-1 transition-transform">
                           <span>Radar</span>
                           <ArrowRight className="w-3.5 h-3.5 ml-1" />
                         </div>
                       </>
                     ) : (
-                      <div className="flex items-center justify-between text-xs text-amber-400 font-bold group-hover:translate-x-1 transition-transform w-full">
+                      <div className="flex items-center justify-between text-xs text-[#FF7A18] font-bold group-hover:translate-x-1 transition-transform w-full">
                         <span>Inspect Neural Radar</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </div>
@@ -572,30 +572,30 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
         {/* ── ADMIN EDIT COGNITIVE PROFILE MODAL ──────────────────────────────── */}
         {editingStudent && (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-slate-900 border border-indigo-500/40 rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white border border-black/[0.08] rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-orange-400 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FFF3EA] text-[#FF7A18] flex items-center justify-center font-bold">
                     <Sliders className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-base">Edit Student Cognitive Profile</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="font-bold text-[#111827] text-base">Edit Student Cognitive Profile</h3>
+                    <p className="text-xs text-[#64748B]">
                       {editingStudent.student_name} &bull; {editingStudent.grade_name} ({editingStudent.email})
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setEditingStudent(null)}
-                  className="text-slate-400 hover:text-white text-2xl font-bold p-1"
+                  className="text-[#94A3B8] hover:text-[#111827] text-2xl font-bold p-1 leading-none cursor-pointer"
                 >
                   &times;
                 </button>
               </div>
 
               {saveSuccessMessage && (
-                <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs text-center flex items-center justify-center gap-2">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs text-center flex items-center justify-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{saveSuccessMessage}</span>
                 </div>
@@ -604,21 +604,21 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <div className="space-y-4 text-xs">
                 {/* Risk Level Selector */}
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Administrative Risk Classification:</label>
+                  <label className="font-bold text-[#111827]">Administrative Risk Classification:</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['LOW', 'MEDIUM', 'HIGH'] as const).map((lvl) => (
                       <button
                         key={lvl}
                         type="button"
                         onClick={() => setEditRiskLevel(lvl)}
-                        className={`py-2 rounded-xl font-bold border transition-all ${
+                        className={`py-2 rounded-xl font-bold border transition-all cursor-pointer ${
                           editRiskLevel === lvl
                             ? lvl === 'HIGH'
-                              ? 'bg-rose-500/20 border-rose-500 text-rose-300 shadow'
+                              ? 'bg-rose-50 border-rose-400 text-rose-700 shadow-xs'
                               : lvl === 'MEDIUM'
-                              ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
-                              : 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                              ? 'bg-amber-50 border-amber-400 text-amber-700 shadow-xs'
+                              : 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-xs'
+                            : 'bg-[#FAF9F6] border-black/[0.08] text-[#64748B] hover:border-black/20'
                         }`}
                       >
                         {lvl} RISK
@@ -629,11 +629,11 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
                 {/* Primary Bottleneck Selector */}
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Primary Learning Bottleneck:</label>
+                  <label className="font-bold text-[#111827]">Primary Learning Bottleneck:</label>
                   <select
                     value={editBottleneck}
                     onChange={(e) => setEditBottleneck(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   >
                     <option value="BALANCED">BALANCED (Steady learning progression)</option>
                     <option value="MISCONCEPTION">MISCONCEPTION (Systemic error reversal needed)</option>
@@ -646,8 +646,8 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                 {/* Competency Slider */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-300">Competency Baseline ($C$ Index):</label>
-                    <span className="font-mono text-amber-400 font-bold text-sm">{editCompetencyPercent}%</span>
+                    <label className="font-bold text-[#111827]">Competency Baseline ($C$ Index):</label>
+                    <span className="font-mono text-[#FF7A18] font-bold text-sm">{editCompetencyPercent}%</span>
                   </div>
                   <input
                     type="range"
@@ -655,15 +655,15 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     max="100"
                     value={editCompetencyPercent}
                     onChange={(e) => setEditCompetencyPercent(Number(e.target.value))}
-                    className="w-full accent-cyan-500 bg-slate-950 cursor-pointer"
+                    className="w-full accent-[#FF7A18] bg-slate-200 cursor-pointer"
                   />
                 </div>
 
                 {/* Mastery Slider */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-300">Bayesian Knowledge Density ($M$ Index):</label>
-                    <span className="font-mono text-emerald-400 font-bold text-sm">{editMasteryPercent}%</span>
+                    <label className="font-bold text-[#111827]">Bayesian Knowledge Density ($M$ Index):</label>
+                    <span className="font-mono text-emerald-600 font-bold text-sm">{editMasteryPercent}%</span>
                   </div>
                   <input
                     type="range"
@@ -671,35 +671,35 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     max="100"
                     value={editMasteryPercent}
                     onChange={(e) => setEditMasteryPercent(Number(e.target.value))}
-                    className="w-full accent-emerald-500 bg-slate-950 cursor-pointer"
+                    className="w-full accent-emerald-600 bg-slate-200 cursor-pointer"
                   />
                 </div>
 
                 {/* Notes */}
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Administrative Override Rationale / Notes:</label>
+                  <label className="font-bold text-[#111827]">Administrative Override Rationale / Notes:</label>
                   <textarea
                     rows={3}
                     value={editNotes}
                     onChange={(e) => setEditNotes(e.target.value)}
                     placeholder="e.g. Risk level adjusted following remedial clinic and 1-on-1 counselor evaluation..."
-                    className="w-full bg-[#0B0F19] border border-amber-500/15 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[#FAF9F6] border border-black/[0.08] rounded-xl p-3 text-xs text-[#111827] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-black/[0.06] flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setEditingStudent(null)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveAdminOverride}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+                  className="px-6 py-2.5 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-extrabold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Save & Apply Override</span>
@@ -711,44 +711,44 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
         {/* ── Deep Student Neural State Radar Modal ────────────────────────────── */}
         {selectedStudentForModal && (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white border border-black/[0.08] rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-black/[0.06] pb-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${selectedStudentForModal.avatar_color} text-white font-extrabold flex items-center justify-center text-lg shadow-lg`}
+                    className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${selectedStudentForModal.avatar_color} text-white font-extrabold flex items-center justify-center text-lg shadow-sm`}
                   >
                     {selectedStudentForModal.student_name.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-[#111827] flex items-center gap-2">
                       {selectedStudentForModal.student_name}
-                      <span className="text-xs font-mono font-normal text-amber-400">
+                      <span className="text-xs font-mono font-normal text-[#FF7A18]">
                         ({selectedStudentForModal.email})
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[#64748B]">
                       {selectedStudentForModal.grade_name} &bull; Primary Bottleneck:{' '}
-                      <strong className="text-yellow-300">{selectedStudentForModal.state.primary_bottleneck}</strong> &bull; Total Evidence Events:{' '}
+                      <strong className="text-[#FF7A18]">{selectedStudentForModal.state.primary_bottleneck}</strong> &bull; Total Evidence Events:{' '}
                       {selectedStudentForModal.recent_events_count}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedStudentForModal(null)}
-                  className="text-slate-400 hover:text-white text-2xl font-bold p-1"
+                  className="text-[#94A3B8] hover:text-[#111827] text-2xl font-bold p-1 leading-none cursor-pointer"
                 >
                   &times;
                 </button>
               </div>
 
               {selectedStudentForModal.admin_override && (
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl text-xs text-orange-300 space-y-1">
+                <div className="p-3 bg-[#FFF3EA] border border-[#FFDEC4] rounded-2xl text-xs text-[#FF7A18] space-y-1">
                   <div className="font-bold flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-orange-400" />
+                    <ShieldCheck className="w-4 h-4 text-[#FF7A18]" />
                     <span>Administrator Override in Effect</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-[11px] text-[#64748B]">
                     {selectedStudentForModal.admin_override.notes || 'Manually reviewed and adjusted by Technical Director / Administrator.'}
                   </p>
                 </div>
@@ -756,17 +756,17 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
               {/* Subject Breakdowns */}
               <div className="space-y-3">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <Target className="w-4 h-4 text-amber-400" />
+                <div className="text-xs font-bold text-[#64748B] uppercase tracking-wider flex items-center gap-2">
+                  <Target className="w-4 h-4 text-[#FF7A18]" />
                   Subject-Wise Bayesian State Breakdown
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {Object.values(selectedStudentForModal.state.subjects).map((subj) => (
-                    <div key={subj.subject} className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-3">
+                    <div key={subj.subject} className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white">{subj.subject}</span>
-                        <span className="font-mono text-amber-400 text-xs font-bold">
+                        <span className="text-xs font-bold text-[#111827]">{subj.subject}</span>
+                        <span className="font-mono text-[#FF7A18] text-xs font-bold">
                           {Math.round(subj.overall_competency * 100)}% C
                         </span>
                       </div>
@@ -775,13 +775,13 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                         {subj.concepts.map((c) => (
                           <div
                             key={c.concept_id}
-                            className="p-2 rounded-xl bg-[#0B0F19] border border-amber-500/15 flex items-center justify-between text-[11px]"
+                            className="p-2.5 rounded-xl bg-white border border-black/[0.06] flex items-center justify-between text-[11px]"
                           >
-                            <span className="text-slate-300 truncate max-w-[180px]">{c.concept_name}</span>
+                            <span className="text-[#334155] truncate max-w-[180px]">{c.concept_name}</span>
                             <div className="flex items-center gap-2 font-mono">
-                              <span className="text-emerald-400">{Math.round(c.mastery * 100)}% M</span>
-                              <span className="text-slate-500">|</span>
-                              <span className="text-amber-400">{Math.round(c.competency * 100)}% C</span>
+                              <span className="text-emerald-600 font-bold">{Math.round(c.mastery * 100)}% M</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="text-[#FF7A18] font-bold">{Math.round(c.competency * 100)}% C</span>
                             </div>
                           </div>
                         ))}
@@ -792,7 +792,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-black/[0.06] flex items-center justify-end gap-3">
                 {isAdmin && (
                   <button
                     onClick={() => {
@@ -800,7 +800,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                       setSelectedStudentForModal(null)
                       handleOpenEditModal(s)
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-orange-300 border border-indigo-500/40 font-bold text-xs flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-xl bg-[#FAF9F6] hover:bg-[#FFF3EA] text-[#FF7A18] border border-black/[0.08] hover:border-[#FFDEC4] font-bold text-xs flex items-center gap-2 cursor-pointer transition-all"
                   >
                     <Edit3 className="w-4 h-4" />
                     <span>Edit Cognitive Profile</span>
@@ -812,7 +812,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                       alert(`Targeted unblocking assignment dispatched to ${selectedStudentForModal.student_name}!`)
                       setSelectedStudentForModal(null)
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg"
+                    className="px-5 py-2.5 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-all"
                   >
                     <Zap className="w-4 h-4" />
                     <span>Assign Targeted Remediation Drill</span>
@@ -1192,43 +1192,43 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 font-sans">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 p-8 rounded-3xl border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl border border-black/[0.06] shadow-xs relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold uppercase tracking-wider">
             <Brain className="w-3.5 h-3.5" />
             LENS-Ω + SN1 &bull; {neuralState.grade_name} Granular Multi-Subject Graph
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight font-serif flex items-center gap-3">
             {user?.display_name || 'Student'} &bull; Cognitive Neural Engine
           </h1>
-          <p className="text-slate-400 text-sm max-w-2xl">
+          <p className="text-[#64748B] text-sm max-w-2xl">
             Enrolled in <strong>{neuralState.grade_name}</strong> ({subjectList.join(', ')}). Psychometric state
             estimation tracking each subject individually with Bayesian updates.
           </p>
         </div>
 
         <div className="flex items-center gap-4 relative z-10">
-          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center min-w-[120px]">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Holistic Competency</div>
-            <div className="text-3xl font-black text-amber-400 font-mono">
+          <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] text-center min-w-[120px]">
+            <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Holistic Competency</div>
+            <div className="text-3xl font-black text-[#FF7A18] font-mono">
               {(neuralState.overall_competency * 100).toFixed(0)}%
             </div>
-            <div className="text-[10px] text-slate-500">Global C Index</div>
+            <div className="text-[10px] text-[#94A3B8]">Global C Index</div>
           </div>
-          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center min-w-[140px]">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Primary Bottleneck</div>
+          <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] text-center min-w-[140px]">
+            <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Primary Bottleneck</div>
             <div
-              className={`text-xs font-black px-2 py-1 rounded mt-1 ${
+              className={`text-xs font-black px-2 py-1 rounded-full mt-1 border ${
                 neuralState.primary_bottleneck === 'INSUFFICIENT_EVIDENCE'
-                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-[#FFF3EA] text-[#FF7A18] border-[#FFDEC4]'
               }`}
             >
               {neuralState.primary_bottleneck}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Events: {neuralState.total_evidence_events}</div>
+            <div className="text-[10px] text-[#94A3B8] mt-1">Events: {neuralState.total_evidence_events}</div>
           </div>
         </div>
       </div>
@@ -1236,8 +1236,8 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
       {/* ── Subject-Wise Benchmark Assessment Hub ──────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-400" />
+          <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
+            <Award className="w-5 h-5 text-[#FF7A18]" />
             Subject-Wise Benchmark Assessment Hub &bull; {neuralState.grade_name}
           </h2>
         </div>
@@ -1251,22 +1251,22 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             return (
               <div
                 key={subjName}
-                className={`p-5 rounded-3xl border flex flex-col justify-between space-y-4 shadow-xl transition-all ${
+                className={`p-5 rounded-3xl border flex flex-col justify-between space-y-4 shadow-xs transition-all ${
                   isTaken
-                    ? 'bg-slate-900/90 border-emerald-500/40 shadow-emerald-500/5'
-                    : 'bg-slate-900/80 border-slate-800'
+                    ? 'bg-white border-emerald-200 shadow-emerald-500/5'
+                    : 'bg-white border-black/[0.06]'
                 }`}
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">{subjName}</span>
+                    <span className="text-xs font-bold text-[#111827]">{subjName}</span>
                     {isTaken ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Already Completed</span>
                       </span>
                     ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]">
                         Pending Test
                       </span>
                     )}
@@ -1274,40 +1274,40 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
                   <div className="flex items-baseline justify-between">
                     <div>
-                      <div className="text-2xl font-black text-amber-400 font-mono">
+                      <div className="text-2xl font-black text-[#FF7A18] font-mono">
                         {Math.round(subj.overall_competency * 100)}%
                       </div>
-                      <div className="text-[10px] text-slate-400">Bayesian Competency</div>
+                      <div className="text-[10px] text-[#64748B]">Bayesian Competency</div>
                     </div>
                     {isTaken && (
                       <div className="text-right">
-                        <div className="text-sm font-black text-emerald-400 font-mono">
+                        <div className="text-sm font-black text-emerald-600 font-mono">
                           {scorePct}% Score
                         </div>
-                        <div className="text-[10px] text-slate-400">Diagnostic Result</div>
+                        <div className="text-[10px] text-[#64748B]">Diagnostic Result</div>
                       </div>
                     )}
                   </div>
 
                   {isTaken && (
-                    <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] flex items-center justify-between text-slate-300">
+                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] text-[11px] flex items-center justify-between text-[#334155]">
                       <span>Neural Status:</span>
-                      <span className="font-mono text-yellow-300 font-bold uppercase">{subj.active_bottleneck}</span>
+                      <span className="font-mono text-[#FF7A18] font-bold uppercase">{subj.active_bottleneck}</span>
                     </div>
                   )}
                 </div>
 
                 <button
                   onClick={() => handleStartSubjectBenchmark(subjName)}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs ${
                     isTaken
-                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                      : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-extrabold shadow-cyan-500/20'
+                      ? 'bg-[#FAF9F6] hover:bg-[#FFF3EA] text-[#111827] hover:text-[#FF7A18] border border-black/[0.08]'
+                      : 'bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-extrabold'
                   }`}
                 >
                   {isTaken ? (
                     <>
-                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <RotateCcw className="w-3.5 h-3.5 text-[#FF7A18]" />
                       <span>Retake Benchmark Test</span>
                     </>
                   ) : (
@@ -1324,11 +1324,11 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
       </div>
 
       {/* ── Subject Granular Concepts Matrix ───────────────────────────────────── */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 space-y-6">
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 space-y-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-white text-base flex items-center gap-2">
-              <Activity className="w-4 h-4 text-amber-400" />
+            <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#FF7A18]" />
               Granular Concept-Level Knowledge Tracing Matrix
             </h3>
           </div>
@@ -1338,10 +1338,10 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
               <button
                 key={tab}
                 onClick={() => setActiveSubjectTab(tab)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   activeSubjectTab === tab
-                    ? 'bg-cyan-500 text-slate-950 font-bold shadow'
-                    : 'bg-[#0B0F19] border border-amber-500/15 text-slate-400 hover:text-white'
+                    ? 'bg-[#FF7A18] text-white font-bold shadow-xs'
+                    : 'bg-[#FAF9F6] border border-black/[0.06] text-[#64748B] hover:text-[#111827]'
                 }`}
               >
                 {tab}
@@ -1352,21 +1352,21 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayedConcepts.map((concept) => (
-            <div key={concept.concept_id} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <div key={concept.concept_id} className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-amber-400">{concept.subject}</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                <span className="text-[10px] font-mono text-[#FF7A18] font-semibold">{concept.subject}</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white border border-black/[0.06] text-[#64748B]">
                   {concept.learning_mode}
                 </span>
               </div>
-              <h4 className="text-xs font-bold text-white line-clamp-1">{concept.concept_name}</h4>
+              <h4 className="text-xs font-bold text-[#111827] line-clamp-1">{concept.concept_name}</h4>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Mastery:</span>
-                <span className="font-mono text-emerald-400 font-bold">{Math.round(concept.mastery * 100)}%</span>
+                <span className="text-[#64748B]">Mastery:</span>
+                <span className="font-mono text-emerald-600 font-bold">{Math.round(concept.mastery * 100)}%</span>
               </div>
               <button
                 onClick={() => handleStartPracticeDrill(concept)}
-                className="w-full py-1.5 rounded-lg bg-cyan-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:border-cyan-500/60 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2 rounded-xl bg-white hover:bg-[#FFF3EA] text-[#FF7A18] border border-black/[0.08] hover:border-[#FFDEC4] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Play className="w-3 h-3 fill-current" />
                 <span>Start Practice Drill</span>
@@ -1377,19 +1377,19 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
       </div>
 
       {/* ── Interactive SN1 AI Assistant Chat ─────────────────────────────────── */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h3 className="font-bold text-white text-base flex items-center gap-2">
-          <Brain className="w-4 h-4 text-amber-400" />
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 space-y-4 shadow-xs">
+        <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+          <Brain className="w-4 h-4 text-[#FF7A18]" />
           Interactive Learning Agent Assistant (SN1 LangGraph)
         </h3>
         <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
           {chatMessages.map((msg, i) => (
             <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`p-3 rounded-2xl max-w-lg text-xs ${
+                className={`p-3.5 rounded-2xl max-w-lg text-xs ${
                   msg.sender === 'user'
-                    ? 'bg-cyan-500 text-slate-950 font-medium'
-                    : 'bg-[#0B0F19] border border-amber-500/15 text-slate-200'
+                    ? 'bg-[#FF7A18] text-white font-medium shadow-xs'
+                    : 'bg-[#FAF9F6] border border-black/[0.06] text-[#334155]'
                 }`}
               >
                 {msg.text}
@@ -1397,19 +1397,19 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-2 border-t border-black/[0.06]">
           <input
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
             placeholder="Ask your learning agent a question..."
-            className="flex-1 bg-[#0B0F19] border border-amber-500/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+            className="flex-1 bg-[#FAF9F6] border border-black/[0.08] rounded-xl px-4 py-2.5 text-xs text-[#111827] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#FF7A18]"
           />
           <button
             onClick={() => handleSendChat()}
             disabled={chatLoading}
-            className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
           >
             {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             <span>Send</span>
@@ -1419,44 +1419,47 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
       {/* ── Subject Benchmark Test Modal ────────────────────────────────────── */}
       {benchmarkModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div>
-                <h3 className="font-bold text-white text-base">Benchmark: {activeTestSubject}</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="font-bold text-[#111827] text-base">Benchmark: {activeTestSubject}</h3>
+                <p className="text-xs text-[#64748B]">
                   {testSummary ? 'Diagnostic Complete' : `Question ${qIndex + 1} of ${questions.length}`}
                 </p>
               </div>
-              <button onClick={() => setBenchmarkModalOpen(false)} className="text-slate-400 hover:text-white text-xl">
+              <button
+                onClick={() => setBenchmarkModalOpen(false)}
+                className="text-[#94A3B8] hover:text-[#111827] text-2xl font-bold p-1 leading-none cursor-pointer"
+              >
                 &times;
               </button>
             </div>
 
             {loadingQuestions ? (
-              <div className="p-12 text-center text-xs text-slate-400 space-y-2">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-400" />
+              <div className="p-12 text-center text-xs text-[#64748B] space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#FF7A18]" />
                 <p>Generating psychometrically calibrated benchmark items...</p>
               </div>
             ) : testSummary ? (
-              <div className="p-6 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center space-y-4">
-                <div className="text-2xl font-black text-emerald-400 font-mono">
+              <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-emerald-200 text-center space-y-4">
+                <div className="text-2xl font-black text-emerald-700 font-mono">
                   Score: {testSummary.scorePercent}% ({testSummary.correctCount}/{testSummary.totalCount})
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-[#64748B]">
                   Bayesian state vectors calibrated for all concepts under {testSummary.subject}.
                 </p>
                 <button
                   onClick={() => setBenchmarkModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+                  className="w-full py-2.5 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs cursor-pointer shadow-xs"
                 >
                   Close & View Updated Matrix
                 </button>
               </div>
             ) : currentQ ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15">
-                  <p className="text-sm font-semibold text-white">{currentQ.prompt}</p>
+                <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06]">
+                  <p className="text-sm font-semibold text-[#111827]">{currentQ.prompt}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -1464,10 +1467,10 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     <button
                       key={optIdx}
                       onClick={() => setSelectedAnswers((prev) => ({ ...prev, [currentQ.id]: optIdx }))}
-                      className={`w-full p-3 rounded-xl border text-left text-xs font-medium transition-all ${
+                      className={`w-full p-3.5 rounded-xl border text-left text-xs font-medium transition-all cursor-pointer ${
                         selectedAnswers[currentQ.id] === optIdx
-                          ? 'bg-cyan-500/20 border-cyan-500 text-white'
-                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                          ? 'bg-[#FFF3EA] border-[#FFDEC4] text-[#111827] font-bold shadow-xs'
+                          : 'bg-white border-black/[0.08] text-[#334155] hover:border-[#FF7A18]/30'
                       }`}
                     >
                       {opt}
@@ -1475,11 +1478,11 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-between pt-3 border-t border-black/[0.06]">
                   <button
                     disabled={qIndex === 0}
                     onClick={() => setQIndex((prev) => prev - 1)}
-                    className="text-xs text-slate-400 hover:text-white disabled:opacity-40"
+                    className="text-xs text-[#64748B] hover:text-[#111827] disabled:opacity-40 cursor-pointer"
                   >
                     Previous
                   </button>
@@ -1488,7 +1491,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     <button
                       disabled={selectedAnswers[currentQ.id] === undefined}
                       onClick={() => setQIndex((prev) => prev + 1)}
-                      className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+                      className="px-4 py-2 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs cursor-pointer shadow-xs disabled:opacity-50"
                     >
                       Next
                     </button>
@@ -1496,7 +1499,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                     <button
                       disabled={testSubmitting}
                       onClick={handleSubmitBenchmark}
-                      className="px-5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs"
+                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer shadow-xs disabled:opacity-50"
                     >
                       {testSubmitting ? 'Calibrating...' : 'Submit Benchmark'}
                     </button>
@@ -1510,47 +1513,50 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
 
       {/* ── Interactive Practice Drill Modal (Dynamic & Bayesian Calibrated) ────────────────── */}
       {drillModalOpen && activeDrillConcept && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-indigo-500/40 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div>
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">{activeDrillConcept.subject} &bull; Practice Drill</span>
-                <h3 className="font-bold text-white text-base">{activeDrillConcept.concept_name}</h3>
+                <span className="text-[10px] font-bold text-[#FF7A18] uppercase tracking-wider">{activeDrillConcept.subject} &bull; Practice Drill</span>
+                <h3 className="font-bold text-[#111827] text-base">{activeDrillConcept.concept_name}</h3>
               </div>
-              <button onClick={() => setDrillModalOpen(false)} className="text-slate-400 hover:text-white text-xl">
+              <button
+                onClick={() => setDrillModalOpen(false)}
+                className="text-[#94A3B8] hover:text-[#111827] text-2xl font-bold p-1 leading-none cursor-pointer"
+              >
                 &times;
               </button>
             </div>
 
             {drillLoading ? (
-              <div className="p-10 text-center text-xs text-slate-400 space-y-2">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-400" />
+              <div className="p-10 text-center text-xs text-[#64748B] space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#FF7A18]" />
                 <p>Generating psychometric conceptual drill items for {activeDrillConcept.concept_name}...</p>
               </div>
             ) : drillResult ? (
-              <div className="p-6 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center space-y-4 animate-in zoom-in-95">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto text-emerald-400">
+              <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-emerald-200 text-center space-y-4 animate-in zoom-in-95">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center mx-auto text-emerald-700">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-white">Drill Complete: {drillResult.conceptName}</h4>
-                  <p className="text-xs text-emerald-400 font-mono font-bold mt-1">
+                  <h4 className="text-lg font-black text-[#111827]">Drill Complete: {drillResult.conceptName}</h4>
+                  <p className="text-xs text-emerald-700 font-mono font-bold mt-1">
                     Score: {drillResult.scorePercent}% ({drillResult.correctCount}/{drillResult.totalCount} Correct)
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#0B0F19] border border-amber-500/15 text-xs">
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-white border border-black/[0.06] text-xs">
                   <div>
-                    <span className="text-slate-400">New Mastery:</span>
-                    <div className="text-base font-black text-amber-400 font-mono">{drillResult.newMastery}%</div>
+                    <span className="text-[#64748B]">New Mastery:</span>
+                    <div className="text-base font-black text-[#FF7A18] font-mono">{drillResult.newMastery}%</div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Memory Retention:</span>
-                    <div className="text-base font-black text-emerald-400 font-mono">{drillResult.newRetention}%</div>
+                    <span className="text-[#64748B]">Memory Retention:</span>
+                    <div className="text-base font-black text-emerald-600 font-mono">{drillResult.newRetention}%</div>
                   </div>
                 </div>
                 <button
                   onClick={() => setDrillModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+                  className="w-full py-2.5 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold text-xs cursor-pointer shadow-xs"
                 >
                   Save & Return to Knowledge Matrix
                 </button>
@@ -1558,22 +1564,22 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
             ) : (
               <div className="space-y-4">
                 {drillQuestions.map((q, idx) => (
-                  <div key={q.id} className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/15 space-y-3">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-bold text-amber-400">Question {idx + 1} of {drillQuestions.length}</span>
+                  <div key={q.id} className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
+                    <div className="flex items-center justify-between text-[11px] text-[#64748B]">
+                      <span className="font-bold text-[#FF7A18]">Question {idx + 1} of {drillQuestions.length}</span>
                       <span className="font-mono">Difficulty: {(q.difficulty * 100).toFixed(0)}%</span>
                     </div>
-                    <p className="text-xs font-semibold text-white">{q.prompt}</p>
+                    <p className="text-xs font-semibold text-[#111827]">{q.prompt}</p>
 
                     <div className="space-y-1.5 pt-1">
                       {q.options.map((opt: string, optIdx: number) => (
                         <button
                           key={optIdx}
                           onClick={() => setDrillAnswers((prev) => ({ ...prev, [q.id]: optIdx }))}
-                          className={`w-full p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
+                          className={`w-full p-3 rounded-xl border text-left text-xs font-medium transition-all cursor-pointer ${
                             drillAnswers[q.id] === optIdx
-                              ? 'bg-cyan-500/20 border-cyan-500 text-white'
-                              : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                              ? 'bg-[#FFF3EA] border-[#FFDEC4] text-[#111827] font-bold shadow-xs'
+                              : 'bg-white border-black/[0.08] text-[#334155] hover:border-[#FF7A18]/30'
                           }`}
                         >
                           {opt}
@@ -1586,7 +1592,7 @@ export const LearningIntelligencePage: React.FC<{ user: User | null }> = ({ user
                 <button
                   disabled={drillSubmitting || Object.keys(drillAnswers).length < drillQuestions.length}
                   onClick={handleSubmitPracticeDrill}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-cyan-400 text-slate-950 font-black text-xs disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-black text-xs disabled:opacity-50 transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {drillSubmitting ? (
                     <>

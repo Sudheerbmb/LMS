@@ -423,16 +423,16 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
       {/* ── Top Header Banner ────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 p-6 md:p-8 rounded-3xl border border-amber-500/20 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-[#FFF5EE] via-[#FFF0E6] to-[#F5EEFF] p-6 md:p-8 rounded-3xl border border-black/[0.06] shadow-xs relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-sm">
-            <GraduationCap className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-xs font-bold uppercase tracking-wider shadow-xs">
+            <GraduationCap className="w-3.5 h-3.5 text-[#FF7A18]" />
             Training Institute Control Center
           </div>
-          <h1 className="text-3xl md:text-4xl font-editorial font-normal text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-serif text-[#111827] tracking-tight flex items-center gap-3">
             Acharya Institute Administration
           </h1>
-          <p className="text-stone-300 text-xs md:text-sm max-w-2xl font-light leading-relaxed">
+          <p className="text-[#64748B] text-xs md:text-sm max-w-2xl font-normal leading-relaxed">
             Configure multi-subject courses, manage student batch enrollments, assign specialized faculty, and control Zoom video classroom streams.
           </p>
         </div>
@@ -440,37 +440,37 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         <div className="flex items-center gap-3 relative z-10 flex-wrap">
           <button
             onClick={() => openAddUser('student')}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-[#FF7A18]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Enroll Student</span>
           </button>
           <button
             onClick={() => openAddUser('teacher')}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-700 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] text-[#111827] text-xs font-bold flex items-center gap-2 hover:bg-neutral-50 transition-all cursor-pointer shadow-xs"
           >
-            <Users className="w-3.5 h-3.5" />
+            <Users className="w-3.5 h-3.5 text-[#FF7A18]" />
             <span>Add Faculty</span>
           </button>
           <button
             onClick={() => setShowAddCourseModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 border border-indigo-500/30 text-indigo-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-700 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] text-[#111827] text-xs font-bold flex items-center gap-2 hover:bg-neutral-50 transition-all cursor-pointer shadow-xs"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-[#FF7A18]" />
             <span>+ New Course</span>
           </button>
           <button
             onClick={handleSeedTechTracks}
             title="Seed Standard Courses (Python GenAI, Salesforce, ServiceNow, etc.)"
-            className="px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-3.5 h-3.5 text-[#FF7A18]" />
             <span>Seed Standard Courses</span>
           </button>
           <button
             onClick={handlePurgeLegacyData}
             title="Reset and purge legacy demo accounts and old data"
-            className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Purge Legacy Data</span>
@@ -478,7 +478,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           <button
             onClick={loadAllData}
             title="Refresh Directory"
-            className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+            className="p-2.5 rounded-2xl bg-white border border-black/[0.08] text-[#64748B] hover:text-[#111827] transition-all cursor-pointer shadow-xs"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -486,12 +486,12 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       </div>
 
       {/* ── Navigation Tabs ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-black/[0.06] pb-3 overflow-x-auto">
         <button
           onClick={() => setActiveTab('students')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'students'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-white'
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'students'
+              ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] shadow-xs'
+              : 'text-[#64748B] hover:text-[#111827]'
             }`}
         >
           <GraduationCap className="w-4 h-4" />
@@ -500,9 +500,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
         <button
           onClick={() => setActiveTab('teachers')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'teachers'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-white'
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'teachers'
+              ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] shadow-xs'
+              : 'text-[#64748B] hover:text-[#111827]'
             }`}
         >
           <Users className="w-4 h-4" />
@@ -511,9 +511,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'courses'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-white'
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'courses'
+              ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] shadow-xs'
+              : 'text-[#64748B] hover:text-[#111827]'
             }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -525,23 +525,23 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             setActiveTab('zoom')
             loadZoomData()
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'zoom'
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-white'
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'zoom'
+              ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] shadow-xs'
+              : 'text-[#64748B] hover:text-[#111827]'
             }`}
         >
-          <Video className="w-4 h-4 text-blue-400" />
+          <Video className="w-4 h-4 text-[#FF7A18]" />
           <span>Zoom Live Infrastructure</span>
         </button>
 
         <button
           onClick={() => setActiveTab('notifications')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'notifications'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-white'
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'notifications'
+              ? 'bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4] shadow-xs'
+              : 'text-[#64748B] hover:text-[#111827]'
             }`}
         >
-          <Bell className="w-4 h-4 text-amber-400" />
+          <Bell className="w-4 h-4 text-[#FF7A18]" />
           <span>System Notifications ({notifications.length})</span>
         </button>
       </div>
@@ -552,22 +552,22 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
               <input
                 type="text"
                 placeholder="Search students by name, email, phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-black/[0.08] rounded-2xl text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#FF7A18] shadow-xs"
               />
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="text-xs text-slate-400 font-semibold shrink-0">Filter Course:</label>
+              <label className="text-xs text-[#64748B] font-bold shrink-0">Filter Course:</label>
               <select
                 value={courseFilter}
                 onChange={(e) => setCourseFilter(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                className="bg-white border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-xs font-medium"
               >
                 <option value="ALL">All Courses ({courses.length})</option>
                 {courses.map((c) => (
@@ -580,10 +580,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           </div>
 
           {/* Students Table */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-black/[0.06] rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
+                <thead className="bg-[#FAF9F6] text-[#64748B] font-bold border-b border-black/[0.06] uppercase tracking-wider text-[11px]">
                   <tr>
                     <th className="p-4">Student Profile</th>
                     <th className="p-4">Contact Info</th>
@@ -592,40 +592,40 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-black/[0.04]">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                      <td colSpan={5} className="p-8 text-center text-[#64748B]">
                         No students found matching your criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredStudents.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={s.id} className="hover:bg-neutral-50/60 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#FFF3EA] text-[#FF7A18] font-bold flex items-center justify-center border border-[#FFDEC4] shrink-0">
                               {s.display_name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-200">{s.display_name}</p>
-                              <p className="text-[11px] text-slate-500">ID: {s.id.slice(0, 8)}...</p>
+                              <p className="font-bold text-[#111827]">{s.display_name}</p>
+                              <p className="text-[11px] text-[#94A3B8]">ID: {s.id.slice(0, 8)}...</p>
                             </div>
                           </div>
                         </td>
 
                         <td className="p-4 space-y-1">
-                          <div className="flex items-center gap-1.5 text-slate-300">
-                            <Mail className="w-3.5 h-3.5 text-slate-500" />
+                          <div className="flex items-center gap-1.5 text-[#334155]">
+                            <Mail className="w-3.5 h-3.5 text-[#94A3B8]" />
                             <span>{s.email}</span>
                           </div>
                           {s.phone_number ? (
-                            <div className="flex items-center gap-1.5 text-slate-400">
-                              <Phone className="w-3.5 h-3.5 text-slate-500" />
+                            <div className="flex items-center gap-1.5 text-[#64748B]">
+                              <Phone className="w-3.5 h-3.5 text-[#94A3B8]" />
                               <span>{s.phone_number}</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-slate-600 italic">No phone added</span>
+                            <span className="text-[10px] text-[#94A3B8] italic">No phone added</span>
                           )}
                         </td>
 
@@ -635,20 +635,20 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                               s.enrolled_courses.map((ec) => (
                                 <span
                                   key={ec.id}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-medium text-[11px]"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] font-bold text-[11px]"
                                 >
                                   {ec.title}
                                   <button
                                     onClick={() => handleQuickUnenroll(s.id, ec.id)}
                                     title="Unenroll from this course"
-                                    className="hover:text-red-400 transition-colors"
+                                    className="hover:text-red-600 transition-colors cursor-pointer"
                                   >
                                     <X className="w-3 h-3" />
                                   </button>
                                 </span>
                               ))
                             ) : (
-                              <span className="text-slate-500 italic text-[11px]">No active enrollments</span>
+                              <span className="text-[#94A3B8] italic text-[11px]">No active enrollments</span>
                             )}
 
                             {/* Enroll into other courses */}
@@ -661,7 +661,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                   }
                                 }}
                                 defaultValue=""
-                                className="bg-slate-950 border border-slate-700/60 rounded-md px-2 py-0.5 text-[10px] text-amber-400 focus:outline-none"
+                                className="bg-[#FAF9F6] border border-black/[0.08] rounded-xl px-2.5 py-1 text-[11px] text-[#FF7A18] font-bold focus:outline-none cursor-pointer"
                               >
                                 <option value="" disabled>
                                   + Enroll in Course
@@ -680,9 +680,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
                         <td className="p-4">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${s.status === 'active'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${s.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
                               }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -693,14 +693,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                         <td className="p-4 text-right space-x-2">
                           <button
                             onClick={() => openEditUser(s)}
-                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-amber-400 transition-colors"
+                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
                             title="Edit Student & Reset Password"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteUser(s)}
-                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-red-400 transition-colors"
+                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Delete Student"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -722,22 +722,22 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           {/* Search */}
           <div className="flex items-center justify-between gap-4">
             <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
               <input
                 type="text"
                 placeholder="Search faculty by name, email, phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-black/[0.08] rounded-2xl text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#FF7A18] shadow-xs"
               />
             </div>
           </div>
 
           {/* Faculty Table */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-black/[0.06] rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
+                <thead className="bg-[#FAF9F6] text-[#64748B] font-bold border-b border-black/[0.06] uppercase tracking-wider text-[11px]">
                   <tr>
                     <th className="p-4">Faculty Member</th>
                     <th className="p-4">Contact Details</th>
@@ -746,40 +746,40 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-black/[0.04]">
                   {filteredTeachers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                      <td colSpan={5} className="p-8 text-center text-[#64748B]">
                         No faculty members found.
                       </td>
                     </tr>
                   ) : (
                     filteredTeachers.map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={t.id} className="hover:bg-neutral-50/60 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-300 font-bold flex items-center justify-center border border-orange-500/30 shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#FFF3EA] text-[#FF7A18] font-bold flex items-center justify-center border border-[#FFDEC4] shrink-0">
                               {t.display_name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-200">{t.display_name}</p>
-                              <p className="text-[11px] text-slate-500">Instructor ID: {t.id.slice(0, 8)}...</p>
+                              <p className="font-bold text-[#111827]">{t.display_name}</p>
+                              <p className="text-[11px] text-[#94A3B8]">Instructor ID: {t.id.slice(0, 8)}...</p>
                             </div>
                           </div>
                         </td>
 
                         <td className="p-4 space-y-1">
-                          <div className="flex items-center gap-1.5 text-slate-300">
-                            <Mail className="w-3.5 h-3.5 text-slate-500" />
+                          <div className="flex items-center gap-1.5 text-[#334155]">
+                            <Mail className="w-3.5 h-3.5 text-[#94A3B8]" />
                             <span>{t.email}</span>
                           </div>
                           {t.phone_number ? (
-                            <div className="flex items-center gap-1.5 text-slate-400">
-                              <Phone className="w-3.5 h-3.5 text-slate-500" />
+                            <div className="flex items-center gap-1.5 text-[#64748B]">
+                              <Phone className="w-3.5 h-3.5 text-[#94A3B8]" />
                               <span>{t.phone_number}</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-slate-600 italic">No phone added</span>
+                            <span className="text-[10px] text-[#94A3B8] italic">No phone added</span>
                           )}
                         </td>
 
@@ -789,23 +789,23 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                               t.assigned_subjects.map((sub) => (
                                 <span
                                   key={sub.id}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-medium text-[11px]"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#FAF9F6] border border-black/[0.08] text-[#111827] font-medium text-[11px]"
                                 >
-                                  <span className="font-bold">{sub.code}:</span> {sub.name}
-                                  <span className="text-[9px] text-slate-400">({sub.course_title})</span>
+                                  <span className="font-bold text-[#FF7A18]">{sub.code}:</span> {sub.name}
+                                  <span className="text-[9px] text-[#94A3B8]">({sub.course_title})</span>
                                 </span>
                               ))
                             ) : (
-                              <span className="text-slate-500 italic text-[11px]">No subjects assigned yet</span>
+                              <span className="text-[#94A3B8] italic text-[11px]">No subjects assigned yet</span>
                             )}
                           </div>
                         </td>
 
                         <td className="p-4">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${t.status === 'active'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${t.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
                               }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -816,14 +816,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                         <td className="p-4 text-right space-x-2">
                           <button
                             onClick={() => openEditUser(t)}
-                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-amber-400 transition-colors"
+                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
                             title="Edit Faculty & Password"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteUser(t)}
-                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-red-400 transition-colors"
+                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Delete Faculty"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -843,16 +843,16 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       {activeTab === 'courses' && (
         <div className="space-y-6">
           {/* Top Actions Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 bg-white border border-black/[0.06] rounded-3xl shadow-xs">
             <div>
-              <h3 className="text-sm font-bold text-white">Course Tracks & Modular Hierarchy</h3>
-              <p className="text-[11px] text-slate-400">All subjects automatically link to teacher timetable grids and student dashboards.</p>
+              <h3 className="text-sm font-bold text-[#111827]">Course Tracks & Modular Hierarchy</h3>
+              <p className="text-xs text-[#64748B]">All subjects automatically link to teacher timetable grids and student dashboards.</p>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 onClick={handleSyncCoursesAndTimetable}
                 disabled={loading}
-                className="px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                className="px-3.5 py-2 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
                 title="Synchronize course subjects into timetable slots"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -861,14 +861,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               <button
                 onClick={handleSeedTechTracks}
                 disabled={loading}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-3.5 py-2 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-[#111827] border border-black/[0.06] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-[#FF7A18]" />
                 <span>Re-seed 5 Tracks</span>
               </button>
               <button
                 onClick={() => setShowAddCourseModal(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#FF7A18]/25 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Track</span>
@@ -878,25 +878,25 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
           <div className="grid grid-cols-1 gap-6">
             {courses.length === 0 ? (
-              <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-500 space-y-4">
-                <BookOpen className="w-10 h-10 mx-auto text-slate-600" />
+              <div className="p-12 text-center bg-white border border-black/[0.06] rounded-3xl text-[#64748B] space-y-4 shadow-xs">
+                <BookOpen className="w-10 h-10 mx-auto text-[#94A3B8]" />
                 <div>
-                  <h3 className="text-white font-bold text-base">No Technical Courses Initialized</h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h3 className="text-[#111827] font-bold text-base">No Technical Courses Initialized</h3>
+                  <p className="text-xs text-[#64748B] mt-1">
                     Seed standard courses (Python with GenAI, Salesforce, ServiceNow, Full Stack, DevOps) with one click.
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={handleSeedTechTracks}
-                    className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] text-white font-bold text-xs shadow-md shadow-[#FF7A18]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                   >
-                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <Sparkles className="w-4 h-4 text-white" />
                     <span>Seed All 5 Technical Tracks</span>
                   </button>
                   <button
                     onClick={() => setShowAddCourseModal(true)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all cursor-pointer"
+                    className="px-4 py-2.5 rounded-2xl bg-neutral-100 border border-black/[0.06] text-[#111827] font-bold text-xs hover:bg-neutral-200 transition-all cursor-pointer"
                   >
                     Create Custom Track
                   </button>
@@ -906,27 +906,27 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               courses.map((course) => (
                 <div
                   key={course.id}
-                  className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5"
+                  className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-xs space-y-5"
                 >
                   {/* Course Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h2 className="text-lg font-extrabold text-white">{course.title}</h2>
-                        <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold uppercase">
+                        <h2 className="text-lg font-bold text-[#111827]">{course.title}</h2>
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] text-[10px] font-bold uppercase">
                           {course.level}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-semibold">
+                        <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-[#64748B] text-[10px] font-semibold">
                           slug: /{course.slug}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400">{course.description || 'No description provided.'}</p>
+                      <p className="text-xs text-[#64748B]">{course.description || 'No description provided.'}</p>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-200">{course.enrolled_count} Students</p>
-                        <p className="text-[10px] text-slate-500">Active Enrollments</p>
+                        <p className="text-xs font-bold text-[#111827]">{course.enrolled_count} Students</p>
+                        <p className="text-[10px] text-[#94A3B8]">Active Enrollments</p>
                       </div>
 
                       <button
@@ -938,7 +938,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                           setSubTeacherId('')
                           setShowAddSubjectModal(true)
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="px-3.5 py-2 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add Subject / Class</span>
@@ -948,26 +948,26 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
                   {/* Subject Modules Grid */}
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
                       Subject Classes & Instructor Assignments ({course.subjects.length})
                     </p>
 
                     {course.subjects.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">No subject modules added yet to this course.</p>
+                      <p className="text-xs text-[#94A3B8] italic">No subject modules added yet to this course.</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {course.subjects.map((subj) => (
                           <div
                             key={subj.id}
-                            className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-3 relative group"
+                            className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] hover:border-[#FF7A18]/40 transition-all flex flex-col justify-between gap-3 relative group"
                           >
                             <div className="space-y-1">
                               <div className="flex items-center justify-between gap-2">
                                 <span
                                   className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase"
                                   style={{
-                                    backgroundColor: `${subj.color}20`,
-                                    borderColor: `${subj.color}40`,
+                                    backgroundColor: `${subj.color}15`,
+                                    borderColor: `${subj.color}30`,
                                     borderWidth: '1px',
                                     color: subj.color,
                                   }}
@@ -978,24 +978,24 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                 <button
                                   onClick={() => handleDeleteSubject(course.id, subj.id, subj.name)}
                                   title="Delete subject"
-                                  className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-opacity p-1"
+                                  className="opacity-0 group-hover:opacity-100 text-[#94A3B8] hover:text-red-600 transition-opacity p-1 cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
 
-                              <h4 className="text-xs font-bold text-slate-200">{subj.name}</h4>
+                              <h4 className="text-xs font-bold text-[#111827]">{subj.name}</h4>
                               {subj.description && (
-                                <p className="text-[11px] text-slate-400 line-clamp-2">{subj.description}</p>
+                                <p className="text-[11px] text-[#64748B] line-clamp-2">{subj.description}</p>
                               )}
                             </div>
 
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-900 text-[11px]">
-                              <span className="text-slate-500 font-medium shrink-0">Faculty:</span>
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-black/[0.04] text-[11px]">
+                              <span className="text-[#64748B] font-medium shrink-0">Faculty:</span>
                               <select
                                 value={subj.teacher_id || ''}
                                 onChange={(e) => handleAssignTeacherToSubject(course.id, subj.id, e.target.value)}
-                                className="bg-slate-900 border border-slate-700/80 rounded-md px-2 py-0.5 text-[11px] text-amber-300 font-semibold focus:outline-none focus:border-amber-500 max-w-[170px] truncate"
+                                className="bg-white border border-black/[0.08] rounded-xl px-2.5 py-1 text-[11px] text-[#111827] font-semibold focus:outline-none focus:border-[#FF7A18] max-w-[170px] truncate"
                               >
                                 <option value="">Unassigned</option>
                                 {teachersList.map((t) => (
@@ -1020,14 +1020,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       {/* ── Tab 4: Zoom Live Infrastructure ───────────────────────────────── */}
       {activeTab === 'zoom' && (
         <div className="space-y-6">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 md:p-8 space-y-6 shadow-xs">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Video className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+                  <Video className="w-5 h-5 text-[#FF7A18]" />
                   Zoom Cloud Meeting & Webhook Telemetry
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#64748B]">
                   Real-time status of Server-to-Server OAuth, cloud recording synchronization, and streaming proxies.
                 </p>
               </div>
@@ -1035,7 +1035,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               <button
                 onClick={loadZoomData}
                 disabled={loadingZoom}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2"
+                className="px-4 py-2 rounded-2xl bg-neutral-100 border border-black/[0.06] text-[#111827] hover:bg-neutral-200 text-xs font-bold flex items-center gap-2 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingZoom ? 'animate-spin' : ''}`} />
                 <span>Refresh Status</span>
@@ -1043,33 +1043,33 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div className="p-5 rounded-3xl bg-[#FAF9F6] border border-black/[0.04] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">OAuth Credentials</span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-[#64748B]">OAuth Credentials</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <p className="text-sm font-bold text-white">
+                <p className="text-sm font-bold text-[#111827]">
                   {zoomStatus?.configured ? 'Configured & Active' : 'Active (Render Secrets)'}
                 </p>
-                <p className="text-[11px] text-slate-500">Account ID, Client ID, Client Secret</p>
+                <p className="text-[11px] text-[#94A3B8]">Account ID, Client ID, Client Secret</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div className="p-5 rounded-3xl bg-[#FAF9F6] border border-black/[0.04] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">Webhook CRC Validation</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-[#64748B]">Webhook CRC Validation</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
-                <p className="text-sm font-bold text-white">SHA256 Challenge Response Ready</p>
-                <p className="text-[11px] text-slate-500">Endpoint: /api/v1/integrations/zoom/webhook</p>
+                <p className="text-sm font-bold text-[#111827]">SHA256 Challenge Response Ready</p>
+                <p className="text-[11px] text-[#94A3B8]">Endpoint: /api/v1/integrations/zoom/webhook</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div className="p-5 rounded-3xl bg-[#FAF9F6] border border-black/[0.04] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">HD Streaming Proxy</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-[#64748B]">HD Streaming Proxy</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
-                <p className="text-sm font-bold text-white">Inline Video Stream Active</p>
-                <p className="text-[11px] text-slate-500">Direct MP4 Playback + AI Notes</p>
+                <p className="text-sm font-bold text-[#111827]">Inline Video Stream Active</p>
+                <p className="text-[11px] text-[#94A3B8]">Direct MP4 Playback + AI Notes</p>
               </div>
             </div>
           </div>
@@ -1079,14 +1079,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       {/* ── Tab 5: System Notifications Manager ─────────────────────────── */}
       {activeTab === 'notifications' && (
         <div className="space-y-6">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 md:p-8 space-y-6 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-amber-400" />
+                <h3 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-[#FF7A18]" />
                   System Notifications & Broadcast Alerts
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#64748B]">
                   Manage active candidate announcements, timetable alerts, and prune obsolete notifications.
                 </p>
               </div>
@@ -1096,17 +1096,17 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                   <button
                     onClick={handleFlushAllNotifications}
                     disabled={flushingNotifs}
-                    className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                    className="px-4 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                     title="Flush out all notifications"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                     <span>{flushingNotifs ? 'Flushing...' : 'Flush Out All Notifications'}</span>
                   </button>
                 )}
 
                 <button
                   onClick={loadAllData}
-                  className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all"
+                  className="p-2.5 rounded-2xl bg-neutral-100 border border-black/[0.06] text-[#64748B] hover:text-[#111827] transition-all cursor-pointer"
                   title="Refresh Notifications"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -1115,39 +1115,39 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             </div>
 
             {notifications.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-                <Bell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <h4 className="text-sm font-bold text-slate-300">No Active Notifications</h4>
-                <p className="text-xs text-slate-500 mt-1">All broadcast and system alerts have been cleared.</p>
+              <div className="text-center py-16 rounded-3xl bg-[#FAF9F6] border border-black/[0.04]">
+                <Bell className="w-10 h-10 text-[#94A3B8] mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-[#111827]">No Active Notifications</h4>
+                <p className="text-xs text-[#64748B] mt-1">All broadcast and system alerts have been cleared.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {notifications.map((n) => (
                   <div
                     key={n.id}
-                    className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start justify-between gap-4 hover:border-slate-700 transition-all"
+                    className="p-4 rounded-2xl bg-[#FAF9F6] border border-black/[0.04] flex items-start justify-between gap-4 hover:border-[#FF7A18]/30 transition-all"
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div
                         className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
                         style={{
-                          background: n.read_at ? 'rgba(255,255,255,0.2)' : '#F59E0B',
-                          boxShadow: n.read_at ? 'none' : '0 0 10px #F59E0B',
+                          background: n.read_at ? 'rgba(0,0,0,0.2)' : '#FF7A18',
+                          boxShadow: n.read_at ? 'none' : '0 0 8px #FF7A18',
                         }}
                       />
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white">{n.title}</span>
-                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                          <span className="text-xs font-bold text-[#111827]">{n.title}</span>
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-[#FFF3EA] text-[#FF7A18] border border-[#FFDEC4]">
                             {n.notification_type || 'Alert'}
                           </span>
                           {n.read_at && (
-                            <span className="text-[10px] text-slate-500">Read</span>
+                            <span className="text-[10px] text-[#94A3B8]">Read</span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed break-words">{n.body}</p>
+                        <p className="text-xs text-[#64748B] leading-relaxed break-words">{n.body}</p>
                         {n.created_at && (
-                          <span className="text-[10px] text-slate-500 block font-mono">
+                          <span className="text-[10px] text-[#94A3B8] block font-mono">
                             {new Date(n.created_at).toLocaleString()}
                           </span>
                         )}
@@ -1156,7 +1156,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
                     <button
                       onClick={() => handleDeleteNotification(n.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all shrink-0"
+                      className="p-2 rounded-xl text-[#94A3B8] hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0 cursor-pointer"
                       title="Delete notification"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1171,89 +1171,89 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
       {/* ── Modal: Add Student / Faculty ──────────────────────────────────── */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                {userModalRole === 'student' ? <GraduationCap className="w-5 h-5 text-amber-400" /> : <Users className="w-5 h-5 text-amber-400" />}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                {userModalRole === 'student' ? <GraduationCap className="w-5 h-5 text-[#FF7A18]" /> : <Users className="w-5 h-5 text-[#FF7A18]" />}
                 {userModalRole === 'student' ? 'Enroll New Student' : 'Add New Faculty Member'}
               </h3>
-              <button onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddUserModal(false)} className="text-[#94A3B8] hover:text-[#111827] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-medium">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSaveNewUser} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Full Name</label>
+                <label className="block text-[#334155] font-bold mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Priya Sharma"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Email Address</label>
+                <label className="block text-[#334155] font-bold mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   placeholder="e.g. priya@institute.com"
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
+                <label className="block text-[#334155] font-bold mb-1">Phone Number</label>
                 <input
                   type="tel"
                   placeholder="+91 98765 43210"
                   value={formPhone}
                   onChange={(e) => setFormPhone(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Password</label>
+                <label className="block text-[#334155] font-bold mb-1">Password</label>
                 <input
                   type="text"
                   required
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18] font-mono"
                 />
               </div>
 
               {/* Subject assignment for teachers OR Course enrollment for students */}
               {userModalRole === 'teacher' ? (
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-2">
+                  <label className="block text-[#334155] font-bold mb-2">
                     Assign Subject Modules Across Tracks (Multi-Select)
                   </label>
-                  <p className="text-[10px] text-slate-400 mb-2">
+                  <p className="text-[10px] text-[#64748B] mb-2">
                     Select specific subject modules this faculty member will handle across technical courses.
                   </p>
-                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800">
+                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-[#FAF9F6] rounded-2xl border border-black/[0.06]">
                     {courses.map((c) => (
-                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-slate-900 last:border-0 last:pb-0">
-                        <span className="text-[10px] font-extrabold uppercase text-amber-400 tracking-wider">
+                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-black/[0.04] last:border-0 last:pb-0">
+                        <span className="text-[10px] font-extrabold uppercase text-[#FF7A18] tracking-wider">
                           {c.title}
                         </span>
                         <div className="grid grid-cols-1 gap-1.5 pl-2">
                           {c.subjects.map((s) => (
-                            <label key={s.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                            <label key={s.id} className="flex items-center gap-2 text-[#334155] hover:text-[#111827] cursor-pointer text-[11px]">
                               <input
                                 type="checkbox"
                                 checked={formSelectedSubjects.includes(s.id)}
@@ -1264,9 +1264,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                     setFormSelectedSubjects((prev) => prev.filter((id) => id !== s.id))
                                   }
                                 }}
-                                className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+                                className="rounded border-neutral-300 text-[#FF7A18] focus:ring-0"
                               />
-                              <span className="font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800">
+                              <span className="font-mono text-[#FF7A18] font-bold px-1.5 py-0.2 rounded bg-white border border-black/[0.08]">
                                 {s.code}
                               </span>
                               <span className="truncate">{s.name}</span>
@@ -1279,10 +1279,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-2">Enroll in Course Track(s)</label>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-2.5 bg-slate-950 rounded-xl border border-slate-800">
+                  <label className="block text-[#334155] font-bold mb-2">Enroll in Course Track(s)</label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-3 bg-[#FAF9F6] rounded-2xl border border-black/[0.06]">
                     {courses.map((c) => (
-                      <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                      <label key={c.id} className="flex items-center gap-2 text-[#334155] hover:text-[#111827] cursor-pointer text-[11px]">
                         <input
                           type="checkbox"
                           checked={formSelectedCourses.includes(c.id)}
@@ -1293,7 +1293,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                               setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
                             }
                           }}
-                          className="rounded border-slate-700 bg-slate-900 text-amber-500"
+                          className="rounded border-neutral-300 text-[#FF7A18]"
                         />
                         <span>{c.title}</span>
                       </label>
@@ -1302,18 +1302,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setShowAddUserModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingUser}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold disabled:opacity-50 cursor-pointer shadow-md shadow-[#FF7A18]/25"
                 >
                   {submittingUser ? 'Saving...' : userModalRole === 'student' ? 'Enroll Student' : 'Add Faculty'}
                 </button>
@@ -1325,76 +1325,76 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
       {/* ── Modal: Edit User / Reset Password ─────────────────────────────── */}
       {showEditUserModal && editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#FF7A18]" />
                 Edit Profile — {editingUser.display_name}
               </h3>
-              <button onClick={() => setShowEditUserModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowEditUserModal(false)} className="text-[#94A3B8] hover:text-[#111827] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-medium">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSaveEditUser} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Full Name</label>
+                <label className="block text-[#334155] font-bold mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
+                <label className="block text-[#334155] font-bold mb-1">Phone Number</label>
                 <input
                   type="tel"
                   placeholder="+91 98765 43210"
                   value={formPhone}
                   onChange={(e) => setFormPhone(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Reset Password (leave blank to keep current)</label>
+                <label className="block text-[#334155] font-bold mb-1">Reset Password (leave blank to keep current)</label>
                 <input
                   type="text"
                   placeholder="New password..."
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18] font-mono"
                 />
               </div>
 
               {/* Subject assignments for teachers OR Course enrollments for students */}
               {editingUser.role === 'teacher' ? (
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-2">
+                  <label className="block text-[#334155] font-bold mb-2">
                     Assigned Subject Modules (Multi-Select)
                   </label>
-                  <p className="text-[10px] text-slate-400 mb-2">
+                  <p className="text-[10px] text-[#64748B] mb-2">
                     Manage subjects taught by this instructor across one or multiple courses.
                   </p>
-                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800">
+                  <div className="space-y-3 max-h-48 overflow-y-auto p-3 bg-[#FAF9F6] rounded-2xl border border-black/[0.06]">
                     {courses.map((c) => (
-                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-slate-900 last:border-0 last:pb-0">
-                        <span className="text-[10px] font-extrabold uppercase text-amber-400 tracking-wider">
+                      <div key={c.id} className="space-y-1.5 pb-2 border-b border-black/[0.04] last:border-0 last:pb-0">
+                        <span className="text-[10px] font-extrabold uppercase text-[#FF7A18] tracking-wider">
                           {c.title}
                         </span>
                         <div className="grid grid-cols-1 gap-1.5 pl-2">
                           {c.subjects.map((s) => (
-                            <label key={s.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                            <label key={s.id} className="flex items-center gap-2 text-[#334155] hover:text-[#111827] cursor-pointer text-[11px]">
                               <input
                                 type="checkbox"
                                 checked={formSelectedSubjects.includes(s.id)}
@@ -1405,9 +1405,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                     setFormSelectedSubjects((prev) => prev.filter((id) => id !== s.id))
                                   }
                                 }}
-                                className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+                                className="rounded border-neutral-300 text-[#FF7A18] focus:ring-0"
                               />
-                              <span className="font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800">
+                              <span className="font-mono text-[#FF7A18] font-bold px-1.5 py-0.2 rounded bg-white border border-black/[0.08]">
                                 {s.code}
                               </span>
                               <span className="truncate">{s.name}</span>
@@ -1420,10 +1420,10 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-2">Enrolled Courses</label>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
+                  <label className="block text-[#334155] font-bold mb-2">Enrolled Courses</label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto p-3 bg-[#FAF9F6] rounded-2xl border border-black/[0.06]">
                     {courses.map((c) => (
-                      <label key={c.id} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px]">
+                      <label key={c.id} className="flex items-center gap-2 text-[#334155] hover:text-[#111827] cursor-pointer text-[11px]">
                         <input
                           type="checkbox"
                           checked={formSelectedCourses.includes(c.id)}
@@ -1434,7 +1434,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                               setFormSelectedCourses((prev) => prev.filter((id) => id !== c.id))
                             }
                           }}
-                          className="rounded border-slate-700 bg-slate-900 text-amber-500"
+                          className="rounded border-neutral-300 text-[#FF7A18]"
                         />
                         <span>{c.title}</span>
                       </label>
@@ -1443,18 +1443,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setShowEditUserModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingUser}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold disabled:opacity-50 cursor-pointer shadow-md shadow-[#FF7A18]/25"
                 >
                   {submittingUser ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -1466,14 +1466,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
       {/* ── Modal: Create New Course Track with Dynamic Subjects ─────────── */}
       {showAddCourseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-[#FF7A18]" />
                 Create Training Course Track & Subject Modules
               </h3>
-              <button onClick={() => setShowAddCourseModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddCourseModal(false)} className="text-[#94A3B8] hover:text-[#111827] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1481,47 +1481,47 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             <form onSubmit={handleCreateCourse} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Course Title</label>
+                  <label className="block text-[#334155] font-bold mb-1">Course Title</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Full Stack Python Development"
                     value={courseTitle}
                     onChange={(e) => setCourseTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">URL Slug (optional)</label>
+                  <label className="block text-[#334155] font-bold mb-1">URL Slug (optional)</label>
                   <input
                     type="text"
                     placeholder="full-stack-python"
                     value={courseSlug}
                     onChange={(e) => setCourseSlug(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18] font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Course Description</label>
+                <label className="block text-[#334155] font-bold mb-1">Course Description</label>
                 <textarea
                   rows={2}
                   placeholder="Overview of this training track, technologies covered, and outcomes..."
                   value={courseDesc}
                   onChange={(e) => setCourseDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Skill Level</label>
+                  <label className="block text-[#334155] font-bold mb-1">Skill Level</label>
                   <select
                     value={courseLevel}
                     onChange={(e) => setCourseLevel(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   >
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
@@ -1530,26 +1530,26 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Price (USD / INR, 0 for free)</label>
+                  <label className="block text-[#334155] font-bold mb-1">Price (USD / INR, 0 for free)</label>
                   <input
                     type="number"
                     value={coursePrice}
                     onChange={(e) => setCoursePrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                   />
                 </div>
               </div>
 
               {/* Dynamic Subjects Builder */}
-              <div className="space-y-3 pt-3 border-t border-slate-800">
+              <div className="space-y-3 pt-3 border-t border-black/[0.06]">
                 <div className="flex items-center justify-between">
-                  <label className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                  <label className="text-[#334155] font-bold uppercase tracking-wider text-[11px]">
                     Subjects / Modules inside this course
                   </label>
                   <button
                     type="button"
                     onClick={handleAddSubjectRow}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add Subject</span>
@@ -1560,7 +1560,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                   {courseSubjects.map((sub, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 relative"
+                      className="p-3.5 bg-[#FAF9F6] rounded-2xl border border-black/[0.06] space-y-2 relative"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                         <div className="sm:col-span-3">
@@ -1575,7 +1575,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                 prev.map((item, i) => (i === idx ? { ...item, code: v } : item))
                               )
                             }}
-                            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono text-[11px]"
+                            className="w-full px-2.5 py-2 bg-white border border-black/[0.08] rounded-xl text-[#111827] font-mono text-[11px]"
                           />
                         </div>
 
@@ -1591,7 +1591,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                 prev.map((item, i) => (i === idx ? { ...item, name: v } : item))
                               )
                             }}
-                            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-[11px]"
+                            className="w-full px-2.5 py-2 bg-white border border-black/[0.08] rounded-xl text-[#111827] text-[11px]"
                           />
                         </div>
 
@@ -1604,7 +1604,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                                 prev.map((item, i) => (i === idx ? { ...item, teacher_id: v } : item))
                               )
                             }}
-                            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 text-[11px]"
+                            className="w-full px-2.5 py-2 bg-white border border-black/[0.08] rounded-xl text-[#334155] text-[11px]"
                           >
                             <option value="">Assign Faculty...</option>
                             {teachersList.map((t) => (
@@ -1620,7 +1620,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                             <button
                               type="button"
                               onClick={() => handleRemoveSubjectRow(idx)}
-                              className="text-slate-500 hover:text-red-400 p-1"
+                              className="text-[#94A3B8] hover:text-red-600 p-1 cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1632,18 +1632,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setShowAddCourseModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingCourse}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold disabled:opacity-50 cursor-pointer shadow-md shadow-[#FF7A18]/25"
                 >
                   {submittingCourse ? 'Creating Course Track...' : 'Create Course & Subjects'}
                 </button>
@@ -1655,60 +1655,60 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
 
       {/* ── Modal: Add Subject to Existing Course ─────────────────────────── */}
       {showAddSubjectModal && targetCourseForSubject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Layers className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white border border-black/[0.08] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#FF7A18]" />
                 Add Subject to {targetCourseForSubject.title}
               </h3>
-              <button onClick={() => setShowAddSubjectModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddSubjectModal(false)} className="text-[#94A3B8] hover:text-[#111827] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAddSubjectToExistingCourse} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Subject / Class Code</label>
+                <label className="block text-[#334155] font-bold mb-1">Subject / Class Code</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. HTML-101"
                   value={subCode}
                   onChange={(e) => setSubCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18] font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Subject Name</label>
+                <label className="block text-[#334155] font-bold mb-1">Subject Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. HTML5, Semantic Elements & CSS Layouts"
                   value={subName}
                   onChange={(e) => setSubName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Description / Modules Covered</label>
+                <label className="block text-[#334155] font-bold mb-1">Description / Modules Covered</label>
                 <textarea
                   rows={2}
                   placeholder="Details on topics, lectures, practical labs..."
                   value={subDesc}
                   onChange={(e) => setSubDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Assign Faculty / Instructor</label>
+                <label className="block text-[#334155] font-bold mb-1">Assign Faculty / Instructor</label>
                 <select
                   value={subTeacherId}
                   onChange={(e) => setSubTeacherId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
                 >
                   <option value="">Unassigned</option>
                   {teachersList.map((t) => (
@@ -1720,14 +1720,14 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Badge Color Theme</label>
+                <label className="block text-[#334155] font-bold mb-1">Badge Color Theme</label>
                 <div className="flex items-center gap-2">
                   {['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'].map((color) => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => setSubColor(color)}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform ${subColor === color ? 'scale-125 border-white' : 'border-transparent'
+                      className={`w-6 h-6 rounded-full border-2 transition-transform cursor-pointer ${subColor === color ? 'scale-125 border-[#111827]' : 'border-transparent'
                         }`}
                       style={{ backgroundColor: color }}
                     />
@@ -1735,18 +1735,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setShowAddSubjectModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-[#64748B] hover:text-[#111827] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingSubject}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white font-bold disabled:opacity-50 cursor-pointer shadow-md shadow-[#FF7A18]/25"
                 >
                   {submittingSubject ? 'Adding...' : 'Add Subject Class'}
                 </button>
