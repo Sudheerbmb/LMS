@@ -828,8 +828,9 @@ async def process_zoom_webhook_event(
 
                 if live_class and rec_id:
                     existing_rec = await session.scalar(select(ClassRecording).where(ClassRecording.zoom_recording_id == rec_id))
+                    target_rec = existing_rec
                     if not existing_rec:
-                        session.add(ClassRecording(
+                        target_rec = ClassRecording(
                             class_id=live_class.id,
                             zoom_meeting_id=meeting_id,
                             zoom_recording_id=rec_id,
@@ -841,17 +842,23 @@ async def process_zoom_webhook_event(
                             status="available",
                             recording_start=datetime.fromisoformat(rf["recording_start"].replace("Z", "+00:00")) if rf.get("recording_start") else None,
                             recording_end=datetime.fromisoformat(rf["recording_end"].replace("Z", "+00:00")) if rf.get("recording_end") else None,
-                        ))
+                        )
+                        session.add(target_rec)
 
                     if not live_class.recording_url and play_url:
                         live_class.recording_url = play_url
 
                     # Forward video to Vimeo pipeline if configured
-                    if file_type == "MP4" and rec_type == "shared_screen_with_speaker_view":
+                    if file_type == "MP4" and (rec_type in ("shared_screen_with_speaker_view", "speaker_view", "shared_screen", "active_speaker") or not live_class.recording_url or "vimeo" not in (live_class.recording_url or "")):
                         try:
-                            vimeo_uri = await upload_zoom_recording({**rf, "download_token": download_token})
+                            vimeo_uri = await upload_zoom_recording({**rf, "download_token": download_token, "file_name": f"{live_class.title or 'Lecture'} - {meeting_id}"})
                             if vimeo_uri:
-                                live_class.recording_url = f"https://vimeo.com/{vimeo_uri.split('/')[-1]}"
+                                v_id = vimeo_uri.split('/')[-1]
+                                vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
+                                live_class.recording_url = vimeo_embed_url
+                                if target_rec:
+                                    target_rec.vimeo_url = vimeo_embed_url
+                                    target_rec.play_url = vimeo_embed_url
                         except Exception as v_err:
                             logger.warning("Vimeo forward note: %s", v_err)
 

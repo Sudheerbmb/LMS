@@ -57,8 +57,20 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   classInfo,
   onClose,
 }) => {
+  const isVimeo = !!(recordingUrl && (recordingUrl.includes('vimeo.com') || recordingUrl.includes('player.vimeo.com')))
+  let vimeoEmbedUrl = ''
+  if (isVimeo && recordingUrl) {
+    const vimeoMatch = recordingUrl.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/)
+    const vimeoId = vimeoMatch ? vimeoMatch[1] : ''
+    if (vimeoId) {
+      vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0`
+    } else {
+      vimeoEmbedUrl = recordingUrl
+    }
+  }
+
   const [activeTab, setActiveTab] = useState<'doubt' | 'summary' | 'transcript' | 'quiz'>('doubt')
-  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>('video')
+  const [playerMode, setPlayerMode] = useState<'video' | 'embed'>(isVimeo ? 'embed' : 'video')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputQuery, setInputQuery] = useState('')
   const [isAsking, setIsAsking] = useState(false)
@@ -91,8 +103,8 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   const zoomPasscode = classInfo?.zoom_password || classInfo?.password || classInfo?.passcode || ''
 
   // Build authenticated embed URL with passcode attached
-  let authenticatedEmbedUrl = recordingUrl
-  if (zoomPasscode && authenticatedEmbedUrl) {
+  let authenticatedEmbedUrl = isVimeo ? vimeoEmbedUrl : recordingUrl
+  if (!isVimeo && zoomPasscode && authenticatedEmbedUrl) {
     if (!authenticatedEmbedUrl.includes('pwd=')) {
       authenticatedEmbedUrl += (authenticatedEmbedUrl.includes('?') ? '&' : '?') + `pwd=${encodeURIComponent(zoomPasscode)}`
     }
@@ -281,14 +293,14 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <a
-              href={authenticatedEmbedUrl || recordingUrl}
+              href={recordingUrl || authenticatedEmbedUrl}
               target="_blank"
               rel="noreferrer"
               title="Open video in new tab / download"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Open in Zoom Tab</span>
+              <span>{isVimeo ? 'Open in Vimeo' : 'Open in Zoom Tab'}</span>
             </a>
             <button
               onClick={onClose}
@@ -306,12 +318,13 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           {/* LEFT COLUMN: VIDEO PLAYER (7/12) */}
           <div className="lg:col-span-7 flex flex-col bg-black/60 overflow-y-auto">
             <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
-              {playerMode === 'embed' && authenticatedEmbedUrl ? (
+              {(isVimeo || playerMode === 'embed') && (authenticatedEmbedUrl || vimeoEmbedUrl) ? (
                 <iframe
-                  src={authenticatedEmbedUrl}
-                  title="Zoom Cloud Recording Video"
+                  src={isVimeo ? (vimeoEmbedUrl || recordingUrl) : authenticatedEmbedUrl}
+                  title={isVimeo ? "Vimeo Recording Player" : "Zoom Cloud Recording Video"}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                  allowFullScreen
                 />
               ) : (
                 <video
@@ -336,39 +349,48 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
             {/* VIDEO PLAYER VIEW TOGGLE & DIRECT ACTIONS */}
             <div className="px-4 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPlayerMode('video')}
-                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
-                    playerMode === 'video'
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-slate-400 hover:text-white bg-slate-800/80'
-                  }`}
-                >
-                  Inline HD Player (No Passcode Needed)
-                </button>
-                {recordingUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setPlayerMode('embed')}
-                    className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
-                      playerMode === 'embed'
-                        ? 'bg-blue-600 text-white shadow'
-                        : 'text-slate-400 hover:text-white bg-slate-800/80'
-                    }`}
-                  >
-                    Zoom Cloud Embed
-                  </button>
+                {isVimeo ? (
+                  <span className="px-3 py-1 rounded-lg font-bold text-[11px] bg-blue-600 text-white shadow flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-200 animate-ping" />
+                    Vimeo HD Stream (Fast & Buffer-Free)
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setPlayerMode('video')}
+                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                        playerMode === 'video'
+                          ? 'bg-blue-600 text-white shadow'
+                          : 'text-slate-400 hover:text-white bg-slate-800/80'
+                      }`}
+                    >
+                      Inline HD Player (No Passcode Needed)
+                    </button>
+                    {recordingUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setPlayerMode('embed')}
+                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                          playerMode === 'embed'
+                            ? 'bg-blue-600 text-white shadow'
+                            : 'text-slate-400 hover:text-white bg-slate-800/80'
+                        }`}
+                      >
+                        Zoom Cloud Embed
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               {recordingUrl && (
                 <a
-                  href={authenticatedEmbedUrl || recordingUrl}
+                  href={recordingUrl || authenticatedEmbedUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
                 >
-                  <span>Open Zoom View</span>
+                  <span>{isVimeo ? 'Open Vimeo Page' : 'Open Zoom View'}</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}

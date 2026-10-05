@@ -601,13 +601,16 @@ async def get_class_video_stream_endpoint(
     if not live_class:
         raise HTTPException(status_code=404, detail="Live class not found")
 
-    # 1. Check ClassRecording table for direct MP4 download_url
+    # 1. Check ClassRecording table for Vimeo URL or direct MP4 download_url
     rec = await session.scalar(
         select(ClassRecording).where(
             ClassRecording.class_id == class_id,
             ClassRecording.file_type == "MP4"
         ).order_by(ClassRecording.created_at.desc())
     )
+    if rec and rec.vimeo_url:
+        return RedirectResponse(url=rec.vimeo_url)
+
     if rec and rec.download_url and zoom_service.is_configured():
         try:
             bearer_token = await zoom_service.client.auth.get_access_token()

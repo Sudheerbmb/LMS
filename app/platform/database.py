@@ -22,6 +22,7 @@ if settings.database_echo:
 
 engine = create_async_engine(settings.database_url, **_engine_kwargs)
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
+async_session_factory = SessionFactory
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -151,6 +152,14 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("live_classes", "zoom_status", "VARCHAR(32) DEFAULT 'scheduled'", cols)
         _add_column("live_classes", "zoom_last_synced_at", dt_type, cols)
         _add_column("live_classes", "zoom_settings_json", json_type, cols)
+
+    # 4. Class Recordings Table
+    if "class_recordings" in tables:
+        cols = {c["name"] for c in inspector.get_columns("class_recordings")}
+        _add_column("class_recordings", "vimeo_url", "VARCHAR(1000)", cols)
+        _add_column("class_recordings", "play_url", "VARCHAR(1000)", cols)
+        _add_column("class_recordings", "download_url", "VARCHAR(1000)", cols)
+
 
 
 async def purge_legacy_school_data(session: AsyncSession) -> None:
