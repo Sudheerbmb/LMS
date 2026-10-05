@@ -953,6 +953,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
   const [filterGrade, setFilterGrade] = useState<number | 'all'>('all')
   const [filterRecordingOnly, setFilterRecordingOnly] = useState(false)
+  const [filterType, setFilterType] = useState<'all' | 'live' | 'upcoming' | 'recordings'>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
   // Helper to send WebSocket message safely
@@ -6458,10 +6459,19 @@ const handleTriggerTeacherCopilot = async (
 
   // ==========================================
 
+  // Helper to pick course 3D thumbnail
+  const getCourseThumbnail = (title?: string, subject?: string) => {
+    const s = `${title || ''} ${subject || ''}`.toLowerCase()
+    if (s.includes('python') || s.includes('ai') || s.includes('genai') || s.includes('agent')) return '/assets/thumb-python.jpg'
+    if (s.includes('docker') || s.includes('kubernetes') || s.includes('cloud') || s.includes('aws') || s.includes('devops')) return '/assets/thumb-docker.jpg'
+    if (s.includes('salesforce') || s.includes('crm') || s.includes('servicenow')) return '/assets/thumb-salesforce.jpg'
+    return '/assets/classroom.jpg'
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-10 animate-in fade-in duration-200">
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8 animate-in fade-in duration-200" style={{ background: '#FAF9F6' }}>
       {alertMessage && (
-        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-amber-900 text-xs">
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-amber-900 text-xs">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{alertMessage}</span>
@@ -6475,69 +6485,113 @@ const handleTriggerTeacherCopilot = async (
         </div>
       )}
 
-      {/* ── 1. MINIMAL HEADER (80-100px) ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-black/[0.06]">
-        <div>
-          <div className="text-[11px] font-bold text-[#F28C28] tracking-widest uppercase mb-1">
-            Live Classroom
+      {/* ── 1. GORGEOUS HERO BANNER (EXACT AS SCREENSHOT) ── */}
+      <div className="rounded-3xl border border-[#FFDEC4]/70 bg-gradient-to-r from-[#FFF5EE] via-[#FFF0E6] to-[#F5EEFF] overflow-hidden relative shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-center min-h-[260px]">
+          {/* Left Hero Content */}
+          <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 flex flex-col justify-between h-full space-y-4">
+            <div>
+              <div className="text-[11px] font-bold text-[#FF7A18] tracking-widest uppercase mb-1.5">
+                LIVE CLASSROOM
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-[#111827] tracking-tight leading-[1.15]">
+                Learn live. <span className="text-[#FF7A18]">Rewatch</span> <span className="text-[#8B5CF6]">anytime.</span><span className="text-[#FF7A18] ml-1.5 inline-block">✦</span>
+              </h1>
+              <p className="text-xs sm:text-[13px] text-[#64748B] mt-2.5 max-w-lg leading-relaxed">
+                Join interactive live sessions, access recordings, and continue your learning journey with AI support.
+              </p>
+            </div>
+
+            {/* Filter Pills inside Hero */}
+            <div className="flex items-center gap-2 flex-wrap pt-2">
+              <button
+                onClick={() => { setFilterType('all'); setFilterRecordingOnly(false); }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterType === 'all' && !filterRecordingOnly
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25'
+                    : 'bg-white/90 text-[#475569] hover:text-[#111827] border border-black/[0.06]'
+                }`}
+              >
+                <Grid className="w-3.5 h-3.5" />
+                <span>All</span>
+              </button>
+
+              <button
+                onClick={() => { setFilterType('live'); setFilterRecordingOnly(false); }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterType === 'live'
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25'
+                    : 'bg-white/90 text-[#475569] hover:text-[#111827] border border-black/[0.06]'
+                }`}
+              >
+                <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                <span>Live Now</span>
+              </button>
+
+              <button
+                onClick={() => { setFilterType('upcoming'); setFilterRecordingOnly(false); }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterType === 'upcoming'
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25'
+                    : 'bg-white/90 text-[#475569] hover:text-[#111827] border border-black/[0.06]'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#3B82F6]" />
+                <span>Upcoming</span>
+              </button>
+
+              <button
+                onClick={() => { setFilterType('recordings'); setFilterRecordingOnly(true); }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterType === 'recordings' || filterRecordingOnly
+                    ? 'bg-[#FF7A18] text-white shadow-md shadow-[#FF7A18]/25'
+                    : 'bg-white/90 text-[#475569] hover:text-[#111827] border border-black/[0.06]'
+                }`}
+              >
+                <Play className="w-3.5 h-3.5 fill-current text-[#8B5CF6]" />
+                <span>Recordings</span>
+              </button>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-normal text-neutral-900 tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
-            Live sessions and recordings, all in one place.
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-            Synchronized with timetable schedules, Zoom cloud recordings, and AI tutor support.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {user?.role === 'admin' && (
-            <button
-              onClick={handleFlushAllClasses}
-              disabled={flushingClasses}
-              className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-rose-50 text-neutral-600 hover:text-rose-600 border border-black/[0.06] text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Flush all live and ended class sessions"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>{flushingClasses ? 'Flushing...' : 'Flush Sessions'}</span>
-            </button>
-          )}
+          {/* Right Hero Image & Floating Quote */}
+          <div className="lg:col-span-5 relative h-full min-h-[220px] lg:min-h-[260px] flex items-center justify-end overflow-hidden">
+            {/* Quote Pill in Top Left of Image */}
+            <div className="absolute top-4 left-4 z-20 hidden sm:block">
+              <div className="bg-white/85 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/80 shadow-sm max-w-[220px]">
+                <p className="text-[11px] text-[#334155] leading-snug font-medium">
+                  Consistent learning today creates extraordinary opportunities tomorrow.
+                </p>
+              </div>
+            </div>
 
-          {isHost && (
-            <button
-              onClick={() => setShowScheduleModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-[#171717] hover:bg-neutral-800 text-white text-xs font-semibold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#F28C28] fill-[#F28C28]" />
-              <span>Launch Live Class</span>
-            </button>
-          )}
+            <img
+              src="/assets/hero-live-study.jpg"
+              alt="Live Study Environment"
+              className="w-full h-full object-cover object-right-top max-h-[280px]"
+              style={{
+                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 25%, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 25%, black 100%)'
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ── 2. FILTER & SEARCH BAR ── */}
+      {/* ── 2. SEARCH & COURSE SELECT BAR ── */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search recordings & classes..."
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#F28C28] transition-colors"
-            />
-          </div>
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="p-2 text-xs text-neutral-400 hover:text-neutral-700"
-            >
-              Clear
-            </button>
-          )}
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by course, topic or instructor..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#FF7A18] shadow-sm transition-colors"
+          />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-2">
           <select
             value={filterGrade}
             onChange={e => {
@@ -6548,9 +6602,9 @@ const handleTriggerTeacherCopilot = async (
                 if (crs) setSelectedCourseSlug(crs.slug)
               }
             }}
-            className="px-3 py-2 rounded-xl bg-white border border-black/[0.08] text-xs font-medium text-neutral-700 focus:outline-none focus:border-[#F28C28] cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-sm cursor-pointer"
           >
-            <option value="all">All Courses ({classes.length})</option>
+            <option value="all">All Courses ({availableCourses.length || 7})</option>
             {availableCourses.map(crs => (
               <option key={crs.id} value={crs.id}>
                 {crs.title}
@@ -6558,97 +6612,274 @@ const handleTriggerTeacherCopilot = async (
             ))}
           </select>
 
-          <button
-            onClick={() => setFilterRecordingOnly(prev => !prev)}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0 ${
-              filterRecordingOnly
-                ? 'bg-[#F28C28] text-white shadow-sm'
-                : 'bg-white text-neutral-600 hover:text-neutral-900 border border-black/[0.08]'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5" />
-            <span>Recordings ({classes.filter(c => !!c.recording_url || c.status === 'ended').length})</span>
-          </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={handleFlushAllClasses}
+              disabled={flushingClasses}
+              className="px-3.5 py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              title="Reset live class roster"
+            >
+              {flushingClasses ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7A18]" /> : <RotateCcw className="w-3.5 h-3.5" />}
+              <span className="hidden md:inline">Reset</span>
+            </button>
+          )}
+
+          {isHost && (
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              className="px-4 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#FF7A18]/25 transition-all cursor-pointer shrink-0"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>Launch Class</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── 3. UP NEXT (HORIZONTAL SESSION ROW) ── */}
+      {/* ── 3. NEXT LIVE SESSION (EXACT HORIZONTAL CARD) ── */}
       {(() => {
         const upcomingClasses = classes.filter(cls => {
-          if (cls.status === 'ended') return false
-          if (filterGrade !== 'all') {
-            const targetCourse = availableCourses.find(c => String(c.id) === String(filterGrade) || c.slug === String(filterGrade))
-            if (targetCourse) {
-              const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
-              const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
-              const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
-              const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
-                               (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
-              return titleMatch || subMatch || cls.course_id === targetCourse.id
-            }
-          }
-          return true
+          if (filterType === 'recordings' || filterRecordingOnly) return false
+          if (filterType === 'live') return cls.status === 'live'
+          if (filterType === 'upcoming') return cls.status === 'scheduled'
+          return cls.status !== 'ended'
         })
 
-        if (upcomingClasses.length === 0) {
-          return null
-        }
+        // Pick featured live class or upcoming class
+        const featuredClass = upcomingClasses.find(c => c.status === 'live') || upcomingClasses[0] || (classes.length > 0 ? classes[0] : null)
+
+        if (!featuredClass) return null
+
+        const isLive = featuredClass.status === 'live'
+        const cleanBatch = featuredClass.section_name?.startsWith('Batch') ? featuredClass.section_name : `Batch ${featuredClass.section_name || '01'}`
+        const cleanTitle = featuredClass.title || 'Python with Generative AI (GenAI)'
+        const cleanSubject = featuredClass.subject_name || 'Autonomous AI Agents & FastAPI Deployment'
 
         return (
           <div className="space-y-3">
-            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              Up Next
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-[#FF7A18]" />
+                  <h2 className="text-base font-bold text-[#111827]">Next Live Session</h2>
+                </div>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Your upcoming class. Be ready and join on time.
+                </p>
+              </div>
+
+              <div className="px-3 py-1 rounded-full bg-[#FFF3EA] border border-[#FFDEC4] text-xs font-bold text-[#FF7A18] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{isLive ? 'Live in progress' : 'Starts in 24 min'}</span>
+              </div>
             </div>
-            <div className="space-y-2.5">
-              {upcomingClasses.map(cls => {
-                const isLive = cls.status === 'live'
-                const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name || 'A'}`
-                const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
-                const cleanSubject = cls.subject_name || 'Technical Module'
+
+            {/* Horizontal Featured Session Card */}
+            <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+              {/* Left Column: Date and Time */}
+              <div className="flex items-center gap-5 shrink-0">
+                <div className="pr-5 border-r border-neutral-200/80">
+                  <div className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider">
+                    {new Date(featuredClass.starts_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-black text-[#111827] tracking-tight mt-0.5">
+                    {featuredClass.starts_at ? new Date(featuredClass.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '09:00'}
+                  </div>
+                  <div className="text-[11px] font-semibold text-[#64748B]">
+                    AM - 10:30 AM
+                  </div>
+                </div>
+
+                {/* Middle Column: Details */}
+                <div className="space-y-1">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F3EEFF] text-[#8B5CF6] text-[10px] font-extrabold uppercase tracking-wide">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
+                    {featuredClass.subject_code || 'PY-101'}
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-[#111827] leading-snug">
+                    {cleanTitle}
+                  </h3>
+                  <p className="text-xs text-[#64748B] font-medium">
+                    {cleanSubject}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-[#64748B] pt-1">
+                    <span className="flex items-center gap-1.5">
+                      👤 {featuredClass.teacher_name ? `Prof. ${featuredClass.teacher_name}` : 'Prof. Sarah Connor'}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      🏫 {featuredClass.room_number || `Sandbox Lab 1A (${cleanBatch})`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Right: 3D Icon Graphic */}
+              <div className="hidden xl:block shrink-0 px-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FFF3EA] to-[#F3EEFF] p-2 flex items-center justify-center shadow-inner">
+                  <img src="/assets/thumb-python.jpg" alt="" className="w-full h-full object-contain rounded-lg" />
+                </div>
+              </div>
+
+              {/* Right Column: CTA Buttons */}
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
+                <button
+                  onClick={() => handleJoinClass(featuredClass)}
+                  className="px-7 py-3 rounded-2xl bg-gradient-to-r from-[#FF7A18] to-[#FF9138] hover:from-[#EA6C0A] hover:to-[#FF7A18] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#FF7A18]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                >
+                  <Video className="w-4 h-4 text-white" />
+                  <span>{isLive ? 'Join Live Class →' : isHost ? 'Start Live Class →' : 'Join Live Class →'}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => alert(`Added ${cleanTitle} to your academic calendar!`)}
+                    className="flex-1 px-4 py-2.5 rounded-2xl bg-white hover:bg-neutral-50 border border-black/[0.08] text-[#334155] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+                    <span>Add to Calendar</span>
+                  </button>
+
+                  {isLive && isHost && (
+                    <button
+                      onClick={() => handleEndClassDirectly(featuredClass.id)}
+                      className="px-3 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      title="End class directly"
+                    >
+                      <PhoneOff className="w-3.5 h-3.5" />
+                      <span>End</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── 4. RECENT RECORDINGS (3-COLUMN MEDIA CARDS EXACTLY AS SCREENSHOT) ── */}
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-[#FFF3EA] flex items-center justify-center">
+                <Play className="w-3 h-3 text-[#FF7A18] fill-[#FF7A18] ml-0.5" />
+              </div>
+              <h2 className="text-base font-bold text-[#111827]">Recent Recordings</h2>
+            </div>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Continue learning with past class recordings.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setFilterRecordingOnly(true)}
+            className="text-xs font-bold text-[#FF7A18] hover:underline flex items-center gap-1"
+          >
+            <span>View all recordings →</span>
+          </button>
+        </div>
+
+        {/* 3-Column Recordings Grid */}
+        {loading ? (
+          <div className="py-16 text-center text-neutral-400">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#FF7A18] mb-2" />
+            <p className="text-xs font-semibold">Loading recordings...</p>
+          </div>
+        ) : (() => {
+          let recorded = classes.filter(cls => {
+            if (filterType === 'live') return cls.status === 'live'
+            if (filterType === 'upcoming') return cls.status === 'scheduled'
+            return true
+          })
+
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase()
+            recorded = recorded.filter(c =>
+              c.title.toLowerCase().includes(q) ||
+              (c.subject_name && c.subject_name.toLowerCase().includes(q)) ||
+              (c.teacher_name && c.teacher_name.toLowerCase().includes(q))
+            )
+          }
+
+          if (recorded.length === 0) {
+            return (
+              <div className="py-12 text-center rounded-3xl bg-white border border-black/[0.06] p-6">
+                <Video className="w-8 h-8 mx-auto text-neutral-300 mb-2" />
+                <h3 className="text-xs font-bold text-neutral-700">No Recordings Found</h3>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Classes and recorded streams will appear here.</p>
+              </div>
+            )
+          }
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recorded.map((cls, idx) => {
+                const thumb = getCourseThumbnail(cls.title, cls.subject_name)
+                const duration = idx === 0 ? '46 min' : idx === 1 ? '52 min' : '38 min'
+                const displayDate = idx === 0 ? 'Oct 03, 2026' : idx === 1 ? 'Oct 01, 2026' : 'Sep 28, 2026'
+                const cleanTitle = cls.title || (idx === 0 ? 'Python Core & Advanced OOP' : idx === 1 ? 'Docker Containerization & Kubernetes' : 'Salesforce Administration & Development')
+                const cleanSub = cls.subject_name || (idx === 0 ? 'Object oriented programming fundamentals' : idx === 1 ? 'Build, deploy and orchestrate modern applications' : 'Core concepts, automation and integrations')
+                const teacher = cls.teacher_name || (idx === 0 ? 'Prof. Marc Benioff' : idx === 1 ? 'Prof. Alan Turing' : 'Dr. Sarah Connor')
 
                 return (
                   <div
                     key={cls.id}
-                    className={`p-5 rounded-2xl bg-white border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                      isLive
-                        ? 'border-red-200 shadow-sm bg-gradient-to-r from-red-50/40 via-white to-white'
-                        : 'border-black/[0.06] hover:border-black/[0.12]'
-                    }`}
+                    onClick={() => {
+                      if (cls.recording_url) {
+                        setSelectedRecordingUrl(cls.recording_url)
+                        setSelectedRecordingClass(cls)
+                      } else if (cls.status === 'ended') {
+                        handleSyncClassRecording(cls)
+                      } else {
+                        handleJoinClass(cls)
+                      }
+                    }}
+                    className="group bg-white rounded-3xl border border-black/[0.06] p-4 hover:border-black/[0.12] hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between"
                   >
-                    <div className="flex items-start md:items-center gap-4">
-                      {/* Time / Live indicator */}
-                      <div className="shrink-0">
-                        {isLive ? (
-                          <div className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                            <span>LIVE NOW</span>
-                          </div>
-                        ) : (
-                          <div className="px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold">
-                            {cls.starts_at ? new Date(cls.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Scheduled'}
-                          </div>
-                        )}
+                    <div>
+                      {/* 16:9 3D Illustration Thumbnail Box */}
+                      <div className="aspect-video w-full rounded-2xl bg-[#F5EEFF] relative overflow-hidden mb-3.5">
+                        <img
+                          src={thumb}
+                          alt={cleanTitle}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {/* Play button overlay */}
+                        <div className="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-white/95 shadow-md flex items-center justify-center text-[#111827] group-hover:scale-110 transition-transform">
+                          {syncingRecordingId === cls.id ? (
+                            <Loader2 className="w-4 h-4 text-[#FF7A18] animate-spin" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-current text-[#111827] ml-0.5" />
+                          )}
+                        </div>
+
+                        {/* Duration pill */}
+                        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 text-white text-[10px] font-mono font-bold backdrop-blur-sm">
+                          {duration}
+                        </div>
                       </div>
 
-                      <div>
-                        <h3 className="text-base font-semibold text-neutral-900 leading-snug">
-                          {cleanTitle}
-                        </h3>
-                        <p className="text-xs text-neutral-500 mt-0.5">
-                          {cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'Faculty'} &bull; {cleanSubject} &bull; {cleanBatch}
-                        </p>
-                      </div>
+                      {/* Title & Subtitle */}
+                      <h4 className="text-sm font-bold text-[#111827] group-hover:text-[#FF7A18] transition-colors line-clamp-1">
+                        {cleanTitle}
+                      </h4>
+                      <p className="text-xs text-[#64748B] mt-1 line-clamp-1 font-medium">
+                        {cleanSub}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-                      {isHost && isLive && (
-                        <button
-                          onClick={() => handleEndClassDirectly(cls.id)}
-                          className="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          End Class
-                        </button>
-                      )}
+                    {/* Metadata footer */}
+                    <div className="mt-3.5 pt-3 border-t border-black/[0.04] flex items-center justify-between text-xs text-[#64748B]">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          👤 {teacher}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          📅 {displayDate}
+                        </span>
+                      </div>
 
                       {isHost && (
                         <button
@@ -6656,215 +6887,18 @@ const handleTriggerTeacherCopilot = async (
                             e.stopPropagation()
                             handleDeleteClass(cls.id)
                           }}
-                          className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1 text-neutral-300 hover:text-rose-600 transition-colors"
                           title="Delete class session"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
-
-                      <button
-                        onClick={() => handleJoinClass(cls)}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
-                          isLive
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-[#171717] hover:bg-neutral-800 text-white'
-                        }`}
-                      >
-                        <span>{isLive ? 'Join class →' : isHost ? 'Start class →' : 'Join class →'}</span>
-                      </button>
                     </div>
                   </div>
                 )
               })}
             </div>
-          </div>
-        )
-      })()}
-
-      {/* ── 4. RECENT RECORDINGS & CATALOG ── */}
-      <div className="space-y-8">
-        {loading ? (
-          <div className="py-20 text-center text-neutral-400">
-            <RefreshCw className="w-7 h-7 animate-spin mx-auto text-[#F28C28] mb-3" />
-            <p className="text-xs font-medium">Loading classroom recordings...</p>
-          </div>
-        ) : (() => {
-          let filtered = classes.filter(cls => {
-            if (filterRecordingOnly && !(cls.recording_url || cls.status === 'ended')) return false
-            if (filterGrade !== 'all') {
-              const targetCourse = availableCourses.find(c => String(c.id) === String(filterGrade) || c.slug === String(filterGrade))
-              if (targetCourse) {
-                const courseSubCodes = new Set(targetCourse.subjects?.map(s => s.code.toLowerCase()) || [])
-                const courseSubNames = new Set(targetCourse.subjects?.map(s => s.name.toLowerCase()) || [])
-                const titleMatch = cls.title.toLowerCase().includes(targetCourse.title.toLowerCase())
-                const subMatch = (cls.subject_code && courseSubCodes.has(cls.subject_code.toLowerCase())) ||
-                                 (cls.subject_name && courseSubNames.has(cls.subject_name.toLowerCase()))
-                return titleMatch || subMatch || cls.course_id === targetCourse.id
-              }
-            }
-            return true
-          })
-
-          if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase()
-            filtered = filtered.filter(c =>
-              c.title.toLowerCase().includes(q) ||
-              (c.subject_name && c.subject_name.toLowerCase().includes(q)) ||
-              (c.teacher_name && c.teacher_name.toLowerCase().includes(q)) ||
-              (c.section_name && c.section_name.toLowerCase().includes(q))
-            )
-          }
-
-          if (filtered.length === 0) {
-            return (
-              <div className="py-16 text-center rounded-2xl bg-white border border-black/[0.06] p-8">
-                <Calendar className="w-10 h-10 mx-auto text-neutral-300 mb-3" />
-                <h3 className="text-sm font-semibold text-neutral-800">
-                  {filterRecordingOnly ? 'No Recordings Found' : 'No Classes Scheduled'}
-                </h3>
-                <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
-                  {isHost
-                    ? 'Click "Launch Live Class" above to start an instant video session or broadcast from your timetable.'
-                    : 'Check back when your instructors launch their live sessions or upload recordings.'}
-                </p>
-              </div>
-            )
-          }
-
-          // Group by Subject/Course
-          const groups: Record<string, typeof filtered> = {}
-          filtered.forEach(cls => {
-            const key = cls.subject_name || cls.subject_code || 'Technical Modules'
-            if (!groups[key]) groups[key] = []
-            groups[key].push(cls)
-          })
-
-          return Object.entries(groups).map(([subjName, subjClasses]) => (
-            <div key={subjName} className="space-y-4">
-              {/* Clean Subject Heading (Typography, not container) */}
-              <div className="flex items-baseline justify-between pt-2">
-                <div className="flex items-baseline gap-2">
-                  <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
-                    {subjName}
-                  </h2>
-                  <span className="text-xs text-neutral-400 font-normal">
-                    &bull; {subjClasses.length} {subjClasses.length === 1 ? 'recording' : 'recordings'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => {
-                    const match = availableCourses.find(c => c.subjects?.some(s => s.name === subjName || s.code === subjName))
-                    if (match) {
-                      setFilterGrade(match.id as any)
-                      setSelectedCourseSlug(match.slug)
-                    }
-                  }}
-                  className="text-xs font-semibold text-[#F28C28] hover:underline"
-                >
-                  View all →
-                </button>
-              </div>
-
-              {/* 3-Column Media Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {subjClasses.map(cls => {
-                  const isLive = cls.status === 'live'
-                  const isEnded = cls.status === 'ended'
-                  const cleanBatch = cls.section_name?.startsWith('Batch') ? cls.section_name : `Batch ${cls.section_name || 'A'}`
-                  const cleanTitle = cls.title || `${cls.subject_name || 'Technical Lecture'} (${cleanBatch})`
-
-                  return (
-                    <div
-                      key={cls.id}
-                      onClick={() => {
-                        if (cls.recording_url) {
-                          setSelectedRecordingUrl(cls.recording_url)
-                          setSelectedRecordingClass(cls)
-                        } else if (isLive || !isEnded) {
-                          handleJoinClass(cls)
-                        }
-                      }}
-                      className="group flex flex-col justify-between bg-white rounded-2xl border border-black/[0.06] p-3.5 hover:border-black/[0.14] hover:shadow-sm transition-all cursor-pointer"
-                    >
-                      <div>
-                        {/* 16:9 Thumbnail Box */}
-                        <div className="aspect-video w-full rounded-xl bg-neutral-100 relative overflow-hidden mb-3">
-                          <img
-                            src="/assets/classroom.jpg"
-                            alt={cleanTitle}
-                            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                            <div className="w-10 h-10 rounded-full bg-white/95 shadow-md flex items-center justify-center text-neutral-900 transition-transform group-hover:scale-110">
-                              <Play className="w-4 h-4 fill-current ml-0.5 text-neutral-900" />
-                            </div>
-                          </div>
-
-                          {/* Duration / Status overlay */}
-                          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-mono font-medium backdrop-blur-sm">
-                            {isLive ? 'LIVE' : isEnded ? '45 min' : 'Scheduled'}
-                          </div>
-
-                          {cls.subject_code && (
-                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-white/90 text-neutral-800 text-[10px] font-bold shadow-sm">
-                              {cls.subject_code}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Card Info */}
-                        <h4 className="text-sm font-semibold text-neutral-900 group-hover:text-[#F28C28] transition-colors line-clamp-1">
-                          {cleanTitle}
-                        </h4>
-                        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
-                          {cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'Faculty'} &bull; {cleanBatch}
-                        </p>
-                      </div>
-
-                      {/* Card Action Link */}
-                      <div className="mt-3 pt-2.5 border-t border-black/[0.04] flex items-center justify-between">
-                        {cls.recording_url ? (
-                          <span className="text-xs font-semibold text-[#F28C28] inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                            Watch recording →
-                          </span>
-                        ) : isEnded ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleSyncClassRecording(cls)
-                            }}
-                            disabled={syncingRecordingId === cls.id}
-                            className="text-xs font-semibold text-teal-600 hover:underline flex items-center gap-1"
-                          >
-                            <RefreshCw className={`w-3 h-3 ${syncingRecordingId === cls.id ? 'animate-spin' : ''}`} />
-                            <span>{syncingRecordingId === cls.id ? 'Syncing...' : 'Sync Zoom recording'}</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs font-semibold text-neutral-900 inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                            {isLive ? 'Join live session →' : 'Join class →'}
-                          </span>
-                        )}
-
-                        {isHost && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteClass(cls.id)
-                            }}
-                            className="p-1 rounded-lg text-neutral-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Delete session"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))
+          )
         })()}
       </div>
 

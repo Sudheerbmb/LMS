@@ -14,6 +14,7 @@ import {
   getAdminCourses
 } from './lib/api'
 import { Sidebar } from './components/Sidebar'
+import { Search, Bell, ChevronDown } from 'lucide-react'
 import { DashboardPage } from './pages/DashboardPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { AssessmentsPage } from './pages/AssessmentsPage'
@@ -608,20 +609,96 @@ export function App() {
         onLogout={handleLogout}
       />
 
-      {/* ── Main Content Area ── */}
-      <main style={{ flex: 1, minWidth: 0, height: '100vh', overflowY: 'auto', background: 'var(--canvas)' }}>
-        {currentTab === 'overview' && (
-          <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
-        )}
-        {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
-        {currentTab === 'classroom' && <ClassroomPage user={user} />}
-        {currentTab === 'timetable' && <TimetablePage user={user} />}
-        {currentTab === 'coding' && <CodingPage user={user} />}
-        {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
-        {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
-        {currentTab === 'certificates' && user.role === 'student' && <CertificatesPage user={user} />}
-        {currentTab === 'admin' && user.role === 'admin' && <AdminPage user={user} />}
-      </main>
+      {/* ── Main Content Area with Header ── */}
+      <div style={{ flex: 1, minWidth: 0, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Top Header Bar */}
+        <header style={{
+          height: 60,
+          background: '#FAFAF8',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 32px',
+          gap: 20,
+          flexShrink: 0
+        }}>
+          {/* Search Bar */}
+          <div style={{ flex: 1, maxWidth: 540, position: 'relative' }}>
+            <Search style={{ width: 15, height: 15, color: '#94A3B8', position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Search classes, recordings, or topics..."
+              style={{
+                width: '100%',
+                padding: '8px 38px 8px 36px',
+                borderRadius: 12,
+                background: 'white',
+                border: '1px solid rgba(0,0,0,0.08)',
+                fontSize: 12.5,
+                color: '#111827',
+                outline: 'none',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+              }}
+            />
+            <div style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              padding: '2px 6px', borderRadius: 6, background: '#F1F5F9', border: '1px solid #E2E8F0',
+              fontSize: 10, fontWeight: 700, color: '#64748B'
+            }}>
+              ⌘ K
+            </div>
+          </div>
+
+          {/* Right actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <button
+              onClick={() => {}}
+              style={{
+                position: 'relative', padding: 6, borderRadius: 8, background: 'none',
+                border: 'none', cursor: 'pointer', color: '#64748B'
+              }}
+              title="Notifications"
+            >
+              <Bell style={{ width: 17, height: 17 }} />
+              {notifications.some(n => !n.read_at) && (
+                <span style={{
+                  position: 'absolute', top: 5, right: 5, width: 7, height: 7,
+                  borderRadius: '50%', background: '#EF4444'
+                }} />
+              )}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontSize: 12, fontWeight: 800,
+                boxShadow: '0 2px 6px rgba(139, 92, 246, 0.25)'
+              }}>
+                {(user.display_name || user.email || 'S')[0].toUpperCase()}
+              </div>
+              <ChevronDown style={{ width: 13, height: 13, color: '#64748B' }} />
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Main Content */}
+        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', background: 'var(--canvas)' }}>
+          {currentTab === 'overview' && (
+            <DashboardPage user={user} summary={dashboardSummary} setCurrentTab={setCurrentTab} />
+          )}
+          {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
+          {currentTab === 'classroom' && <ClassroomPage user={user} />}
+          {currentTab === 'timetable' && <TimetablePage user={user} />}
+          {currentTab === 'coding' && <CodingPage user={user} />}
+          {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
+          {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
+          {currentTab === 'certificates' && user.role === 'student' && <CertificatesPage user={user} />}
+          {currentTab === 'admin' && user.role === 'admin' && <AdminPage user={user} />}
+        </main>
+      </div>
     </div>
   )
 }

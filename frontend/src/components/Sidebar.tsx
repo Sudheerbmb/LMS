@@ -20,7 +20,6 @@ import {
   X,
   Trash2,
   CheckCheck,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -116,16 +115,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => setCurrentTab(item.id)}
         className={`nav-item ${isActive ? 'active' : ''}`}
         title={collapsed ? item.label : undefined}
-        style={{ overflow: collapsed ? 'hidden' : 'visible' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '9px 12px',
+          borderRadius: 10,
+          border: 'none',
+          background: isActive ? '#FFF3EA' : 'transparent',
+          color: isActive ? '#FF7A18' : '#64748B',
+          fontWeight: isActive ? 600 : 500,
+          fontSize: 13,
+          cursor: 'pointer',
+          width: '100%',
+          textAlign: 'left',
+          transition: 'all 0.15s ease',
+          position: 'relative',
+          overflow: collapsed ? 'hidden' : 'visible'
+        }}
       >
+        {isActive && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: '15%',
+              bottom: '15%',
+              width: 3,
+              borderRadius: '0 4px 4px 0',
+              background: '#FF7A18'
+            }}
+          />
+        )}
         <Icon
           style={{
-            width: 16, height: 16, flexShrink: 0,
-            color: isActive ? 'var(--saffron)' : 'var(--ink-3)'
+            width: 17,
+            height: 17,
+            flexShrink: 0,
+            color: isActive ? '#FF7A18' : '#64748B'
           }}
         />
         {!collapsed && (
-          <span style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.label}
           </span>
         )}
@@ -137,10 +168,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       <aside
         className={`nav-rail ${collapsed ? 'collapsed' : ''}`}
-        style={{ justifyContent: 'space-between' }}
+        style={{
+          width: collapsed ? 72 : 240,
+          minWidth: collapsed ? 72 : 240,
+          background: '#FAFAF8',
+          borderRight: '1px solid rgba(0,0,0,0.06)',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          transition: 'width 0.2s ease',
+          zIndex: 40
+        }}
       >
         {/* ── Brand Header ── */}
-        <div style={{ padding: '20px 14px 12px', borderBottom: '1px solid var(--nav-border)' }}>
+        <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <button
               onClick={() => setCurrentTab('overview')}
@@ -152,26 +194,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div style={{
                 width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                background: 'linear-gradient(135deg, #E8820C 0%, #F59E0B 100%)',
+                background: 'linear-gradient(135deg, #FF7A18 0%, #FF9E40 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(232,130,12,0.3)'
+                boxShadow: '0 2px 10px rgba(255,122,24,0.3)'
               }}>
                 <Flame style={{ width: 18, height: 18, color: 'white' }} />
               </div>
               {!collapsed && (
-                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ minWidth: 0, overflow: 'hidden', textAlign: 'left' }}>
                   <div style={{
-                    fontSize: 14, fontWeight: 800, color: 'var(--ink)',
-                    letterSpacing: '-0.02em', lineHeight: 1.2,
+                    fontSize: 15, fontWeight: 800, color: '#111827',
+                    letterSpacing: '-0.02em', lineHeight: 1.15,
                     whiteSpace: 'nowrap'
                   }}>
                     Acharya
                   </div>
                   <div style={{
-                    fontSize: 10, fontWeight: 600, color: 'var(--saffron)',
-                    letterSpacing: '0.05em', textTransform: 'uppercase'
+                    fontSize: 9.5, fontWeight: 700, color: '#94A3B8',
+                    letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1
                   }}>
-                    {user.role === 'admin' ? 'Admin Console' : user.role === 'teacher' ? 'Teaching Studio' : 'Learning Portal'}
+                    LEARNING OS
                   </div>
                 </div>
               )}
@@ -180,80 +222,90 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => setCollapsed(!collapsed)}
               style={{
-                width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)',
-                background: 'var(--surface-2)', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--ink-3)'
+                width: 26, height: 26, borderRadius: 7, border: '1px solid rgba(0,0,0,0.08)',
+                background: 'white', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#64748B'
               }}
               title={collapsed ? 'Expand' : 'Collapse'}
             >
               {collapsed
-                ? <ChevronRight style={{ width: 13, height: 13 }} />
-                : <ChevronLeft  style={{ width: 13, height: 13 }} />
+                ? <ChevronRight style={{ width: 12, height: 12 }} />
+                : <ChevronLeft  style={{ width: 12, height: 12 }} />
               }
             </button>
           </div>
         </div>
 
         {/* ── Navigation ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
           {/* Learn group */}
-          {!collapsed && <div className="nav-section-label">Learn</div>}
-          {collapsed && <div style={{ height: 12 }} />}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {!collapsed && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 10px 8px' }}>
+              LEARN
+            </div>
+          )}
+          {collapsed && <div style={{ height: 8 }} />}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {learnGroup.map(item => <NavItem key={item.id} item={item} />)}
           </div>
 
           {/* Practice group */}
           {practiceGroup.length > 0 && (
             <>
-              {!collapsed
-                ? <div className="nav-section-label" style={{ marginTop: 20 }}>Practice</div>
-                : <div style={{ height: 16, borderTop: '1px solid var(--border)', margin: '12px 4px' }} />
-              }
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {!collapsed ? (
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 10px 8px' }}>
+                  PRACTICE
+                </div>
+              ) : (
+                <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '12px 4px' }} />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {practiceGroup.map(item => <NavItem key={item.id} item={item} />)}
               </div>
             </>
           )}
 
-          {/* Progress / Admin group */}
+          {/* Progress / Manage group */}
           {progressGroup.length > 0 && (
             <>
-              {!collapsed
-                ? <div className="nav-section-label" style={{ marginTop: 20 }}>Progress</div>
-                : <div style={{ height: 16, borderTop: '1px solid var(--border)', margin: '12px 4px' }} />
-              }
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {!collapsed ? (
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 10px 8px' }}>
+                  MANAGE
+                </div>
+              ) : (
+                <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '12px 4px' }} />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {progressGroup.map(item => <NavItem key={item.id} item={item} />)}
               </div>
             </>
           )}
 
-          {/* AI Copilot shortcut */}
-          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+          {/* AI Copilot shortcut card */}
+          <div style={{ marginTop: 18 }}>
             <div
               style={{
-                background: 'linear-gradient(135deg, rgba(124, 92, 252, 0.08) 0%, rgba(124, 92, 252, 0.02) 100%)',
-                border: '1px solid rgba(124, 92, 252, 0.22)',
-                borderRadius: 10, padding: collapsed ? '10px 8px' : '10px 12px',
-                display: 'flex', alignItems: 'center', gap: 8,
-                cursor: 'default'
+                background: 'linear-gradient(135deg, #F5EEFF 0%, #EDE5FF 100%)',
+                border: '1px solid rgba(139, 92, 246, 0.18)',
+                borderRadius: 12, padding: collapsed ? '10px 8px' : '10px 12px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: 'pointer'
               }}
             >
               <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #7C5CFC, #6A45F9)',
+                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(124, 92, 252, 0.3)'
+                boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
               }}>
                 <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
               </div>
               {!collapsed && (
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6A45F9', letterSpacing: '0.02em' }}>
-                    Ask Acharya
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#6D28D9', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    Ask Acharya <span style={{ color: '#FF7A18', fontSize: 10 }}>✦</span>
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>AI Learning Assistant</div>
+                  <div style={{ fontSize: 10.5, color: '#7C3AED', opacity: 0.85 }}>Your AI Learning Assistant</div>
                 </div>
               )}
             </div>
@@ -261,60 +313,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* ── Footer: Notifications + Profile ── */}
-        <div style={{ padding: '10px', borderTop: '1px solid var(--nav-border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {/* Notification */}
           <button
             onClick={() => setShowNotifs(!showNotifs)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 10px', borderRadius: 9, border: 'none',
-              background: showNotifs ? 'var(--saffron-bg)' : 'transparent',
-              cursor: 'pointer', color: 'var(--ink-3)', width: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '8px 10px', borderRadius: 10, border: 'none',
+              background: showNotifs ? '#FFF3EA' : 'transparent',
+              cursor: 'pointer', color: '#64748B', width: '100%',
               transition: 'background 0.15s ease'
             }}
             title="Notifications"
           >
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <Bell style={{ width: 16, height: 16 }} />
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: -6, right: -6,
-                  width: 15, height: 15, borderRadius: '50%',
-                  background: '#EF4444', color: 'white',
-                  fontSize: 9, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Bell style={{ width: 16, height: 16, color: '#64748B' }} />
+              {!collapsed && (
+                <span style={{ fontSize: 12.5, fontWeight: 500, color: '#475569' }}>
+                  Notifications
                 </span>
               )}
             </div>
-            {!collapsed && (
-              <span style={{ fontSize: 12, fontWeight: 500 }}>
-                {unreadCount > 0 ? `${unreadCount} new` : 'Notifications'}
+            {unreadCount > 0 && (
+              <span style={{
+                padding: '2px 6px', borderRadius: 10,
+                background: '#FF7A18', color: 'white',
+                fontSize: 10, fontWeight: 700
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
           {/* Profile */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 8px', borderRadius: 9, background: 'var(--surface-2)'
-          }}>
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 10px', borderRadius: 10, background: 'transparent',
+              cursor: 'pointer', transition: 'background 0.15s ease'
+            }}
+          >
             <div style={{
-              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-              background: 'linear-gradient(135deg, #E8820C, #F59E0B)',
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #FF7A18 0%, #FF9E40 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontSize: 11, fontWeight: 800
+              color: 'white', fontSize: 13, fontWeight: 800,
+              boxShadow: '0 2px 6px rgba(255,122,24,0.25)'
             }}>
-              {(user.display_name || user.email || 'U')[0].toUpperCase()}
+              {(user.display_name || user.email || 'S')[0].toUpperCase()}
             </div>
             {!collapsed && (
               <>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user.display_name || 'User'}
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.display_name || (user.role === 'admin' ? 'System Admin' : 'User')}
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)', textTransform: 'capitalize' }}>
+                  <div style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
                     {user.role}
                   </div>
                 </div>
@@ -322,12 +376,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={onLogout}
                   style={{
                     padding: 4, borderRadius: 6, border: 'none',
-                    background: 'none', cursor: 'pointer', color: 'var(--ink-muted)',
+                    background: 'none', cursor: 'pointer', color: '#94A3B8',
                     display: 'flex', alignItems: 'center', flexShrink: 0
                   }}
                   title="Sign Out"
                 >
-                  <LogOut style={{ width: 13, height: 13 }} />
+                  <ChevronRight style={{ width: 14, height: 14 }} />
                 </button>
               </>
             )}
