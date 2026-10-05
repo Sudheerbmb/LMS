@@ -12,50 +12,74 @@
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Canvas ── */
-  --canvas:       #FAFAF7;
-  --canvas-warm:  #F7F5F0;
-  --surface:      #FFFFFF;
-  --surface-2:    #F5F4F0;
+  /* ── Canvas & Surfaces (Light-First System) ── */
+  --canvas:           #F7F8F5;
+  --canvas-alt:       #FAFAF8;
+  --canvas-warm:      #FFF9EE;
+  --canvas-warm-alt:  #F8F6F0;
+  --surface:          #FFFFFF;
+  --surface-2:        #F8F6F0;
+  --surface-elevated: #FFFFFF;
 
-  /* ── Typography ── */
-  --ink:          #171717;
-  --ink-2:        #454545;
-  --ink-3:        #737373;
-  --ink-muted:    #A3A3A3;
+  /* ── Typography (Neutral & High-Contrast) ── */
+  --ink:          #151515;
+  --ink-2:        #666666;
+  --ink-3:        #929292;
+  --ink-muted:    #A8A8A8;
+  --text-primary:   #151515;
+  --text-secondary: #666666;
+  --text-muted:     #929292;
 
-  /* ── Brand Accent — Saffron ── */
-  --saffron:      #E8820C;
-  --saffron-l:    #F59E0B;
-  --saffron-d:    #C2690A;
-  --saffron-bg:   #FFF8EE;
-  --saffron-muted: rgba(232, 130, 12, 0.12);
+  /* ── Primary Brand Accents — Orange/Amber ── */
+  --saffron:      #FF8A00;
+  --saffron-l:    #FFB547;
+  --saffron-d:    #E07A00;
+  --saffron-bg:   #FFF4E3;
+  --saffron-muted: rgba(255, 138, 0, 0.12);
+  --brand:        #FF8A00;
+  --brand-soft:   #FFF4E3;
+
+  /* ── AI Intelligence Accent — Purple/Indigo ── */
+  --ai:           #7C5CFC;
+  --ai-hover:     #6A45F9;
+  --ai-bg:        rgba(124, 92, 252, 0.08);
+  --ai-border:    rgba(124, 92, 252, 0.25);
+  --ai-glow:      0 8px 24px -4px rgba(124, 92, 252, 0.25);
+
+  /* ── Status Colors ── */
+  --success:      #16A37A;
+  --success-bg:   #EAFBF4;
+  --info:         #3B82F6;
+  --info-bg:      #EFF6FF;
+  --danger:       #EF4444;
+  --danger-bg:    #FEF2F2;
 
   /* ── Subject Colors ── */
-  --sage:         #4A7C59;
-  --sage-bg:      #F0F7F2;
-  --sky:          #0369A1;
+  --sage:         #16A37A;
+  --sage-bg:      #EAFBF4;
+  --sky:          #3B82F6;
   --sky-bg:       #EFF6FF;
-  --lavender:     #6B4FA0;
-  --lavender-bg:  #F5F0FD;
-  --coral:        #D44B2F;
-  --coral-bg:     #FEF3F0;
-  --butter:       #B45309;
-  --butter-bg:    #FFFBEB;
-  --mint:         #0A7955;
-  --mint-bg:      #ECFDF5;
+  --lavender:     #7C5CFC;
+  --lavender-bg:  rgba(124, 92, 252, 0.08);
+  --coral:        #FF8A00;
+  --coral-bg:     #FFF4E3;
+  --butter:       #FFB547;
+  --butter-bg:    #FFF9EE;
+  --mint:         #16A37A;
+  --mint-bg:      #EAFBF4;
 
-  /* ── Border & Glass ── */
-  --border:       rgba(0, 0, 0, 0.07);
-  --border-med:   rgba(0, 0, 0, 0.11);
-  --glass:        rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.95);
+  /* ── Border & Glassmorphic Precision ── */
+  --border:       rgba(0, 0, 0, 0.06);
+  --border-med:   rgba(0, 0, 0, 0.10);
+  --glass:        rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-card:   rgba(255, 255, 255, 0.85);
 
   /* ── Navigation Rail ── */
   --nav-bg:       #FFFFFF;
-  --nav-border:   rgba(0, 0, 0, 0.06);
-  --nav-active-bg: rgba(232, 130, 12, 0.07);
-  --nav-active-bar: #E8820C;
+  --nav-border:   rgba(0, 0, 0, 0.05);
+  --nav-active-bg: #FFF4E3;
+  --nav-active-bar: #FF8A00;
 
   /* ── Geometry ── */
   --r-sm:   6px;
@@ -64,12 +88,12 @@
   --r-xl:   20px;
   --r-2xl:  28px;
 
-  /* ── Shadows ── */
-  --shadow-xs:  0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-md:  0 4px 20px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
-  --shadow-lg:  0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-  --shadow-xl:  0 24px 60px rgba(0,0,0,0.10), 0 8px 20px rgba(0,0,0,0.05);
+  /* ── Shadows (Subtle, Apple/Linear style) ── */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.03);
+  --shadow-lg:  0 12px 36px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-xl:  0 24px 50px rgba(0,0,0,0.09), 0 8px 20px rgba(0,0,0,0.04);
 
   color-scheme: light;
 }

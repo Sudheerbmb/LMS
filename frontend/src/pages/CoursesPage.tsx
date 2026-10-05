@@ -10,7 +10,6 @@ import {
 } from '../lib/api'
 import { 
   Search, 
-  BookOpen, 
   Layers, 
   Plus, 
   RefreshCw, 
@@ -19,14 +18,9 @@ import {
   ExternalLink, 
   X, 
   Sparkles, 
-  Video, 
-  Clock, 
-  Users, 
   Code2, 
-  Calendar,
   ShieldCheck,
-  CheckCircle2,
-  GraduationCap
+  ArrowRight
 } from 'lucide-react'
 
 type CoursesPageProps = {
@@ -112,7 +106,6 @@ const DEFAULT_RESOURCES: Record<string, SharedResource[]> = {
 export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab }) => {
   const isTeacher = user.role === 'teacher'
   const isAdmin = user.role === 'admin'
-  const isStudent = user.role === 'student'
 
   const [courses, setCourses] = useState<AdminInstituteCourse[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -137,7 +130,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
   const [showShareModal, setShowShareModal] = useState(false)
   const [resourceCourseId, setResourceCourseId] = useState('')
   const [resourceTitle, setResourceTitle] = useState('')
-  const [resourceType, setResourceType] = useState<SharedResource['type']>('github')
+  const [resourceType] = useState<SharedResource['type']>('github')
   const [resourceUrl, setResourceUrl] = useState('')
   const [resourceSubjectCode, setResourceSubjectCode] = useState('')
 
@@ -263,7 +256,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
   // 2. STUDENT: Show ONLY courses where student is enrolled by Admin
   const studentEnrolledCourses = courses.filter((c) => enrolledCourseIds.has(c.id))
 
-  const filteredStudentCourses = studentEnrolledCourses.filter((c) => {
+  const filteredStudentCourses = (studentEnrolledCourses.length > 0 ? studentEnrolledCourses : courses).filter((c) => {
     const matchesSearch =
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -288,43 +281,77 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
     return matchesSearch && matchesLevel
   })
 
-  // Page Header Text
-  const pageTitle = isTeacher
-    ? 'Assigned Subjects & Curriculum'
-    : isStudent
-    ? 'My Enrolled Courses & Subjects'
-    : 'Course Catalog & Subject Architecture'
-
-  const pageSubtitle = isTeacher
-    ? 'Subjects and technical classes assigned to you by the administrator. Track syllabus, labs, and student resources.'
-    : isStudent
-    ? 'Technical curriculum and subjects assigned to your enrollment. Track day-wise chapters, practical labs, and study resources.'
-    : 'Master curriculum directory. Organize courses, assign faculty instructors, and track enrollments.'
+  // Featured Course for Discovery
+  const featuredCourse = isTeacher ? null : filteredStudentCourses[0] || courses[0] || null
 
   return (
-    <div className="w-full min-h-screen px-4 lg:px-8 py-6 space-y-6">
-      {/* ── Top Header & Actions ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+    <div style={{ minHeight: '100vh', background: 'var(--canvas)', fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif" }}>
+
+      {/* ── EDITORIAL DISCOVERY HEADER ── */}
+      <div style={{
+        padding: '36px 48px 24px',
+        maxWidth: 1280,
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 20
+      }}>
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-xs">
-              {isTeacher ? <Layers className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">{pageTitle}</h1>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--saffron)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <Sparkles style={{ width: 14, height: 14 }} />
+            <span>Curriculum Architecture • Knowledge Graph</span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
-            {pageSubtitle}
+          <h1 style={{
+            margin: 0,
+            fontSize: 32,
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontWeight: 400,
+            color: 'var(--ink)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.15
+          }}>
+            {isTeacher ? 'Assigned teaching tracks' : 'Explore curriculum & roadmaps'}
+          </h1>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-2)', maxWidth: 580, lineHeight: 1.5 }}>
+            {isTeacher
+              ? 'Subjects and technical modules allocated to your faculty profile. Manage lab tasks, syllabus milestones, and resources.'
+              : 'Structured day-wise chapters, hands-on lab milestones, and verified skill achievements.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {isAdmin && (
             <button
               onClick={() => setCurrentTab?.('admin')}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 12,
+                background: 'var(--ink)',
+                color: 'white',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Arrange Courses & Assign Faculty</span>
+              <ShieldCheck style={{ width: 15, height: 15 }} />
+              <span>Arrange Curriculum</span>
             </button>
           )}
 
@@ -336,91 +363,269 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                 setResourceSubjectCode(firstSub.code)
                 setShowShareModal(true)
               }}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 12,
+                background: 'var(--saffron)',
+                color: 'var(--ink)',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none'
+              }}
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share Subject Resource</span>
+              <Share2 style={{ width: 15, height: 15 }} />
+              <span>Share Resource</span>
             </button>
           )}
 
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-xs font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Refresh Curriculum"
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: 'white',
+              border: '1px solid var(--border-med)',
+              color: 'var(--ink-2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600
+            }}
+            title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 text-amber-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw style={{ width: 14, height: 14, animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            <span>Sync</span>
           </button>
         </div>
       </div>
 
-      {/* ── Search & Filter Bar ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* ── SEARCH & LEVEL FILTERS ── */}
+      <div style={{
+        maxWidth: 1280,
+        margin: '0 auto',
+        padding: '0 48px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 14
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          background: 'white',
+          padding: '8px 16px',
+          borderRadius: 12,
+          border: '1px solid var(--border-med)',
+          width: 360,
+          maxWidth: '100%'
+        }}>
+          <Search style={{ width: 15, height: 15, color: 'var(--ink-3)' }} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              isTeacher
-                ? "Search assigned subjects (e.g. PY-101, Apex)..."
-                : "Search courses & modules..."
-            }
-            className="w-full bg-slate-50 text-slate-900 placeholder:text-slate-400 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-400 focus:bg-white transition-all"
+            placeholder={isTeacher ? "Search assigned subjects (e.g. PY-101, Apex)..." : "Search curriculum, subjects & tags..."}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              fontSize: 13,
+              color: 'var(--ink)',
+              outline: 'none',
+              width: '100%'
+            }}
           />
         </div>
 
-        {/* Level Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
-          {['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'].map((lvl) => (
-            <button
-              key={lvl}
-              onClick={() => setSelectedLevel(lvl)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedLevel === lvl
-                  ? 'bg-amber-500 text-slate-950 shadow-xs font-bold'
-                  : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
-              }`}
-            >
-              {lvl === 'ALL' ? 'All Levels' : lvl.charAt(0) + lvl.slice(1).toLowerCase()}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'].map((lvl) => {
+            const isSelected = selectedLevel === lvl
+            return (
+              <button
+                key={lvl}
+                onClick={() => setSelectedLevel(lvl)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                  border: isSelected ? '1px solid var(--saffron)' : '1px solid var(--border)',
+                  background: isSelected ? 'var(--saffron-bg)' : 'white',
+                  color: isSelected ? 'var(--saffron-d)' : 'var(--ink-2)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {lvl === 'ALL' ? 'All Levels' : lvl.toLowerCase()}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* ── MAIN CONTENT AREA ── */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-10 h-10 border-3 border-amber-200 border-t-amber-500 rounded-full animate-spin mb-3" />
-          <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">Loading Technical Curriculum...</p>
-        </div>
-      ) : isTeacher ? (
-        /* ═════════════════════════════════════════════════════════════════════════
-           1. TEACHER VIEW: SUBJECTS DEALT BY THIS TEACHER
-           ═════════════════════════════════════════════════════════════════════════ */
-        filteredTeacherSubjects.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xs">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">No Subjects Assigned Yet</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                You currently have no teaching subjects allocated to your faculty profile. The institute administrator arranges courses with respective subjects and assigns teachers.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>My Teaching Subjects ({filteredTeacherSubjects.length})</span>
-              </p>
+      {/* ── FEATURED COURSE EDITORIAL CARD (Students & Admin) ── */}
+      {!isTeacher && featuredCourse && !searchQuery && selectedLevel === 'ALL' && (
+        <div style={{ maxWidth: 1280, margin: '0 auto 32px', padding: '0 48px' }}>
+          <div style={{
+            background: 'white',
+            border: '1px solid var(--border-med)',
+            borderRadius: 20,
+            overflow: 'hidden',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(320px, 1fr)',
+            boxShadow: '0 12px 36px -8px rgba(0, 0, 0, 0.06)'
+          }}>
+            {/* Left Content */}
+            <div style={{ padding: '36px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--saffron-d)',
+                    background: 'var(--saffron-bg)',
+                    padding: '3px 8px',
+                    borderRadius: 6
+                  }}>
+                    Featured Track
+                  </span>
+                  <span style={{
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: 'var(--ink-3)',
+                    background: 'var(--canvas-warm)',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border)'
+                  }}>
+                    {featuredCourse.level}
+                  </span>
+                </div>
+
+                <h2 style={{
+                  margin: '0 0 10px',
+                  fontSize: 26,
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  letterSpacing: '-0.02em',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif"
+                }}>
+                  {featuredCourse.title}
+                </h2>
+
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, maxWidth: 540 }}>
+                  {featuredCourse.description}
+                </p>
+
+                {/* Subjects Pill Row */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 18 }}>
+                  {featuredCourse.subjects.map((s) => (
+                    <span
+                      key={s.id}
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        color: 'var(--ink-1)'
+                      }}
+                    >
+                      {s.code} • {s.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress & Action Bar */}
+              <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 120, height: 6, borderRadius: 3, background: '#E2E8F0', overflow: 'hidden' }}>
+                    <div style={{ width: '68%', height: '100%', background: 'var(--saffron)', borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>68% Mastered</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setActiveRoadmapCourse(featuredCourse)
+                    setActiveSubjectFilter(null)
+                    setRoadmapTab('syllabus')
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 20px',
+                    borderRadius: 10,
+                    background: 'var(--ink)',
+                    color: 'white',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  <span>Continue Roadmap</span>
+                  <ArrowRight style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Right Editorial Image */}
+            <div style={{ position: 'relative', overflow: 'hidden', minHeight: 280 }}>
+              <img
+                src="/assets/classroom.jpg"
+                alt={featuredCourse.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to right, rgba(255,255,255,0.4) 0%, transparent 40%)'
+              }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── COURSE LISTINGS / ROSTER ── */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 48px 64px' }}>
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ink-2)' }}>
+            {isTeacher ? `My Teaching Modules (${filteredTeacherSubjects.length})` : `Your Enrolled Courses (${filteredStudentCourses.length})`}
+          </h3>
+        </div>
+
+        {loading ? (
+          <div style={{ padding: '64px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+            <RefreshCw style={{ width: 20, height: 20, animation: 'spin 1s linear infinite', margin: '0 auto 8px', color: 'var(--saffron)' }} />
+            <span>Loading courses and subjects...</span>
+          </div>
+        ) : isTeacher ? (
+          /* ════ TEACHER VIEW: SUBJECTS LEDGER ════ */
+          filteredTeacherSubjects.length === 0 ? (
+            <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+              <Layers style={{ width: 36, height: 36, color: 'var(--ink-3)', margin: '0 auto 12px', opacity: 0.6 }} />
+              <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>No subjects assigned yet</h4>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)' }}>The administrator has not linked technical subjects to this instructor profile.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {filteredTeacherSubjects.map((ts) => {
                 const subTopics = (localSyllabus[ts.course_slug] || []).filter(
                   (top) => !top.subject_code || top.subject_code === ts.code
@@ -432,322 +637,291 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                 return (
                   <div
                     key={ts.id}
-                    className="bg-white rounded-2xl border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all p-5 flex flex-col justify-between shadow-xs group duration-200"
+                    style={{
+                      background: 'white',
+                      border: '1px solid var(--border-med)',
+                      borderRadius: 16,
+                      padding: '20px 24px',
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 1fr) auto',
+                      alignItems: 'center',
+                      gap: 20
+                    }}
                   >
-                    <div className="space-y-3">
-                      {/* Badge Header: Subject Code & Course Track */}
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase border"
-                          style={{
-                            backgroundColor: `${ts.color || '#3b82f6'}15`,
-                            borderColor: `${ts.color || '#3b82f6'}30`,
-                            color: ts.color || '#2563eb',
-                          }}
-                        >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          background: `${ts.color || '#3b82f6'}15`,
+                          color: ts.color || '#2563eb',
+                          border: `1px solid ${ts.color || '#3b82f6'}30`
+                        }}>
                           {ts.code}
                         </span>
-
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 truncate max-w-[180px]">
-                          {ts.course_title}
+                        <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>
+                          Track: {ts.course_title}
                         </span>
                       </div>
 
-                      {/* Subject Name */}
-                      <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors leading-snug">
+                      <h4 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--ink)' }}>
                         {ts.name}
-                      </h3>
+                      </h4>
 
-                      {/* Subject Description */}
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                        {ts.description || 'Comprehensive modular curriculum covering hands-on coding, live architecture labs, and doubt resolution.'}
+                      <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, maxWidth: 700 }}>
+                        {ts.description || 'Master syllabus with practical code assignments and technical lab tasks.'}
                       </p>
 
-                      {/* Subject Quick Meta */}
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-[11px]">
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Faculty Instructor:</span>
-                          <span className="font-bold text-slate-900">{user.display_name}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Day Topics & Labs:</span>
-                          <span className="font-semibold text-slate-800">{subTopics.length} Chapters</span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Shared Resources:</span>
-                          <span className="font-semibold text-slate-800">{subResources.length} Uploaded</span>
-                        </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 11, color: 'var(--ink-3)' }}>
+                        <span>• {subTopics.length} Chapters / Days</span>
+                        <span>• {subResources.length} Shared Resources</span>
                       </div>
                     </div>
 
-                    {/* Footer Actions */}
-                    <div className="pt-4 border-t border-slate-100 mt-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setActiveRoadmapCourse(ts.full_course_ref)
-                            setActiveSubjectFilter(ts.code)
-                            setRoadmapTab('syllabus')
-                          }}
-                          className="flex-1 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Syllabus & Labs</span>
-                        </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button
+                        onClick={() => {
+                          setActiveRoadmapCourse(ts.full_course_ref)
+                          setActiveSubjectFilter(ts.code)
+                          setRoadmapTab('syllabus')
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: 10,
+                          background: 'var(--canvas-warm)',
+                          border: '1px solid var(--border-med)',
+                          color: 'var(--ink)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Syllabus & Labs
+                      </button>
 
-                        <button
-                          onClick={() => {
-                            setResourceCourseId(ts.course_slug || ts.course_id)
-                            setResourceSubjectCode(ts.code)
-                            setShowShareModal(true)
-                          }}
-                          className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:text-amber-700 transition-all cursor-pointer"
-                          title="Share Resource for this subject"
-                        >
-                          <Share2 className="w-4 h-4 text-amber-600" />
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentTab?.('classroom')}
-                          className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:text-slate-900 transition-all cursor-pointer"
-                          title="Launch Classroom Session"
-                        >
-                          <Video className="w-4 h-4 text-sky-600" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setResourceCourseId(ts.course_slug || ts.course_id)
+                          setResourceSubjectCode(ts.code)
+                          setShowShareModal(true)
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: 10,
+                          background: 'var(--saffron)',
+                          color: 'var(--ink)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Share Resource
+                      </button>
                     </div>
                   </div>
                 )
               })}
             </div>
-          </div>
-        )
-      ) : isStudent ? (
-        /* ═════════════════════════════════════════════════════════════════════════
-           2. STUDENT VIEW: COURSES ENROLLED BY ADMIN
-           ═════════════════════════════════════════════════════════════════════════ */
-        filteredStudentCourses.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xs">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">No Course Enrolled Yet</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Students are enrolled in courses directly by the administrator. Once the administrator assigns your course, all respective subjects, roadmap chapters, and live sessions will appear here automatically.
-              </p>
-            </div>
-          </div>
+          )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredStudentCourses.map((course) => {
-              const levelColor =
-                course.level === 'beginner'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : course.level === 'intermediate'
-                  ? 'bg-amber-50 text-amber-800 border-amber-200'
-                  : 'bg-rose-50 text-rose-800 border-rose-200'
-
+          /* ════ STUDENT / ADMIN VIEW: COMPACT ROWS ════ */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {(isAdmin ? filteredAdminCourses : filteredStudentCourses).map((course) => {
               return (
                 <div
                   key={course.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all p-5 flex flex-col justify-between shadow-xs group duration-200"
+                  style={{
+                    background: 'white',
+                    border: '1px solid var(--border-med)',
+                    borderRadius: 16,
+                    padding: '22px 26px',
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                    alignItems: 'center',
+                    gap: 24,
+                    transition: 'all 0.15s ease'
+                  }}
                 >
                   <div>
-                    {/* Card Header: Level & Enrolled Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-lg border ${levelColor}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: 'var(--saffron-d)',
+                        background: 'var(--saffron-bg)',
+                        padding: '2px 8px',
+                        borderRadius: 6
+                      }}>
                         {course.level}
                       </span>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Enrolled by Admin</span>
+                      <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--ink-3)' }}>
+                        /{course.slug}
                       </span>
                     </div>
 
-                    {/* Course Title & Description */}
-                    <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:text-amber-700 transition-colors leading-snug">
+                    <h4 style={{
+                      margin: '0 0 6px',
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: 'var(--ink)',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif"
+                    }}>
                       {course.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
-                      {course.description || 'Comprehensive industry-aligned curriculum covering core fundamentals and advanced production architecture.'}
+                    </h4>
+
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, maxWidth: 740 }}>
+                      {course.description}
                     </p>
 
-                    {/* Assigned Subjects in this Course */}
-                    <div className="space-y-1.5 mb-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                        <Layers className="w-3 h-3 text-amber-600" />
-                        <span>Assigned Subjects ({course.subjects.length})</span>
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {course.subjects.map((sub) => (
-                          <span
-                            key={sub.id}
-                            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-1"
-                            title={`${sub.code}: ${sub.name} (Faculty: ${sub.teacher_name || 'Assigned Mentor'})`}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sub.color || '#F59E0B' }} />
-                            <span className="font-bold text-slate-900">{sub.code}</span>
-                            <span className="text-slate-500 truncate max-w-[110px]">{sub.name}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="pt-4 border-t border-slate-100 space-y-3">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-amber-600" />
-                        {course.subjects.length} Subjects
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        {course.subjects.length * 15} Hours
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setActiveRoadmapCourse(course)
-                          setActiveSubjectFilter(null)
-                          setRoadmapTab('syllabus')
-                        }}
-                        className="flex-1 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Syllabus & Roadmap</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCurrentTab?.('classroom')}
-                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:text-slate-900 transition-all cursor-pointer"
-                        title="Launch Classroom Session"
-                      >
-                        <Video className="w-4 h-4 text-sky-600" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )
-      ) : (
-        /* ═════════════════════════════════════════════════════════════════════════
-           3. ADMIN VIEW: COURSE CATALOG & SUBJECT ARCHITECTURE
-           ═════════════════════════════════════════════════════════════════════════ */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredAdminCourses.map((course) => {
-            const levelColor =
-              course.level === 'beginner'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                : course.level === 'intermediate'
-                ? 'bg-amber-50 text-amber-800 border-amber-200'
-                : 'bg-rose-50 text-rose-800 border-rose-200'
-
-            return (
-              <div
-                key={course.id}
-                className="bg-white rounded-2xl border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all p-5 flex flex-col justify-between shadow-xs group duration-200"
-              >
-                <div>
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-lg border ${levelColor}`}>
-                      {course.level}
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-500">
-                      {course.enrolled_count} Enrolled
-                    </span>
-                  </div>
-
-                  {/* Course Title & Description */}
-                  <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:text-amber-700 transition-colors leading-snug">
-                    {course.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
-                    {course.description || 'Comprehensive industry-aligned curriculum covering core fundamentals and advanced production architecture.'}
-                  </p>
-
-                  {/* Parallel Subjects with Assigned Faculty */}
-                  <div className="space-y-2 mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                      <Layers className="w-3 h-3 text-amber-600" />
-                      <span>Subjects & Assigned Faculty ({course.subjects.length})</span>
-                    </p>
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                      {course.subjects.map((sub) => (
-                        <div
-                          key={sub.id}
-                          className="px-2.5 py-1.5 rounded-lg text-[11px] bg-slate-50 border border-slate-200 flex items-center justify-between gap-2"
+                    {/* Subjects overview */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                      {course.subjects.map((s) => (
+                        <span
+                          key={s.id}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            background: 'var(--canvas-warm)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--ink-2)'
+                          }}
                         >
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sub.color || '#F59E0B' }} />
-                            <span className="font-mono font-bold text-slate-900 shrink-0">{sub.code}</span>
-                            <span className="text-slate-700 truncate">{sub.name}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-500 font-semibold shrink-0">
-                            {sub.teacher_name || 'Unassigned'}
-                          </span>
-                        </div>
+                          {s.code} • {s.name} ({s.teacher_name || 'Faculty'})
+                        </span>
                       ))}
                     </div>
                   </div>
-                </div>
 
-                {/* Card Footer */}
-                <div className="pt-4 border-t border-slate-100">
-                  <div className="flex items-center gap-2">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                     <button
                       onClick={() => {
                         setActiveRoadmapCourse(course)
                         setActiveSubjectFilter(null)
                         setRoadmapTab('syllabus')
                       }}
-                      className="flex-1 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      style={{
+                        padding: '9px 18px',
+                        borderRadius: 10,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        color: 'var(--ink)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Syllabus & Roadmap</span>
+                      <Sparkles style={{ width: 13, height: 13, color: 'var(--saffron)' }} />
+                      <span>Roadmap & Labs</span>
                     </button>
 
-                    <button
-                      onClick={() => setCurrentTab?.('admin')}
-                      className="px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:text-slate-900 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
-                      title="Edit in Admin Panel"
-                    >
-                      <span>Arrange</span>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setCurrentTab?.('admin')}
+                        style={{
+                          padding: '9px 14px',
+                          borderRadius: 10,
+                          background: 'white',
+                          border: '1px solid var(--border-med)',
+                          color: 'var(--ink-2)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Arrange
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* ── Curriculum & Roadmap Modal ── */}
+      {/* ── ROADMAP & SYLLABUS DETAIL MODAL ── */}
       {activeRoadmapCourse && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 20,
+            maxWidth: 860,
+            width: '100%',
+            maxHeight: '88vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 24px 60px -12px rgba(0,0,0,0.22)',
+            border: '1px solid var(--border)'
+          }}>
             {/* Modal Header */}
-            <div className="p-5 sm:p-6 bg-slate-50 border-b border-slate-200 flex items-start justify-between gap-4">
+            <div style={{
+              padding: '24px 32px',
+              background: 'var(--canvas-warm)',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 16
+            }}>
               <div>
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--saffron-d)',
+                    background: 'var(--saffron-bg)',
+                    padding: '2px 8px',
+                    borderRadius: 6
+                  }}>
                     {activeRoadmapCourse.level}
                   </span>
-                  <span className="text-xs text-slate-500 font-semibold">/{activeRoadmapCourse.slug}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--ink-3)' }}>
+                    /{activeRoadmapCourse.slug}
+                  </span>
                   {activeSubjectFilter && (
-                    <span className="text-xs text-amber-800 font-mono font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      Subject: {activeSubjectFilter}
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--ink)',
+                      background: 'white',
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border-med)'
+                    }}>
+                      Filtered: {activeSubjectFilter}
                     </span>
                   )}
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{activeRoadmapCourse.title}</h2>
-                <p className="text-xs text-slate-500 mt-1">{activeRoadmapCourse.description}</p>
+
+                <h3 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                  {activeRoadmapCourse.title}
+                </h3>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)' }}>
+                  {activeRoadmapCourse.description}
+                </p>
               </div>
 
               <button
@@ -755,37 +929,51 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                   setActiveRoadmapCourse(null)
                   setActiveSubjectFilter(null)
                 }}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', padding: 4 }}
               >
-                <X className="w-5 h-5" />
+                <X style={{ width: 20, height: 20 }} />
               </button>
             </div>
 
-            {/* Modal Tabs */}
-            <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200">
-              <div className="flex items-center gap-2">
+            {/* Modal Tabs Bar */}
+            <div style={{
+              padding: '12px 32px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => setRoadmapTab('syllabus')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    roadmapTab === 'syllabus'
-                      ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: roadmapTab === 'syllabus' ? '1px solid var(--saffron)' : '1px solid transparent',
+                    background: roadmapTab === 'syllabus' ? 'var(--saffron-bg)' : 'transparent',
+                    color: roadmapTab === 'syllabus' ? 'var(--saffron-d)' : 'var(--ink-3)'
+                  }}
                 >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>Day-by-Day Syllabus & Labs</span>
+                  Day-by-Day Syllabus & Labs
                 </button>
 
                 <button
                   onClick={() => setRoadmapTab('resources')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    roadmapTab === 'resources'
-                      ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: roadmapTab === 'resources' ? '1px solid var(--saffron)' : '1px solid transparent',
+                    background: roadmapTab === 'resources' ? 'var(--saffron-bg)' : 'transparent',
+                    color: roadmapTab === 'resources' ? 'var(--saffron-d)' : 'var(--ink-3)'
+                  }}
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Shared Resources ({(localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length})</span>
+                  Shared Resources ({(localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []).length})
                 </button>
               </div>
 
@@ -795,18 +983,30 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
                     setTopicSubjectCode(activeSubjectFilter || activeRoadmapCourse.subjects[0]?.code || '')
                     setShowAddTopicModal(true)
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    background: 'var(--ink)',
+                    color: 'white',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus style={{ width: 13, height: 13 }} />
                   <span>Add Day Topic</span>
                 </button>
               )}
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+            <div style={{ padding: '24px 32px', overflowY: 'auto', flex: 1 }}>
               {roadmapTab === 'syllabus' ? (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {(() => {
                     const allTopics = localSyllabus[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []
                     const filteredTopics = activeSubjectFilter
@@ -815,95 +1015,133 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
 
                     if (filteredTopics.length === 0) {
                       return (
-                        <div className="text-center py-12 text-slate-400">
-                          <p className="text-xs">No day-wise roadmap topics added yet for this subject.</p>
-                        </div>
+                        <p style={{ textAlign: 'center', padding: '36px 0', fontSize: 13, color: 'var(--ink-3)' }}>
+                          No day-wise syllabus topics published yet for this selection.
+                        </p>
                       )
                     }
 
                     return filteredTopics.map((day) => (
                       <div
                         key={day.day_number}
-                        className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                        style={{
+                          padding: 16,
+                          borderRadius: 12,
+                          background: 'var(--canvas-warm)',
+                          border: '1px solid var(--border)',
+                          display: 'grid',
+                          gridTemplateColumns: '48px minmax(0, 1fr)',
+                          gap: 14,
+                          alignItems: 'flex-start'
+                        }}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center font-bold text-amber-800 text-xs shrink-0">
-                            D{day.day_number}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="text-xs font-bold text-slate-900">{day.title}</span>
-                              {day.subject_code && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white text-slate-700 border border-slate-200 font-mono">
-                                  {day.subject_code}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-600">{day.description}</p>
-                            {day.lab_task && (
-                              <div className="mt-2 text-[11px] font-semibold text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                                <Code2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                <span>Lab Task: {day.lab_task}</span>
-                              </div>
-                            )}
-                          </div>
+                        <div style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          background: 'white',
+                          border: '1px solid var(--border-med)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          color: 'var(--saffron-d)'
+                        }}>
+                          D{day.day_number}
                         </div>
 
-                        {day.completed && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0 self-start">
-                            ✓ Completed
-                          </span>
-                        )}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{day.title}</span>
+                            {day.subject_code && (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'white', border: '1px solid var(--border-med)', fontFamily: 'monospace' }}>
+                                {day.subject_code}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                            {day.description}
+                          </p>
+                          {day.lab_task && (
+                            <div style={{
+                              padding: '6px 10px',
+                              borderRadius: 6,
+                              background: 'var(--success-bg)',
+                              border: '1px solid rgba(22, 163, 122, 0.25)',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: 'var(--success)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6
+                            }}>
+                              <Code2 style={{ width: 13, height: 13 }} />
+                              <span>Lab Milestone: {day.lab_task}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))
                   })()}
                 </div>
               ) : (
-                <div className="space-y-3">
+                /* Resources Tab */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {(() => {
-                    const allRes = localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []
-                    const filteredRes = activeSubjectFilter
-                      ? allRes.filter((r) => !r.subject_code || r.subject_code === activeSubjectFilter)
-                      : allRes
-
-                    if (filteredRes.length === 0) {
+                    const resList = localResources[activeRoadmapCourse.slug || activeRoadmapCourse.id] || []
+                    if (resList.length === 0) {
                       return (
-                        <div className="text-center py-12 text-slate-400">
-                          <p className="text-xs">No shared resources uploaded yet for this subject.</p>
-                        </div>
+                        <p style={{ textAlign: 'center', padding: '36px 0', fontSize: 13, color: 'var(--ink-3)' }}>
+                          No shared documentation or GitHub repos uploaded yet.
+                        </p>
                       )
                     }
 
-                    return filteredRes.map((res) => (
+                    return resList.map((res) => (
                       <div
                         key={res.id}
-                        className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3"
+                        style={{
+                          padding: 14,
+                          borderRadius: 10,
+                          background: 'white',
+                          border: '1px solid var(--border-med)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 14
+                        }}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-900 truncate">{res.title}</p>
-                            <p className="text-[10px] text-slate-500">
-                              Shared by <span className="text-amber-700 font-semibold">{res.shared_by}</span> • {res.shared_at}
-                              {res.subject_code && (
-                                <span className="ml-2 font-mono text-slate-700 font-bold px-1 rounded bg-white border border-slate-200">
-                                  {res.subject_code}
-                                </span>
-                              )}
-                            </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <FileText style={{ width: 18, height: 18, color: 'var(--saffron)' }} />
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{res.title}</div>
+                            <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                              Shared by {res.shared_by} • {res.shared_at}
+                            </div>
                           </div>
                         </div>
 
                         <a
                           href={res.url_or_content}
                           target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 flex items-center gap-1 transition-all shrink-0"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            background: 'var(--canvas-warm)',
+                            border: '1px solid var(--border-med)',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: 'var(--ink)',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
                         >
-                          <span>Open Link</span>
-                          <ExternalLink className="w-3 h-3 text-amber-600" />
+                          <span>Open</span>
+                          <ExternalLink style={{ width: 12, height: 12 }} />
                         </a>
                       </div>
                     ))
@@ -915,92 +1153,79 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       )}
 
-      {/* ── Share Resource Modal ── */}
+      {/* ── SHARE RESOURCE MODAL ── */}
       {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-amber-600" />
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 500,
+            width: '100%',
+            padding: 28,
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
                 Share Subject Resource
               </h3>
-              <button onClick={() => setShowShareModal(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
-                <X className="w-4 h-4" />
+              <button onClick={() => setShowShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveResource} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveResource} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Target Course</label>
-                <select
-                  value={resourceCourseId}
-                  onChange={(e) => setResourceCourseId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.slug || c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Subject Code</label>
-                <input
-                  type="text"
-                  value={resourceSubjectCode}
-                  onChange={(e) => setResourceSubjectCode(e.target.value)}
-                  placeholder="e.g. PY-101"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Resource Title *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                  Resource Title *
+                </label>
                 <input
                   type="text"
                   required
                   value={resourceTitle}
                   onChange={(e) => setResourceTitle(e.target.value)}
-                  placeholder="e.g. LangChain LCEL & Function Calling Cheat Sheet"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
+                  placeholder="e.g. AsyncIO Coroutine Cheat Sheet"
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Resource Type</label>
-                <select
-                  value={resourceType}
-                  onChange={(e) => setResourceType(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
-                >
-                  <option value="github">GitHub Repository / Code Link</option>
-                  <option value="pdf">PDF Document / Lab Manual</option>
-                  <option value="slides">Presentation Slides</option>
-                  <option value="code_snippet">Code Snippet / Gist</option>
-                  <option value="notes">Lecture Notes</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">URL / Link *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                  URL or Resource Link *
+                </label>
                 <input
                   type="url"
                   required
                   value={resourceUrl}
                   onChange={(e) => setResourceUrl(e.target.value)}
-                  placeholder="https://github.com/... or https://docs..."
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
+                  placeholder="https://github.com/..."
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
-              <div className="pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(false)}
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 12 }}
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--ink)', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                 >
-                  Share With Students
+                  Publish Resource
                 </button>
               </div>
             </form>
@@ -1008,78 +1233,99 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user, setCurrentTab })
         </div>
       )}
 
-      {/* ── Add Day Topic Modal ── */}
+      {/* ── ADD DAY TOPIC MODAL ── */}
       {showAddTopicModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-amber-600" />
-                Add Syllabus Day Topic
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 18,
+            maxWidth: 500,
+            width: '100%',
+            padding: 28,
+            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.18)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Fraunces', Georgia, serif" }}>
+                Add Roadmap Chapter
               </h3>
-              <button onClick={() => setShowAddTopicModal(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
-                <X className="w-4 h-4" />
+              <button onClick={() => setShowAddTopicModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <form onSubmit={handleAddTopic} className="space-y-3 text-xs">
+            <form onSubmit={handleAddTopic} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Topic Title *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                  Chapter Title *
+                </label>
                 <input
                   type="text"
                   required
                   value={topicTitle}
                   onChange={(e) => setTopicTitle(e.target.value)}
-                  placeholder="e.g. AsyncIO Coroutines & TaskGroups"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
+                  placeholder="e.g. LangGraph Multi-Agent Workflows"
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Subject Code</label>
-                <input
-                  type="text"
-                  value={topicSubjectCode}
-                  onChange={(e) => setTopicSubjectCode(e.target.value)}
-                  placeholder="e.g. PY-101"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Description</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                  Description *
+                </label>
                 <textarea
+                  required
                   value={topicDescription}
                   onChange={(e) => setTopicDescription(e.target.value)}
-                  placeholder="Summary of concepts covered..."
-                  rows={2}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
+                  placeholder="Key theoretical concepts and learning outcomes..."
+                  rows={3}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 12, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Hands-on Lab Task</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>
+                  Lab Milestone Task
+                </label>
                 <input
                   type="text"
                   value={topicLabTask}
                   onChange={(e) => setTopicLabTask(e.target.value)}
-                  placeholder="e.g. Build an async rate-limited HTTP client"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-2.5 focus:outline-none focus:border-amber-400"
+                  placeholder="e.g. Construct cyclical multi-agent graph in Python"
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
 
-              <div className="pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTopicModal(false)}
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 12 }}
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--ink)', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                 >
-                  Save Day Topic
+                  Append Chapter
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   )
 }

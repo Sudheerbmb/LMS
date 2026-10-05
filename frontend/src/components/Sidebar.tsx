@@ -233,8 +233,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
             <div
               style={{
-                background: 'linear-gradient(135deg, #FFF8EE 0%, #FFFDF8 100%)',
-                border: '1px solid rgba(232, 130, 12, 0.2)',
+                background: 'linear-gradient(135deg, rgba(124, 92, 252, 0.08) 0%, rgba(124, 92, 252, 0.02) 100%)',
+                border: '1px solid rgba(124, 92, 252, 0.22)',
                 borderRadius: 10, padding: collapsed ? '10px 8px' : '10px 12px',
                 display: 'flex', alignItems: 'center', gap: 8,
                 cursor: 'default'
@@ -242,14 +242,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div style={{
                 width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #F59E0B, #E8820C)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                background: 'linear-gradient(135deg, #7C5CFC, #6A45F9)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(124, 92, 252, 0.3)'
               }}>
                 <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
               </div>
               {!collapsed && (
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--saffron-d)', letterSpacing: '0.02em' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6A45F9', letterSpacing: '0.02em' }}>
                     Ask Acharya
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>AI Learning Assistant</div>
