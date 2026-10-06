@@ -8,7 +8,6 @@ import {
   CalendarDays,
   FileText,
   CheckSquare,
-  Award,
   Users,
   Bell,
   X,
@@ -97,9 +96,6 @@ export const Header: React.FC<HeaderProps> = ({
       : []),
     ...(user.role !== 'admin'
       ? [{ id: 'assessments', label: 'Assessments', icon: CheckSquare }]
-      : []),
-    ...(user.role === 'student'
-      ? [{ id: 'certificates', label: 'Certificates', icon: Award }]
       : []),
     ...(user.role === 'admin'
       ? [{ id: 'admin', label: 'Institute Admin', icon: Users }]

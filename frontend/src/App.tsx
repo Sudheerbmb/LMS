@@ -23,7 +23,6 @@ import { CodingPage } from './pages/CodingPage'
 import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
-import { CertificatesPage } from './pages/CertificatesPage'
 
 const STANDARD_TRACKS = [
   { id: 'python-genai', title: 'Python with Generative AI (GenAI)' },
@@ -70,9 +69,9 @@ export function App() {
     }
   }, [token])
 
-  // Safeguard: Ensure Admin is redirected if on student/teacher specific tabs
+// Safeguard: Ensure Admin is redirected if on student/teacher specific tabs
   useEffect(() => {
-    if (user?.role === 'admin' && (currentTab === 'assessments' || currentTab === 'assignments' || currentTab === 'certificates')) {
+    if (user?.role === 'admin' && (currentTab === 'assessments' || currentTab === 'assignments')) {
       setCurrentTab('overview')
     }
   }, [user?.role, currentTab])
@@ -695,7 +694,6 @@ export function App() {
           {currentTab === 'coding' && <CodingPage user={user} />}
           {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
           {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
-          {currentTab === 'certificates' && user.role === 'student' && <CertificatesPage user={user} />}
           {currentTab === 'admin' && user.role === 'admin' && <AdminPage user={user} />}
         </main>
       </div>

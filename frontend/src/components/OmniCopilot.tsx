@@ -190,15 +190,6 @@ export const OmniCopilot: React.FC<OmniCopilotProps> = ({
         return
       }
 
-      if (lower.includes('certificate') || lower.includes('credential')) {
-        setActionSteps([{ text: 'Opening Certificate Desk...', status: 'done' }])
-        setCurrentTab('certificates')
-        setLastAgentMessage('Navigated to Certificates & Credentials.')
-        setQuery('')
-        setIsProcessing(false)
-        return
-      }
-
       if (lower.includes('admin') || lower.includes('tenancy') || lower.includes('institute') || lower.includes('audit')) {
         if (!isAdmin) {
           setActionSteps([{ text: 'Permission denied: Requires Administrator role', status: 'restricted' }])

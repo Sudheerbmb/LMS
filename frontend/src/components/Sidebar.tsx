@@ -14,7 +14,6 @@ import {
   Code2,
   FileText,
   CheckSquare,
-  Award,
   Users,
   Bell,
   X,
@@ -73,7 +72,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ]
 
   const progressGroup = [
-    ...(user.role === 'student' ? [{ id: 'certificates', label: 'Certificates', icon: Award }] : []),
     ...(user.role === 'admin'   ? [{ id: 'admin',         label: 'Institute Admin', icon: Users }] : []),
   ]
 
