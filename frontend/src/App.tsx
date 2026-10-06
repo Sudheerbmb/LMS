@@ -19,7 +19,6 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { AssessmentsPage } from './pages/AssessmentsPage'
 import { AssignmentsPage } from './pages/AssignmentsPage'
-import { CodingPage } from './pages/CodingPage'
 import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
@@ -691,7 +690,6 @@ export function App() {
           {currentTab === 'courses' && <CoursesPage user={user} setCurrentTab={setCurrentTab} />}
           {currentTab === 'classroom' && <ClassroomPage user={user} />}
           {currentTab === 'timetable' && <TimetablePage user={user} />}
-          {currentTab === 'coding' && <CodingPage user={user} />}
           {currentTab === 'assignments' && user.role !== 'admin' && <AssignmentsPage user={user} />}
           {currentTab === 'assessments' && user.role !== 'admin' && <AssessmentsPage user={user} />}
           {currentTab === 'admin' && user.role === 'admin' && <AdminPage user={user} />}
