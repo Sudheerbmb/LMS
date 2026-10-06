@@ -160,6 +160,11 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("class_recordings", "play_url", "VARCHAR(1000)", cols)
         _add_column("class_recordings", "download_url", "VARCHAR(1000)", cols)
 
+    # 5. Enrollments Table
+    if "enrollments" in tables:
+        cols = {c["name"] for c in inspector.get_columns("enrollments")}
+        _add_column("enrollments", "section_id", uuid_type, cols)
+
 
 
 async def purge_legacy_school_data(session: AsyncSession) -> None:

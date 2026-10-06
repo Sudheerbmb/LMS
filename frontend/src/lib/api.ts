@@ -142,11 +142,15 @@ export type Enrollment = {
   id: string
   user_id: string
   course_id: string
+  section_id?: string
   status: string
-  enrolled_at: string
+  enrolled_at?: string
+  progress_percent?: number
   course?: Course
   course_name?: string
+  course_title?: string
   course_slug?: string
+  section_name?: string
 }
 
 export type CodingExercise = { id: string; title: string; prompt: string; starter_code: string; language: string }
@@ -636,7 +640,21 @@ export const getTimetableGrid = (params?: { section_id?: string; grade_id?: stri
 
 
 
-export const getMyTimetableSchedule = () => request<TimetableSlot[]>('/api/v1/timetable/my-schedule')
+export interface TodayClassesResponse {
+  date: string
+  day_of_week: string
+  total_classes: number
+  classes: TimetableSlot[]
+}
+
+export const getMyTodayClasses = () => request<TodayClassesResponse>('/api/v1/timetable/my-today-classes')
+
+export const getMyTimetableSchedule = (params?: { day_of_week?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.day_of_week) query.set('day_of_week', params.day_of_week)
+  const qs = query.toString()
+  return request<TimetableSlot[]>(`/api/v1/timetable/my-schedule${qs ? `?${qs}` : ''}`)
+}
 
 export const syncCoursesToTimetable = () =>
   request<{ status: string; courses_synced: number; grades_synced: number; subjects_synced: number }>('/api/v1/timetable/sync-courses', { method: 'POST' })

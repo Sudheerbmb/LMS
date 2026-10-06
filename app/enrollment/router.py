@@ -41,23 +41,43 @@ async def get_my_enrollments(
     ).all()
     course_map = {c.id: c for c in courses}
 
+    from app.timetable.models import SchoolGrade, SchoolSection
+
+    # Resolve sections and grades for active enrollments
+    all_sections = (await session.scalars(select(SchoolSection).options(selectinload(SchoolSection.grade)))).all()
+    section_map = {s.id: s for s in all_sections}
+
     result = []
     for e in enrollments:
         c = course_map.get(e.course_id)
         c_title = c.versions[0].title if (c and c.versions) else (c.slug if c else "Technical Course")
         c_slug = c.slug if c else ""
+
+        sec = section_map.get(e.section_id) if e.section_id else None
+        if not sec and c:
+            # Find matching grade and default section
+            for s in all_sections:
+                if s.grade and (c_title.lower() in s.grade.name.lower() or c.slug.lower() in s.grade.name.lower()):
+                    sec = s
+                    e.section_id = s.id
+                    session.add(e)
+                    break
+        sec_name = sec.name if sec else "Batch-01"
+
         result.append(
             EnrollmentRead(
                 id=e.id,
                 user_id=e.user_id,
                 course_id=e.course_id,
+                section_id=e.section_id,
                 status=e.status,
                 progress_percent=e.progress_percent,
                 course_title=c_title,
                 course_slug=c_slug,
-                section_name="Batch A",
+                section_name=sec_name,
             )
         )
+    await session.commit()
     return result
 
 

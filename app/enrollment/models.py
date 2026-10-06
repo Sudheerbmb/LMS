@@ -16,5 +16,8 @@ class Enrollment(UUIDMixin, TimestampMixin, Base):
     course_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    section_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("school_sections.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
     progress_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

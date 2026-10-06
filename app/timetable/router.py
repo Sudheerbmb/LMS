@@ -55,6 +55,7 @@ from app.timetable.service import (
     update_slot,
     update_timetable_rule,
     get_school_courses_and_syllabus,
+    get_today_classes_for_user,
 )
 
 router = APIRouter(prefix="/api/v1/timetable", tags=["timetable"])
@@ -91,13 +92,23 @@ async def generate_timetable_endpoint(
     return result
 
 
-@router.get("/my-schedule", response_model=List[TimetableSlotRead])
-async def get_my_schedule_endpoint(
+@router.get("/my-today-classes", response_model=Dict[str, Any])
+async def get_my_today_classes_endpoint(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Returns the personalized weekly schedule for the authenticated student or teacher."""
-    return await get_timetable_grid(session, user=current_user)
+    """Returns today's classes dynamically derived from the database for the authenticated user."""
+    return await get_today_classes_for_user(session, user=current_user)
+
+
+@router.get("/my-schedule", response_model=List[TimetableSlotRead])
+async def get_my_schedule_endpoint(
+    day_of_week: Optional[str] = Query(None, description="Filter by weekday (e.g. Tuesday)"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns the personalized schedule for the authenticated student or teacher."""
+    return await get_timetable_grid(session, user=current_user, day_of_week=day_of_week)
 
 
 @router.get("/grid", response_model=List[TimetableSlotRead])

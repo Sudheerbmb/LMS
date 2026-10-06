@@ -10,6 +10,7 @@ class EnrollmentRead(BaseModel):
     id: UUID
     user_id: UUID
     course_id: UUID
+    section_id: Optional[UUID] = None
     status: str
     progress_percent: int
     course_title: Optional[str] = None

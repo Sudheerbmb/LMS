@@ -22,7 +22,7 @@ import {
   getAnnouncements,
   createAnnouncement,
   generateTimetable,
-  getMyTimetableSchedule,
+  getMyTodayClasses,
   getSchoolCourses,
   recordTeacherLeave
 } from '../lib/api'
@@ -123,12 +123,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
         setTeacherSlots(slotsRes || [])
         setTeacherCurriculumCourses(curriculumRes || [])
       } else if (user.role === 'student') {
-        const [enrolledRes, gridRes] = await Promise.all([
+        const [enrolledRes, todayRes] = await Promise.all([
           getMyEnrollments().catch(() => []),
-          getMyTimetableSchedule().catch(() => [])
+          getMyTodayClasses().catch(() => null)
         ])
         setEnrollments(enrolledRes || [])
-        setStudentTimetable(gridRes || [])
+        setStudentTimetable(todayRes?.classes || [])
       }
     } catch (err: any) {
       console.warn('Dashboard data:', err)
@@ -224,7 +224,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     finally { setActionLoading(null) }
   }
 
-  const activeLiveClass = liveClasses.find(c => c.status === 'live')
+  const activeLiveClass = React.useMemo(() => {
+    const live = liveClasses.find(c => c.status === 'live')
+    if (!live) return null
+    if (user.role !== 'student') return live
+    // Check if student is actively enrolled in this live course or section
+    const isEnrolled = enrollments.some(e =>
+      e.status === 'active' &&
+      (
+        e.course_id === live.course_id ||
+        (live.subject_name && e.course_title && live.subject_name.toLowerCase().includes(e.course_title.toLowerCase())) ||
+        (live.title && e.course_title && live.title.toLowerCase().includes(e.course_title.toLowerCase())) ||
+        (live.section_name && e.section_name && live.section_name.toLowerCase() === e.section_name.toLowerCase())
+      )
+    )
+    return isEnrolled ? live : null
+  }, [liveClasses, enrollments, user.role])
+
   const currentWeekday = currentTime.toLocaleDateString('en-US', { weekday: 'long' })
   const activeDisplayDay = selectedScheduleDay || currentWeekday
   const todayTeacherSlots = teacherSlots
@@ -237,10 +253,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     return currentMinutes >= toMin(slot.start_time) && currentMinutes < toMin(slot.end_time)
   }
 
-  // Compute "today's schedule" for student
+  // Today's classes for student directly derived from backend schedule endpoint
   const todayStudentSlots = studentTimetable
-    .filter((s: any) => (s.day_of_week || '').toLowerCase() === currentWeekday.toLowerCase())
-    .sort((a: any, b: any) => (a.start_time || '').localeCompare(b.start_time || ''))
 
   const greeting = getGreeting()
   const firstName = (user.display_name || '').split(' ')[0] || 'there'
@@ -371,10 +385,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 </div>
 
                 {todayStudentSlots.length === 0 ? (
-                  <div style={{ padding: '24px', textAlign: 'center', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
-                    <Calendar style={{ width: 22, height: 22, color: 'var(--ink-muted)', margin: '0 auto 6px' }} />
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>No classes scheduled for today</p>
-                    <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>Review past recordings or preview upcoming course modules.</p>
+                  <div style={{ padding: '28px 24px', textAlign: 'center', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    <Calendar style={{ width: 22, height: 22, color: 'var(--ink-muted)', margin: '0 auto 8px' }} />
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>No classes scheduled today</p>
+                    <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>You're all caught up. Check your timetable for upcoming sessions.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -400,7 +414,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                                 {slot.subject_name || slot.grade_name || 'Class Session'}
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                                {slot.teacher_name ? `${slot.teacher_name} • ` : ''}{slot.grade_name ? `${slot.grade_name} • ` : ''}{slot.room_or_venue || 'Auditorium'}
+                                {slot.teacher_name ? `${slot.teacher_name} • ` : ''}{slot.section_name ? `Batch ${slot.section_name} • ` : ''}{slot.room_or_venue || 'Auditorium'}
                               </div>
                             </div>
                           </div>

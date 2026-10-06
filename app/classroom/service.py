@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -357,7 +357,7 @@ async def get_school_live_classes(
     query = select(LiveClass).order_by(LiveClass.starts_at.desc())
 
     if user.role == "student":
-        # Students: Strictly filter to enrolled courses, subjects, and corresponding grade tracks
+        # Students: Strictly filter to enrolled courses, subjects, and assigned batch
         enrollments = (
             await session.scalars(
                 select(Enrollment).where(
@@ -366,12 +366,17 @@ async def get_school_live_classes(
                 )
             )
         ).all()
-        enrolled_course_ids = [e.course_id for e in enrollments]
-
-        if not enrolled_course_ids:
+        if not enrollments:
             return []
 
-        enrolled_courses = (
+        enrolled_course_ids = [e.course_id for e in enrollments]
+        all_sections = (
+            await session.scalars(
+                select(SchoolSection).options(selectinload(SchoolSection.grade))
+            )
+        ).all()
+
+        courses = (
             await session.scalars(
                 select(Course)
                 .options(
@@ -381,39 +386,58 @@ async def get_school_live_classes(
                 .where(Course.id.in_(enrolled_course_ids))
             )
         ).all()
+        course_map = {c.id: c for c in courses}
 
+        enrolled_section_names = set()
+        enrolled_grade_numbers = set()
         enrolled_subject_codes = set()
-        enrolled_subject_names = set()
-        enrolled_titles = set()
-        for c in enrolled_courses:
-            title = c.versions[0].title if c.versions else c.slug
-            enrolled_titles.add(title.lower())
-            enrolled_titles.add(c.slug.lower())
+
+        for e in enrollments:
+            c = course_map.get(e.course_id)
+            if not c:
+                continue
+            c_title = (c.versions[0].title if c.versions else c.slug).lower()
             for s in (c.subjects or []):
                 if s.code:
                     enrolled_subject_codes.add(s.code)
-                if s.name:
-                    enrolled_subject_names.add(s.name)
 
-        # Also match SchoolGrade numbers for enrolled courses
-        all_grades = (await session.scalars(select(SchoolGrade))).all()
-        enrolled_grade_numbers = [
-            g.grade_number for g in all_grades
-            if any(et in g.name.lower() for et in enrolled_titles)
-        ]
+            for sec in all_sections:
+                if sec.grade and (c_title in sec.grade.name.lower() or c.slug.lower() in sec.grade.name.lower()):
+                    enrolled_grade_numbers.add(sec.grade.grade_number)
+                    if not e.section_id or e.section_id == sec.id:
+                        enrolled_section_names.add(sec.name)
 
         conditions = []
         if enrolled_course_ids:
-            conditions.append(LiveClass.course_id.in_(enrolled_course_ids))
-        if enrolled_subject_codes:
-            conditions.append(LiveClass.subject_code.in_(list(enrolled_subject_codes)))
-        if enrolled_subject_names:
-            conditions.append(LiveClass.subject_name.in_(list(enrolled_subject_names)))
+            if enrolled_section_names:
+                conditions.append(
+                    and_(
+                        LiveClass.course_id.in_(enrolled_course_ids),
+                        or_(
+                            LiveClass.section_name.in_(list(enrolled_section_names)),
+                            LiveClass.section_name.is_(None),
+                        )
+                    )
+                )
+            else:
+                conditions.append(LiveClass.course_id.in_(enrolled_course_ids))
+
         if enrolled_grade_numbers:
-            conditions.append(LiveClass.grade_number.in_(enrolled_grade_numbers))
+            if enrolled_section_names:
+                conditions.append(
+                    and_(
+                        LiveClass.grade_number.in_(list(enrolled_grade_numbers)),
+                        or_(
+                            LiveClass.section_name.in_(list(enrolled_section_names)),
+                            LiveClass.section_name.is_(None),
+                        )
+                    )
+                )
+            else:
+                conditions.append(LiveClass.grade_number.in_(list(enrolled_grade_numbers)))
 
         if conditions:
-            query = query.where(or_(*conditions))
+            query = query.where(or_(*conditions)).where(LiveClass.status != "cancelled")
         else:
             return []
 

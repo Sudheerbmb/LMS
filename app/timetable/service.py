@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 from sqlalchemy import delete, func, select
@@ -448,6 +449,45 @@ async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
     }
 
 
+def resolve_current_weekday_and_date(tz_name: Optional[str] = None) -> tuple[str, str]:
+    """Resolves today's weekday ('Monday', 'Tuesday', ...) and ISO date ('2026-10-06') in institute/user timezone."""
+    import zoneinfo
+    tz = None
+    if tz_name:
+        try:
+            tz = zoneinfo.ZoneInfo(tz_name)
+        except Exception:
+            pass
+    if not tz:
+        try:
+            tz = zoneinfo.ZoneInfo("Asia/Kolkata")
+        except Exception:
+            tz = timezone.utc
+
+    now = datetime.now(tz)
+    weekday = now.strftime("%A")
+    iso_date = now.strftime("%Y-%m-%d")
+    return weekday, iso_date
+
+
+async def get_today_classes_for_user(
+    session: AsyncSession,
+    user: User,
+) -> Dict[str, Any]:
+    """
+    Returns today's classes dynamically derived from the database for the authenticated user,
+    respecting active enrollments, course track, assigned batch, and current date.
+    """
+    weekday, iso_date = resolve_current_weekday_and_date(user.timezone)
+    slots = await get_timetable_grid(session, user=user, day_of_week=weekday)
+    return {
+        "date": iso_date,
+        "day_of_week": weekday,
+        "total_classes": len(slots),
+        "classes": slots,
+    }
+
+
 async def get_timetable_grid(
     session: AsyncSession,
     user: Optional[User] = None,
@@ -456,7 +496,7 @@ async def get_timetable_grid(
     teacher_id: Optional[UUID] = None,
     day_of_week: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieves timetable slots formatted for weekly display with student/teacher role awareness."""
+    """Retrieves timetable slots formatted for display with strict student/teacher enrollment isolation."""
     from app.courses.models import Course
     from app.enrollment.models import Enrollment
 
@@ -475,16 +515,10 @@ async def get_timetable_grid(
         .order_by(TimetableSlot.period_number)
     )
 
-    if section_id:
-        query = query.where(TimetableSlot.section_id == section_id)
-    if teacher_id:
-        query = query.where(TimetableSlot.teacher_id == teacher_id)
     if day_of_week:
         query = query.where(TimetableSlot.day_of_week == day_of_week)
 
-    slots = (await session.scalars(query)).all()
-
-    # 1. Student role: Strictly filter to enrolled courses, tracks and subjects
+    # 1. Student role: Strictly filter to enrolled courses and assigned sections/batches
     if user and user.role == "student":
         enrollments = (
             await session.scalars(
@@ -494,58 +528,79 @@ async def get_timetable_grid(
                 )
             )
         ).all()
-        enrolled_course_ids = [e.course_id for e in enrollments]
-
-        if not enrolled_course_ids:
+        if not enrollments:
             return []
+
+        enrolled_course_ids = [e.course_id for e in enrollments]
+        all_sections = (
+            await session.scalars(
+                select(SchoolSection).options(selectinload(SchoolSection.grade))
+            )
+        ).all()
 
         courses = (
             await session.scalars(
                 select(Course)
-                .options(
-                    selectinload(Course.versions),
-                    selectinload(Course.subjects),
-                )
+                .options(selectinload(Course.versions))
                 .where(Course.id.in_(enrolled_course_ids))
             )
         ).all()
-        enrolled_titles = {
-            (c.versions[0].title if c.versions else c.slug).lower()
-            for c in courses
-        }
-        enrolled_slugs = {c.slug.lower() for c in courses}
-        enrolled_sub_codes = {s.code for c in courses for s in (c.subjects or []) if s.code}
-        enrolled_sub_names = {s.name.lower() for c in courses for s in (c.subjects or []) if s.name}
+        course_map = {c.id: c for c in courses}
 
-        slots = [
-            s for s in slots
-            if (s.section and s.section.grade and any(et in s.section.grade.name.lower() for et in enrolled_titles))
-            or (s.subject and (
-                s.subject.category.lower() in enrolled_slugs
-                or s.subject.code in enrolled_sub_codes
-                or (s.subject.name and s.subject.name.lower() in enrolled_sub_names)
-            ))
-        ]
+        authorized_section_ids = set()
+        for e in enrollments:
+            c = course_map.get(e.course_id)
+            c_title = (c.versions[0].title if (c and c.versions) else (c.slug if c else "")).lower()
+            c_slug = (c.slug if c else "").lower()
+
+            matched_sec = None
+            if e.section_id:
+                matched_sec = next((s for s in all_sections if s.id == e.section_id), None)
+
+            if not matched_sec and c:
+                # Find matching section for course
+                for s in all_sections:
+                    if s.grade and (c_title in s.grade.name.lower() or c_slug in s.grade.name.lower()):
+                        matched_sec = s
+                        e.section_id = s.id
+                        session.add(e)
+                        break
+
+            if matched_sec:
+                authorized_section_ids.add(matched_sec.id)
+
+        if not authorized_section_ids:
+            return []
+
+        query = query.where(TimetableSlot.section_id.in_(list(authorized_section_ids)))
+        await session.commit()
 
     # 2. Teacher role: Filter to teacher's own teaching schedule
-    elif user and user.role == "teacher" and not teacher_id:
+    elif user and user.role == "teacher":
         prof = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
         if prof:
-            slots = [s for s in slots if s.teacher_id == prof.id]
+            query = query.where(TimetableSlot.teacher_id == prof.id)
+        elif teacher_id:
+            query = query.where(TimetableSlot.teacher_id == teacher_id)
 
-    # 3. Explicit grade_id or section_id filters (applied within role scope)
-    if grade_id:
-        slots = [s for s in slots if s.section and s.section.grade_id == grade_id]
-    if section_id:
-        slots = [s for s in slots if s.section_id == section_id]
+    # 3. Admin filters (if provided)
+    if user and user.role == "admin":
+        if section_id:
+            query = query.where(TimetableSlot.section_id == section_id)
+        if teacher_id:
+            query = query.where(TimetableSlot.teacher_id == teacher_id)
+        if grade_id:
+            query = query.join(TimetableSlot.section).where(SchoolSection.grade_id == grade_id)
 
-    teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher}
+    slots = (await session.scalars(query)).all()
+
+    teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher and s.teacher.user_id}
     users = (await session.scalars(select(User).where(User.id.in_(teacher_user_ids)))).all() if teacher_user_ids else []
     user_name_map = {u.id: u.display_name for u in users}
 
     result = []
     for s in slots:
-        t_name = user_name_map.get(s.teacher.user_id) if s.teacher else None
+        t_name = user_name_map.get(s.teacher.user_id) if (s.teacher and s.teacher.user_id) else None
         result.append({
             "id": s.id,
             "day_of_week": s.day_of_week,
