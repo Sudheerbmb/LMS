@@ -234,31 +234,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
     setLoadingSubmissions(true)
     try {
       const subs = await getAssignmentSubmissions(asg.id)
-      if (subs && subs.length > 0) {
-        setSubmissions(subs)
-      } else {
-        const demoSubs: AssignmentSubmission[] = [
-          {
-            id: `sub_${asg.id}_1`,
-            assignment_id: asg.id,
-            user_id: 'student_1',
-            content: 'Step 1: Factored out the coefficients. Step 2: Formulated quadratic discriminant D = b^2 - 4ac. Step 3: Roots evaluated as real and distinct.',
-            status: 'submitted',
-            score: null,
-            feedback: null
-          },
-          {
-            id: `sub_${asg.id}_2`,
-            assignment_id: asg.id,
-            user_id: 'student_2',
-            content: 'Applied Gauss symmetric summation formula to find S_n = n/2 [2a + (n-1)d]. Checked with initial boundary conditions.',
-            status: 'graded',
-            score: 92,
-            feedback: 'Exceptional algebraic rigor and clear derivation.'
-          }
-        ]
-        setSubmissions(demoSubs)
-      }
+      setSubmissions(subs || [])
     } catch {
       setSubmissions([])
     } finally {

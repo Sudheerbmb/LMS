@@ -22,7 +22,7 @@ import {
   getAnnouncements,
   createAnnouncement,
   generateTimetable,
-  getTimetableGrid,
+  getMyTimetableSchedule,
   getSchoolCourses,
   recordTeacherLeave
 } from '../lib/api'
@@ -125,7 +125,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       } else if (user.role === 'student') {
         const [enrolledRes, gridRes] = await Promise.all([
           getMyEnrollments().catch(() => []),
-          getTimetableGrid().catch(() => [])
+          getMyTimetableSchedule().catch(() => [])
         ])
         setEnrollments(enrolledRes || [])
         setStudentTimetable(gridRes || [])
@@ -291,11 +291,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 {greeting}, <span style={{ color: 'var(--saffron-d)' }}>{firstName}.</span>
               </h1>
               <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-3)' }}>
-                {todayStudentSlots.length > 0
-                  ? `You have ${todayStudentSlots.length} class${todayStudentSlots.length !== 1 ? 'es' : ''} scheduled today.`
-                  : activeLiveClass
-                  ? 'A live lecture session is in progress.'
-                  : 'All caught up with today’s scheduled periods.'}
+                {todayStudentSlots.length === 0
+                  ? 'You have no classes scheduled today.'
+                  : todayStudentSlots.length === 1
+                  ? 'You have 1 class scheduled today.'
+                  : `You have ${todayStudentSlots.length} classes scheduled today.`}
               </p>
             </div>
 
@@ -370,19 +370,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   </button>
                 </div>
 
-                {todayStudentSlots.length === 0 && !activeLiveClass ? (
+                {todayStudentSlots.length === 0 ? (
                   <div style={{ padding: '24px', textAlign: 'center', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
                     <Calendar style={{ width: 22, height: 22, color: 'var(--ink-muted)', margin: '0 auto 6px' }} />
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>No classes today</p>
-                    <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>Review past recordings or preview upcoming modules.</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>No classes scheduled for today</p>
+                    <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>Review past recordings or preview upcoming course modules.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {todayStudentSlots.map((slot: any, i) => {
                       const sc = subjectColor(slot.subject_name)
+                      const timeString = slot.start_time ? `${slot.start_time} – ${slot.end_time || ''}` : `Period ${slot.period_number || (i + 1)}`
                       return (
                         <div
-                          key={i}
+                          key={slot.id || i}
                           style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '12px 16px', borderRadius: 8, background: 'white',
@@ -390,16 +391,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-                            <div style={{ minWidth: 70, fontSize: 12, fontWeight: 700, color: 'var(--ink-2)' }}>
-                              {slot.start_time || '09:00'}
+                            <div style={{ minWidth: 90, fontSize: 12, fontWeight: 700, color: 'var(--ink-2)' }}>
+                              {timeString}
                             </div>
                             <div style={{ width: 3, height: 24, borderRadius: 2, background: sc.accent, flexShrink: 0 }} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {slot.subject_name || 'Class Session'}
+                                {slot.subject_name || slot.grade_name || 'Class Session'}
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                                {slot.teacher_name || 'Faculty'} • {slot.room_or_venue || 'Lab'}
+                                {slot.teacher_name ? `${slot.teacher_name} • ` : ''}{slot.grade_name ? `${slot.grade_name} • ` : ''}{slot.room_or_venue || 'Auditorium'}
                               </div>
                             </div>
                           </div>
@@ -433,16 +434,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                 {enrollments.length === 0 ? (
                   <div style={{ padding: '24px', textAlign: 'center', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
                     <BookOpen style={{ width: 22, height: 22, color: 'var(--ink-muted)', margin: '0 auto 6px' }} />
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>No active enrollments</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>You aren't enrolled in any courses yet</p>
                     <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>Enroll in technical tracks to start learning.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                     {enrollments.slice(0, 4).map((enroll: any, i) => {
                       const sc = subjectColor(enroll.course_title || '')
+                      const progress = typeof enroll.progress_percent === 'number' ? enroll.progress_percent : 0
                       return (
                         <div
-                          key={i}
+                          key={enroll.id || i}
                           onClick={() => setCurrentTab('courses')}
                           style={{
                             padding: '16px', borderRadius: 10, background: 'white',
@@ -456,25 +458,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: sc.bg, color: sc.text }}>
-                                Active Track
+                                {enroll.status === 'active' ? 'Active Track' : (enroll.status || 'Enrolled')}
                               </span>
                               <ArrowRight style={{ width: 13, height: 13, color: 'var(--ink-muted)' }} />
                             </div>
                             <h4 style={{ margin: '0 0 4px', fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3 }}>
-                              {enroll.course_title || enroll.subject_name || 'Course'}
+                              {enroll.course_title || enroll.subject_name || 'Technical Course'}
                             </h4>
                             <p style={{ margin: 0, fontSize: 11.5, color: 'var(--ink-3)' }}>
-                              Batch {enroll.section_name || 'A'} • Semester 1
+                              Batch {enroll.section_name || 'A'}
                             </p>
                           </div>
 
                           <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>
                               <span>Curriculum Progress</span>
-                              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>65%</span>
+                              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{progress}%</span>
                             </div>
                             <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                              <div style={{ width: '65%', height: '100%', background: sc.accent }} />
+                              <div style={{ width: `${progress}%`, height: '100%', background: sc.accent }} />
                             </div>
                           </div>
                         </div>
@@ -869,10 +871,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28
           }}>
             {[
-              { label: 'STUDENTS', value: statsData.students_total ?? 624, onClick: () => setUserFilter('student') },
-              { label: 'FACULTY', value: statsData.teachers_total ?? 38, onClick: () => setUserFilter('teacher') },
-              { label: 'COURSES', value: statsData.timetable_slots_total ?? 18, onClick: () => setCurrentTab('courses') },
-              { label: 'LIVE TODAY', value: liveClasses.filter(c => c.status === 'live').length || 12, onClick: () => setCurrentTab('classroom') },
+              { label: 'STUDENTS', value: statsData.students_total ?? 0, onClick: () => setUserFilter('student') },
+              { label: 'FACULTY', value: statsData.teachers_total ?? 0, onClick: () => setUserFilter('teacher') },
+              { label: 'COURSES', value: statsData.published_courses ?? statsData.courses_total ?? 0, onClick: () => setCurrentTab('courses') },
+              { label: 'LIVE TODAY', value: liveClasses.filter(c => c.status === 'live').length, onClick: () => setCurrentTab('classroom') },
             ].map((m) => (
               <div
                 key={m.label}

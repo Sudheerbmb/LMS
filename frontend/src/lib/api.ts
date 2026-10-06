@@ -634,6 +634,8 @@ export const getTimetableGrid = (params?: { section_id?: string; grade_id?: stri
   return request<TimetableSlot[]>(`/api/v1/timetable/grid${qs ? `?${qs}` : ''}`)
 }
 
+
+
 export const getMyTimetableSchedule = () => request<TimetableSlot[]>('/api/v1/timetable/my-schedule')
 
 export const syncCoursesToTimetable = () =>

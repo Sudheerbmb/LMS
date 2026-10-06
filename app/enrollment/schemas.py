@@ -1,3 +1,4 @@
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -11,3 +12,6 @@ class EnrollmentRead(BaseModel):
     course_id: UUID
     status: str
     progress_percent: int
+    course_title: Optional[str] = None
+    course_slug: Optional[str] = None
+    section_name: Optional[str] = None
