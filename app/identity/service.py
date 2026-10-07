@@ -25,6 +25,11 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
     if existing:
         raise ConflictError("An account with this email already exists")
 
+    if data.phone_number and data.phone_number.strip():
+        existing_phone = await session.scalar(select(User).where(User.phone_number == data.phone_number.strip()))
+        if existing_phone:
+            raise ConflictError("An account with this phone number already exists")
+
     raw_token, expires = create_email_verify_token()
 
     req_role = (data.role or "student").strip().lower()
