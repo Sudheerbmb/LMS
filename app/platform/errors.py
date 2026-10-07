@@ -54,10 +54,18 @@ async def lms_error_handler(request: Request, exc: LMSError) -> JSONResponse:
 
 
 async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
-    logger.warning("database_integrity_error", error=str(exc.orig), path=request.url.path)
+    orig_str = str(getattr(exc, "orig", ""))
+    logger.warning("database_integrity_error", error=orig_str, path=request.url.path)
+    if "ix_users_phone_number" in orig_str or "phone_number" in orig_str:
+        detail_msg = "An account with this phone number already exists."
+    elif "ix_users_email" in orig_str or "email" in orig_str:
+        detail_msg = "An account with this email address already exists."
+    else:
+        detail_msg = "A resource with that value already exists."
+
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
-        content={"detail": "A resource with that value already exists.", "error_type": "ConflictError"},
+        content={"detail": detail_msg, "error_type": "ConflictError"},
     )
 
 
@@ -82,3 +90,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "An internal server error occurred.", "error_type": "InternalError"},
     )
+
+
+def register_error_handlers(app) -> None:
+    app.add_exception_handler(LMSError, lms_error_handler)
+    app.add_exception_handler(IntegrityError, integrity_error_handler)
+    app.add_exception_handler(SQLAlchemyError, database_error_handler)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
+

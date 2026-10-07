@@ -44,8 +44,7 @@ from app.mcp.router import router as mcp_router
 from app.agents.router import router as agents_router
 from app.platform.config import settings
 from app.platform.database import init_database
-from app.platform.errors import database_error_handler, unhandled_exception_handler
-from sqlalchemy.exc import SQLAlchemyError
+from app.platform.errors import register_error_handlers
 from app.platform.logging import configure_logging
 from app.timetable import models as timetable_models  # noqa: F401
 from app.timetable.router import router as timetable_router
@@ -75,8 +74,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_exception_handler(Exception, unhandled_exception_handler)
-app.add_exception_handler(SQLAlchemyError, database_error_handler)
+register_error_handlers(app)
 app.include_router(identity_router)
 app.include_router(notifications_router)
 app.include_router(courses_router)
