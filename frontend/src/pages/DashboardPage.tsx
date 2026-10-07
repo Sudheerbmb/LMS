@@ -179,23 +179,38 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
   }
 
   const handleInstantLaunchClass = async (slot: TeacherTimetableSlot) => {
-    setActionLoading(`launch-${slot.period_number}`)
+    const slotKey = slot.id || slot.slot_id || slot.period_number
+    setActionLoading(`launch-${slotKey}`)
     try {
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
       const res = await createSchoolLiveClass({
         title: `${slot.subject_name} Live Session (${slot.grade_name || 'Course'})`,
-        starts_at: now.toISOString(), ends_at: end.toISOString(),
-        grade_number: slot.grade_number, section_name: '',
-        subject_code: slot.subject_code, subject_name: slot.subject_name,
-        period_number: slot.period_number, room_number: slot.room_or_venue, status: 'live'
+        starts_at: now.toISOString(),
+        ends_at: end.toISOString(),
+        grade_number: slot.grade_number,
+        section_name: '',
+        subject_code: slot.subject_code,
+        subject_name: slot.subject_name,
+        period_number: slot.period_number,
+        room_number: slot.room_or_venue || 'Main Classroom',
+        status: 'live',
+        course_id: slot.course_id || undefined,
+        subject_id: slot.subject_id || undefined,
+        timetable_slot_id: (slot.slot_id || slot.id) || undefined,
+        auto_create_zoom: true,
       })
       showToast(`Launching ${slot.subject_name}...`, 'success')
       const zoomUrl = res.zoom_start_url || res.zoom_join_url || res.meeting_url
-      if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) window.open(zoomUrl, '_blank')
+      if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) {
+        window.open(zoomUrl, '_blank')
+      }
       setCurrentTab('classroom')
-    } catch (err: any) { showToast(err.message || 'Could not launch class.', 'error') }
-    finally { setActionLoading(null) }
+    } catch (err: any) {
+      showToast(err.message || 'Could not launch class.', 'error')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleSubmitLeaveRequest = async (e: React.FormEvent) => {
@@ -777,12 +792,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                           <button
                             onClick={() => handleInstantLaunchClass(slot)}
-                            disabled={!isLiveNow || actionLoading === `launch-${slot.id || slot.slot_id || idx}`}
+                            disabled={isCompleted || actionLoading === `launch-${slot.id || slot.slot_id || slot.period_number}`}
                             className="btn-primary btn-sm"
-                            style={{ opacity: isLiveNow ? 1 : 0.4 }}
+                            style={{ opacity: isCompleted ? 0.4 : 1 }}
                           >
-                            {actionLoading === `launch-${slot.id || slot.slot_id || idx}` ? <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> : <Play style={{ width: 12, height: 12 }} />}
-                            {isLiveNow ? 'Launch' : isUpcoming ? 'Upcoming' : 'Completed'}
+                            {actionLoading === `launch-${slot.id || slot.slot_id || slot.period_number}` ? <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> : <Play style={{ width: 12, height: 12 }} />}
+                            {isLiveNow ? 'Launch' : isUpcoming ? 'Launch Early' : 'Completed'}
                           </button>
                           <button
                             onClick={() => { setLeaveSlot(slot); setShowLeaveModal(true) }}
