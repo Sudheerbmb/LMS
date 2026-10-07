@@ -243,26 +243,38 @@ async def fetch_authoritative_course_detail(
             )
             teachers_list = [teacher_info]
 
-        classes_cnt = await session.scalar(
-            select(func.count(TimetableSlot.id)).where(
-                or_(
-                    TimetableSlot.subject_id == s.id,
-                    and_(TimetableSlot.course_id == course.id, TimetableSlot.subject_code == s.code),
-                )
-            )
-        ) or 0
+        try:
+            async with session.begin_nested():
+                classes_cnt = await session.scalar(
+                    select(func.count(TimetableSlot.id)).where(
+                        or_(
+                            TimetableSlot.subject_id == s.id,
+                            and_(TimetableSlot.course_id == course.id, TimetableSlot.subject_code == s.code),
+                        )
+                    )
+                ) or 0
+        except Exception:
+            classes_cnt = 0
 
-        recs_cnt = await session.scalar(
-            select(func.count(ClassRecording.id)).where(
-                ClassRecording.subject_id == s.id
-            )
-        ) or 0
+        try:
+            async with session.begin_nested():
+                recs_cnt = await session.scalar(
+                    select(func.count(ClassRecording.id)).where(
+                        ClassRecording.subject_id == s.id
+                    )
+                ) or 0
+        except Exception:
+            recs_cnt = 0
 
-        res_cnt = await session.scalar(
-            select(func.count(LearningResource.id)).where(
-                LearningResource.subject_id == s.id
-            )
-        ) or 0
+        try:
+            async with session.begin_nested():
+                res_cnt = await session.scalar(
+                    select(func.count(LearningResource.id)).where(
+                        LearningResource.subject_id == s.id
+                    )
+                ) or 0
+        except Exception:
+            res_cnt = 0
 
         subjects_res.append(
             SubjectDetailRead(
@@ -331,26 +343,38 @@ async def get_subject_detail(
                 email=teacher_user.email,
             )
 
-    classes_cnt = await session.scalar(
-        select(func.count(TimetableSlot.id)).where(
-            or_(
-                TimetableSlot.subject_id == subject.id,
-                and_(TimetableSlot.course_id == subject.course_id, TimetableSlot.subject_code == subject.code),
-            )
-        )
-    ) or 0
+    try:
+        async with session.begin_nested():
+            classes_cnt = await session.scalar(
+                select(func.count(TimetableSlot.id)).where(
+                    or_(
+                        TimetableSlot.subject_id == subject.id,
+                        and_(TimetableSlot.course_id == subject.course_id, TimetableSlot.subject_code == subject.code),
+                    )
+                )
+            ) or 0
+    except Exception:
+        classes_cnt = 0
 
-    recs_cnt = await session.scalar(
-        select(func.count(ClassRecording.id)).where(
-            ClassRecording.subject_id == subject.id
-        )
-    ) or 0
+    try:
+        async with session.begin_nested():
+            recs_cnt = await session.scalar(
+                select(func.count(ClassRecording.id)).where(
+                    ClassRecording.subject_id == subject.id
+                )
+            ) or 0
+    except Exception:
+        recs_cnt = 0
 
-    res_cnt = await session.scalar(
-        select(func.count(LearningResource.id)).where(
-            LearningResource.subject_id == subject.id
-        )
-    ) or 0
+    try:
+        async with session.begin_nested():
+            res_cnt = await session.scalar(
+                select(func.count(LearningResource.id)).where(
+                    LearningResource.subject_id == subject.id
+                )
+            ) or 0
+    except Exception:
+        res_cnt = 0
 
     return SubjectDetailRead(
         id=subject.id,
@@ -502,15 +526,19 @@ async def get_subject_recordings(
 
     await _verify_course_enrollment(session, current_user, subject.course_id)
 
-    recs = (
-        await session.scalars(
-            select(ClassRecording)
-            .where(
-                ClassRecording.subject_id == subject.id
-            )
-            .order_by(ClassRecording.recording_start.desc().nullslast(), ClassRecording.created_at.desc())
-        )
-    ).all()
+    try:
+        async with session.begin_nested():
+            recs = (
+                await session.scalars(
+                    select(ClassRecording)
+                    .where(
+                        ClassRecording.subject_id == subject.id
+                    )
+                    .order_by(ClassRecording.recording_start.desc().nullslast(), ClassRecording.created_at.desc())
+                )
+            ).all()
+    except Exception:
+        recs = []
 
     teacher_name = None
     if subject.teacher_id:
@@ -556,13 +584,17 @@ async def get_subject_resources(
 
     await _verify_course_enrollment(session, current_user, subject.course_id)
 
-    resources = (
-        await session.scalars(
-            select(LearningResource)
-            .where(LearningResource.subject_id == subject.id)
-            .order_by(LearningResource.position.asc(), LearningResource.created_at.asc())
-        )
-    ).all()
+    try:
+        async with session.begin_nested():
+            resources = (
+                await session.scalars(
+                    select(LearningResource)
+                    .where(LearningResource.subject_id == subject.id)
+                    .order_by(LearningResource.position.asc(), LearningResource.created_at.asc())
+                )
+            ).all()
+    except Exception:
+        resources = []
 
     return [SubjectResourceRead.model_validate(r) for r in resources]
 

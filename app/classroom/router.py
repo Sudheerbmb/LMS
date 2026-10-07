@@ -806,8 +806,6 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
     candidate_models = [
         settings.groq_model or 'llama-3.3-70b-versatile',
         'llama-3.1-8b-instant',
-        'llama3-70b-8192',
-        'llama3-8b-8192',
         'gemma2-9b-it',
     ]
 
@@ -841,10 +839,10 @@ async def call_groq_llm(messages: List[Dict[str, str]], json_mode: bool = False,
             if res:
                 return res
         except urllib.error.HTTPError as he:
-            logger.warning("Groq model %s returned HTTP %s: %s. Trying fallback model...", model_name, he.code, he.reason)
+            logger.debug("Groq model %s returned HTTP %s: %s. Trying fallback model...", model_name, he.code, he.reason)
             continue
         except Exception as e:
-            logger.warning("Groq model %s call exception: %s. Trying next...", model_name, e)
+            logger.debug("Groq model %s call exception: %s. Trying next...", model_name, e)
             continue
 
     return None

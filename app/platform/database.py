@@ -70,10 +70,19 @@ def _patch_missing_columns(connection: Connection) -> None:
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
 
+    def _exec_safe(sql: str) -> None:
+        try:
+            with connection.begin_nested():
+                connection.execute(text(sql))
+        except Exception as e:
+            print(f"[Schema Patch] Safe execute notice for '{sql.strip()[:60]}...': {e}")
+
     def _add_column(table: str, col_name: str, col_def: str, existing_cols: set[str]) -> None:
         if col_name not in existing_cols:
             try:
-                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}"))
+                with connection.begin_nested():
+                    connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}"))
+                existing_cols.add(col_name)
             except Exception as e:
                 # Some engines / states might error if column already exists or table is locked
                 print(f"[Schema Patch] Failed to add {col_name} to {table}: {e}")
@@ -119,21 +128,39 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("courses", "rating_count", "INTEGER DEFAULT 0", cols)
         _add_column("courses", "enrolled_count", "INTEGER DEFAULT 0", cols)
         if is_postgres:
-            try:
-                connection.execute(text("ALTER TABLE courses ALTER COLUMN organization_id DROP NOT NULL"))
-                connection.execute(text("ALTER TABLE school_grades ALTER COLUMN name TYPE VARCHAR(160)"))
-                connection.execute(text("ALTER TABLE school_sections ALTER COLUMN name TYPE VARCHAR(32)"))
-                connection.execute(text("ALTER TABLE school_subjects ALTER COLUMN name TYPE VARCHAR(128)"))
-            except Exception as e:
-                print(f"[Schema Patch] Column adjustments note: {e}")
+            _exec_safe("ALTER TABLE courses ALTER COLUMN organization_id DROP NOT NULL")
+            _exec_safe("ALTER TABLE school_grades ALTER COLUMN name TYPE VARCHAR(160)")
+            _exec_safe("ALTER TABLE school_sections ALTER COLUMN name TYPE VARCHAR(32)")
+            _exec_safe("ALTER TABLE school_subjects ALTER COLUMN name TYPE VARCHAR(128)")
 
-    # 3. Live Classes Table
+    # 3. Course Subjects Table
+    if "course_subjects" in tables:
+        cols = {c["name"] for c in inspector.get_columns("course_subjects")}
+        _add_column("course_subjects", "course_id", uuid_type, cols)
+        _add_column("course_subjects", "teacher_id", uuid_type, cols)
+        _add_column("course_subjects", "code", "VARCHAR(32)", cols)
+        _add_column("course_subjects", "name", "VARCHAR(128)", cols)
+        _add_column("course_subjects", "description", "TEXT", cols)
+        _add_column("course_subjects", "order_index", "INTEGER DEFAULT 1", cols)
+        _add_column("course_subjects", "color", "VARCHAR(32) DEFAULT '#3b82f6'", cols)
+        if is_postgres:
+            _exec_safe("""
+                UPDATE course_subjects 
+                SET teacher_id = tp.user_id 
+                FROM teacher_profiles tp 
+                WHERE course_subjects.teacher_id = tp.id
+            """)
+            _exec_safe("ALTER TABLE course_subjects DROP CONSTRAINT IF EXISTS course_subjects_teacher_id_fkey")
+            _exec_safe("ALTER TABLE course_subjects ADD CONSTRAINT course_subjects_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL")
+
+    # 4. Live Classes Table
     if "live_classes" in tables:
         cols = {c["name"] for c in inspector.get_columns("live_classes")}
         _add_column("live_classes", "organization_id", uuid_type, cols)
         _add_column("live_classes", "course_id", uuid_type, cols)
         _add_column("live_classes", "subject_id", uuid_type, cols)
         _add_column("live_classes", "timetable_slot_id", uuid_type, cols)
+        _add_column("live_classes", "teacher_id", uuid_type, cols)
         _add_column("live_classes", "grade_number", "INTEGER", cols)
         _add_column("live_classes", "section_name", "VARCHAR(32)", cols)
         _add_column("live_classes", "subject_code", "VARCHAR(16)", cols)
@@ -154,32 +181,87 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("live_classes", "zoom_status", "VARCHAR(32) DEFAULT 'scheduled'", cols)
         _add_column("live_classes", "zoom_last_synced_at", dt_type, cols)
         _add_column("live_classes", "zoom_settings_json", json_type, cols)
+        if is_postgres:
+            _exec_safe("ALTER TABLE live_classes DROP CONSTRAINT IF EXISTS live_classes_subject_id_fkey")
+            _exec_safe("ALTER TABLE live_classes DROP CONSTRAINT IF EXISTS live_classes_teacher_id_fkey")
+            _exec_safe("""
+                UPDATE live_classes 
+                SET teacher_id = tp.user_id 
+                FROM teacher_profiles tp 
+                WHERE live_classes.teacher_id = tp.id
+            """)
+            _exec_safe("ALTER TABLE live_classes ADD CONSTRAINT live_classes_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE")
 
-    # 4. Class Recordings Table
+    # 5. Class Recordings Table
     if "class_recordings" in tables:
         cols = {c["name"] for c in inspector.get_columns("class_recordings")}
+        _add_column("class_recordings", "course_id", uuid_type, cols)
+        _add_column("class_recordings", "subject_id", uuid_type, cols)
         _add_column("class_recordings", "vimeo_url", "VARCHAR(1000)", cols)
         _add_column("class_recordings", "play_url", "VARCHAR(1000)", cols)
         _add_column("class_recordings", "download_url", "VARCHAR(1000)", cols)
+        _add_column("class_recordings", "duration_seconds", "INTEGER", cols)
+        _add_column("class_recordings", "status", "VARCHAR(32) DEFAULT 'available'", cols)
 
-    # 5. Enrollments Table
+    # 6. Learning Resources Table
+    if "learning_resources" in tables:
+        cols = {c["name"] for c in inspector.get_columns("learning_resources")}
+        _add_column("learning_resources", "course_id", uuid_type, cols)
+        _add_column("learning_resources", "subject_id", uuid_type, cols)
+        _add_column("learning_resources", "course_version_id", uuid_type, cols)
+        _add_column("learning_resources", "section_id", uuid_type, cols)
+        _add_column("learning_resources", "resource_type", "VARCHAR(32) DEFAULT 'document'", cols)
+        _add_column("learning_resources", "title", "VARCHAR(200)", cols)
+        _add_column("learning_resources", "description", "TEXT", cols)
+        _add_column("learning_resources", "position", "INTEGER DEFAULT 0", cols)
+        _add_column("learning_resources", "external_url", "VARCHAR(1000)", cols)
+        _add_column("learning_resources", "file_url", "VARCHAR(1000)", cols)
+        _add_column("learning_resources", "file_size_bytes", "INTEGER", cols)
+        _add_column("learning_resources", "mime_type", "VARCHAR(100)", cols)
+        _add_column("learning_resources", "duration_seconds", "INTEGER", cols)
+        _add_column("learning_resources", "is_preview", f"BOOLEAN DEFAULT {bool_false}", cols)
+        _add_column("learning_resources", "is_required", f"BOOLEAN DEFAULT {bool_true}", cols)
+        _add_column("learning_resources", "downloadable", f"BOOLEAN DEFAULT {bool_false}", cols)
+        _add_column("learning_resources", "content_body", "TEXT", cols)
+        _add_column("learning_resources", "metadata", json_type, cols)
+
+    # 7. Enrollments Table
     if "enrollments" in tables:
         cols = {c["name"] for c in inspector.get_columns("enrollments")}
         _add_column("enrollments", "section_id", uuid_type, cols)
 
-    # 6. Timetable Slots Table
+    # 8. Timetable Slots Table
     if "timetable_slots" in tables:
         cols = {c["name"] for c in inspector.get_columns("timetable_slots")}
         _add_column("timetable_slots", "course_id", uuid_type, cols)
+        _add_column("timetable_slots", "teacher_id", uuid_type, cols)
+        _add_column("timetable_slots", "subject_id", uuid_type, cols)
+        _add_column("timetable_slots", "section_id", uuid_type, cols)
         _add_column("timetable_slots", "subject_name", "VARCHAR(200)", cols)
         _add_column("timetable_slots", "subject_code", "VARCHAR(64)", cols)
         _add_column("timetable_slots", "subject_color", "VARCHAR(32) DEFAULT '#3b82f6'", cols)
         _add_column("timetable_slots", "meeting_url", "VARCHAR(500)", cols)
         if is_postgres:
-            try:
-                connection.execute(text("ALTER TABLE timetable_slots ALTER COLUMN section_id DROP NOT NULL"))
-            except Exception:
-                pass
+            _exec_safe("ALTER TABLE timetable_slots ALTER COLUMN section_id DROP NOT NULL")
+            # Drop legacy constraints
+            _exec_safe("ALTER TABLE timetable_slots DROP CONSTRAINT IF EXISTS timetable_slots_teacher_id_fkey")
+            _exec_safe("ALTER TABLE timetable_slots DROP CONSTRAINT IF EXISTS timetable_slots_subject_id_fkey")
+            _exec_safe("ALTER TABLE timetable_slots DROP CONSTRAINT IF EXISTS timetable_slots_section_id_fkey")
+            # If teacher_id stored teacher_profiles.id, migrate to users.id
+            _exec_safe("""
+                UPDATE timetable_slots 
+                SET teacher_id = tp.user_id 
+                FROM teacher_profiles tp 
+                WHERE timetable_slots.teacher_id = tp.id
+            """)
+            # Nullify any orphaned teacher_ids before adding new FK
+            _exec_safe("""
+                UPDATE timetable_slots 
+                SET teacher_id = NULL 
+                WHERE teacher_id IS NOT NULL AND teacher_id NOT IN (SELECT id FROM users)
+            """)
+            # Add proper FK constraint referencing users(id)
+            _exec_safe("ALTER TABLE timetable_slots ADD CONSTRAINT timetable_slots_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL")
 
 
 

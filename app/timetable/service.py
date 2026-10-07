@@ -912,6 +912,8 @@ async def create_slot(
             teacher_prof = await session.get(TeacherProfile, teacher_id)
             if teacher_prof:
                 teacher_id = teacher_prof.user_id
+            else:
+                teacher_id = None
 
     subject_name = payload.get("subject_name")
     if not subject_name and course:
@@ -963,7 +965,7 @@ async def update_slot(
             if teacher_prof:
                 slot.teacher_id = teacher_prof.user_id
             else:
-                slot.teacher_id = teacher_id
+                slot.teacher_id = None
         else:
             slot.teacher_id = teacher_id
 
