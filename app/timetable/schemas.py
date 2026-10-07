@@ -151,8 +151,51 @@ class SlotUpdateRequest(BaseModel):
     period_number: Optional[int] = None
     slot_type: Optional[str] = None
     room_or_venue: Optional[str] = None
-    meeting_url: Optional[str] = None
     subject_id: Optional[UUID] = None
+
+
+class SlotSwapRequest(BaseModel):
+    slot_id_1: UUID
+    slot_id_2: UUID
+
+
+class TimetableGenerationResult(BaseModel):
+    status: str
+    academic_year: str
+    total_slots_scheduled: int
+    total_sections: int
+    ground_capacity_complied: bool
+    autonomous_decisions: list[str]
+    audit_summary: str
+
+
+class TimetableRuleBase(BaseModel):
+    name: str
+    rule_type: str
+    category: str = "policy"
+    description: str
+    parameters: dict = {}
+    is_enabled: bool = True
+    priority: int = 1
+
+
+class TimetableRuleCreate(TimetableRuleBase):
+    pass
+
+
+class TimetableRuleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    parameters: Optional[dict] = None
+    is_enabled: Optional[bool] = None
+    priority: Optional[int] = None
+
+
+class TimetableRuleRead(TimetableRuleBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    created_at: datetime
 
 
 class SubstituteTeacherRead(BaseModel):
