@@ -492,6 +492,91 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] ensure students: {err}")
 
+        # 6. Ensure Core Courses, Subjects & Enrollments
+        try:
+            from app.courses.models import Course, CourseVersion, CourseSubject
+            from app.enrollment.models import Enrollment
+
+            org = await session.scalar(select(Organization).where(Organization.slug == "omni-institute"))
+            sarah = await session.scalar(select(User).where(User.email == "sarah.fullstack@institute.edu"))
+            alan = await session.scalar(select(User).where(User.email == "alan.genai@institute.edu"))
+            alex = await session.scalar(select(User).where(User.email == "alex.student@institute.edu"))
+            priya = await session.scalar(select(User).where(User.email == "priya.student@institute.edu"))
+
+            if org and sarah and alan:
+                # 1. Full Stack Course
+                c_fs = await session.scalar(select(Course).where(Course.slug == "full-stack-web-development"))
+                if not c_fs:
+                    c_fs = Course(
+                        organization_id=org.id,
+                        slug="full-stack-web-development",
+                        status="published",
+                        level="intermediate",
+                        is_featured=True,
+                    )
+                    session.add(c_fs)
+                    await session.flush()
+                    v_fs = CourseVersion(
+                        course_id=c_fs.id,
+                        version_number=1,
+                        title="Full Stack Web Development & Distributed Systems",
+                        description="Comprehensive masterclass on React, FastAPI, microservices, and Vimeo video pipelines.",
+                    )
+                    session.add(v_fs)
+                    subj_fs = CourseSubject(
+                        course_id=c_fs.id,
+                        teacher_id=sarah.id,
+                        code="FS-101",
+                        name="Full Stack Architecture & Cloud Services",
+                        color="#3b82f6",
+                    )
+                    session.add(subj_fs)
+                    await session.flush()
+
+                if alex and c_fs:
+                    enr_alex = await session.scalar(select(Enrollment).where(Enrollment.user_id == alex.id, Enrollment.course_id == c_fs.id))
+                    if not enr_alex:
+                        session.add(Enrollment(user_id=alex.id, course_id=c_fs.id, status="active"))
+
+                # 2. Gen AI Course
+                c_ai = await session.scalar(select(Course).where(Course.slug == "generative-ai-and-llms"))
+                if not c_ai:
+                    c_ai = Course(
+                        organization_id=org.id,
+                        slug="generative-ai-and-llms",
+                        status="published",
+                        level="advanced",
+                        is_featured=True,
+                    )
+                    session.add(c_ai)
+                    await session.flush()
+                    v_ai = CourseVersion(
+                        course_id=c_ai.id,
+                        version_number=1,
+                        title="Generative AI, LLMs & Autonomous Agents",
+                        description="Deep dive into transformers, RAG architectures, prompt engineering, and autonomous agents.",
+                    )
+                    session.add(v_ai)
+                    subj_ai = CourseSubject(
+                        course_id=c_ai.id,
+                        teacher_id=alan.id,
+                        code="AI-201",
+                        name="Generative AI & LLM Systems",
+                        color="#8b5cf6",
+                    )
+                    session.add(subj_ai)
+                    await session.flush()
+
+                if priya and c_ai:
+                    enr_priya = await session.scalar(select(Enrollment).where(Enrollment.user_id == priya.id, Enrollment.course_id == c_ai.id))
+                    if not enr_priya:
+                        session.add(Enrollment(user_id=priya.id, course_id=c_ai.id, status="active"))
+
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure courses & enrollments: {err}")
+
 
 async def flush_all_operational_data(session: AsyncSession) -> dict[str, Any]:
     """Completely flushes all demo/test/seed operational data across the entire database:
