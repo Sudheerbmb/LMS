@@ -199,6 +199,8 @@ class SubjectClassesResponse(BaseModel):
 class RecordingRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
+    class_id: UUID | None = None
+    vimeo_video_id: str | None = None
     title: str
     recorded_at: datetime | None = None
     duration: str | None = None
@@ -206,6 +208,7 @@ class RecordingRead(BaseModel):
     play_url: str | None = None
     vimeo_url: str | None = None
     teacher_name: str | None = None
+    status: str = "available"
 
 
 class SubjectResourceRead(BaseModel):

@@ -287,6 +287,8 @@ export interface SubjectClassesResponse {
 
 export interface LMSRecording {
   id: string
+  class_id?: string
+  vimeo_video_id?: string
   title: string
   recorded_at?: string
   duration?: string
@@ -294,6 +296,7 @@ export interface LMSRecording {
   play_url?: string
   vimeo_url?: string
   teacher_name?: string
+  status?: string
 }
 
 export interface LMSResource {

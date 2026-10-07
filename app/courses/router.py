@@ -260,7 +260,22 @@ async def fetch_authoritative_course_detail(
             async with session.begin_nested():
                 recs_cnt = await session.scalar(
                     select(func.count(ClassRecording.id)).where(
-                        ClassRecording.subject_id == s.id
+                        or_(
+                            ClassRecording.subject_id == s.id,
+                            and_(
+                                ClassRecording.course_id == course.id,
+                                or_(ClassRecording.subject_id == s.id, ClassRecording.subject_id.is_(None))
+                            ),
+                            ClassRecording.class_id.in_(
+                                select(LiveClass.id).where(
+                                    or_(
+                                        LiveClass.subject_id == s.id,
+                                        LiveClass.subject_code == s.code,
+                                        LiveClass.course_id == course.id,
+                                    )
+                                )
+                            )
+                        )
                     )
                 ) or 0
         except Exception:
@@ -532,7 +547,22 @@ async def get_subject_recordings(
                 await session.scalars(
                     select(ClassRecording)
                     .where(
-                        ClassRecording.subject_id == subject.id
+                        or_(
+                            ClassRecording.subject_id == subject.id,
+                            and_(
+                                ClassRecording.course_id == subject.course_id,
+                                or_(ClassRecording.subject_id == subject.id, ClassRecording.subject_id.is_(None)),
+                            ),
+                            ClassRecording.class_id.in_(
+                                select(LiveClass.id).where(
+                                    or_(
+                                        LiveClass.subject_id == subject.id,
+                                        LiveClass.subject_code == subject.code,
+                                        LiveClass.course_id == subject.course_id,
+                                    )
+                                )
+                            )
+                        )
                     )
                     .order_by(ClassRecording.recording_start.desc().nullslast(), ClassRecording.created_at.desc())
                 )
@@ -560,6 +590,8 @@ async def get_subject_recordings(
         result.append(
             RecordingRead(
                 id=r.id,
+                class_id=r.class_id,
+                vimeo_video_id=r.vimeo_video_id,
                 title=subject.name,
                 recorded_at=r.recording_start or r.created_at,
                 duration=format_duration(r.duration_seconds),
@@ -567,6 +599,7 @@ async def get_subject_recordings(
                 play_url=r.play_url or r.vimeo_url,
                 vimeo_url=r.vimeo_url,
                 teacher_name=teacher_name,
+                status=r.status or "available",
             )
         )
     return result

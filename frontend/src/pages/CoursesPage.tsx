@@ -17,6 +17,7 @@ import {
   getSubjectResources,
   createSubjectResource
 } from '../lib/api'
+import { AiRecordingPlayerModal } from '../components/AiRecordingPlayerModal'
 import { 
   Search, 
   BookOpen, 
@@ -511,51 +512,20 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
           )}
         </div>
 
-        {/* ── VIDEO PLAYER MODAL ── */}
+        {/* ── VIDEO PLAYER MODAL WITH CHAPTERS, TOPICS & TRANSCRIPT SEEKING ── */}
         {activeRecording && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl border border-slate-200">
-              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">{activeRecording.title}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Duration: {activeRecording.duration || 'N/A'}</p>
-                </div>
-                <button
-                  onClick={() => setActiveRecording(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="relative aspect-video bg-black flex items-center justify-center">
-                {activeRecording.play_url || activeRecording.vimeo_url ? (
-                  <iframe
-                    src={activeRecording.play_url || activeRecording.vimeo_url || ''}
-                    title={activeRecording.title}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <div className="text-center text-slate-400 p-8">
-                    <AlertCircle className="w-10 h-10 mx-auto mb-2 text-slate-500" />
-                    <p className="text-sm">Recording stream link is not available.</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
-                <span>Vimeo Cloud Recording</span>
-                <button
-                  onClick={() => setActiveRecording(null)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+          <AiRecordingPlayerModal
+            recordingUrl={activeRecording.play_url || activeRecording.vimeo_url || ''}
+            classInfo={{
+              id: activeRecording.class_id || activeRecording.id,
+              title: activeRecording.title || (selectedSubject ? selectedSubject.name : 'Class Recording'),
+              subject_name: selectedSubject ? selectedSubject.name : activeRecording.title,
+              teacher_name: activeRecording.teacher_name,
+              vimeo_video_id: activeRecording.vimeo_video_id,
+              duration_seconds: activeRecording.duration_seconds,
+            }}
+            onClose={() => setActiveRecording(null)}
+          />
         )}
 
         {/* ── ADD RESOURCE MODAL ── */}
