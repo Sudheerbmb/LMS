@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  Filter,
   Layers,
   GraduationCap,
   CalendarDays,
@@ -68,7 +67,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const role = currentUser?.role || 'student'
   const isAdmin = role === 'admin'
   const isTeacher = role === 'teacher'
-  const isStudent = role === 'student'
 
   // Data state
   const [slots, setSlots] = useState<TimetableSlot[]>([])
@@ -348,7 +346,6 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   // Count stats
   const totalClasses = slots.length
   const uniqueCourses = new Set(slots.map((s) => s.course_id).filter(Boolean)).size
-  const uniqueTeachers = new Set(slots.map((s) => s.teacher_id).filter(Boolean)).size
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-6">
