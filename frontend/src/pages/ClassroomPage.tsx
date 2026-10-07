@@ -100,6 +100,8 @@ import {
   uploadClassRecording,
   syncClassWithZoom,
   getClassRecordings,
+  getRecordings,
+  retryVimeoUpload,
   getTeacherCopilotAssistance,
   getStudentTutorAssistance,
   getWsBaseUrl,
@@ -107,7 +109,7 @@ import {
   getMyEnrollments,
 } from '../lib/api'
 
-import type { SchoolLiveClass, TeacherTimetableSlot, AdminInstituteCourse, Enrollment } from '../lib/api'
+import type { SchoolLiveClass, TeacherTimetableSlot, AdminInstituteCourse, Enrollment, ClassRecordingItem } from '../lib/api'
 import { AiRecordingPlayerModal } from '../components/AiRecordingPlayerModal'
 
 interface PeerUser {
@@ -384,6 +386,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [loading, setLoading] = useState(true)
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [launchModalTab, setLaunchModalTab] = useState<'instant' | 'timetable'>('instant')
   const [selectedLaunchCourseId, setSelectedLaunchCourseId] = useState<string>('')
   const [selectedLaunchSubjectId, setSelectedLaunchSubjectId] = useState<string>('')
   const [selectedLaunchSlotId, setSelectedLaunchSlotId] = useState<string>('')
@@ -391,6 +394,8 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
   const [flushingClasses, setFlushingClasses] = useState(false)
   const [syncingRecordingId, setSyncingRecordingId] = useState<string | null>(null)
+  const [recordingsList, setRecordingsList] = useState<ClassRecordingItem[]>([])
+  const [retryingRecordingId, setRetryingRecordingId] = useState<string | null>(null)
   
 
   // Active Video Call Room State
@@ -418,7 +423,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [recordingUploadProgress, setRecordingUploadProgress] = useState<string | null>(null)
 
   const [selectedRecordingUrl, setSelectedRecordingUrl] = useState<string | null>(null)
-  const [selectedRecordingClass, setSelectedRecordingClass] = useState<SchoolLiveClass | null>(null)
+  const [selectedRecordingClass, setSelectedRecordingClass] = useState<any | null>(null)
   
   // Teacher AI Copilot State
   const [showTeacherCopilot, setShowTeacherCopilot] = useState(false)
@@ -954,18 +959,25 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
       const gradeQuery = filterGrade === 'all' ? undefined : filterGrade
 
-      const [liveData, coursesData, enrollmentsData] = await Promise.all([
+      const [liveData, coursesData, enrollmentsData, recsData] = await Promise.all([
         getSchoolLiveClasses(gradeQuery !== undefined ? { grade_number: gradeQuery } : undefined).catch(() => []),
         getAdminCourses().catch(() => []),
         getMyEnrollments().catch(() => []),
+        getRecordings().catch(() => []),
       ])
 
       setClasses(liveData || [])
       setAdminCourses(coursesData || [])
       setEnrollments(enrollmentsData || [])
+      setRecordingsList(recsData || [])
 
-      if (coursesData && coursesData.length > 0 && !selectedCourseSlug) {
-        setSelectedCourseSlug(coursesData[0].slug)
+      if (coursesData && coursesData.length > 0) {
+        if (!selectedCourseSlug) {
+          setSelectedCourseSlug(coursesData[0].slug)
+        }
+        if (!selectedLaunchCourseId) {
+          setSelectedLaunchCourseId(coursesData[0].id)
+        }
       }
 
       if (isHost) {
@@ -3876,6 +3888,66 @@ const handleTriggerTeacherCopilot = async (
 
   }
 
+  const handleInstantClassSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedLaunchCourseId) {
+      alert('Please select a course to start an instant class.')
+      return
+    }
+    setSubmittingSchedule(true)
+
+    try {
+      const selectedCourse = adminCourses.find(c => c.id === selectedLaunchCourseId)
+      const selectedSubject = selectedCourse?.subjects?.find(s => s.id === selectedLaunchSubjectId)
+      
+      const now = new Date()
+      const startIso = now.toISOString()
+      const endIso = new Date(now.getTime() + 60 * 60 * 1000).toISOString()
+      
+      const courseTitle = selectedCourse?.title || 'Technical Course'
+      const title = customTitle.trim() || (selectedSubject ? `${selectedSubject.name} - Instant Class` : `${courseTitle} - Instant Live Class`)
+
+      const created = await createSchoolLiveClass({
+        title,
+        starts_at: startIso,
+        ends_at: endIso,
+        grade_number: 1,
+        section_name: '',
+        subject_code: selectedSubject?.code,
+        subject_name: selectedSubject?.name || courseTitle,
+        room_number: 'Main Classroom',
+        status: 'live',
+        course_id: selectedLaunchCourseId,
+        subject_id: selectedLaunchSubjectId || undefined,
+        auto_create_zoom: true,
+      })
+
+      setShowScheduleModal(false)
+      setCustomTitle('')
+      await loadClassroomData()
+      await handleJoinClass(created)
+    } catch (err: any) {
+      console.error('Failed to start instant live class:', err)
+      alert(err.message || 'Failed to start instant live class. Please try again.')
+    } finally {
+      setSubmittingSchedule(false)
+    }
+  }
+
+  const handleRetryVimeoUpload = async (recordingId: string) => {
+    try {
+      setRetryingRecordingId(recordingId)
+      await retryVimeoUpload(recordingId)
+      alert('Vimeo upload retry queued. It will process in the background.')
+      await loadClassroomData()
+    } catch (err: any) {
+      console.error('Failed to retry Vimeo upload:', err)
+      alert(err.message || 'Failed to retry Vimeo upload')
+    } finally {
+      setRetryingRecordingId(null)
+    }
+  }
+
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (teacherSlots.length === 0) return
@@ -6697,57 +6769,67 @@ const handleTriggerTeacherCopilot = async (
             <p className="text-xs font-semibold">Loading recordings...</p>
           </div>
         ) : (() => {
-          let recorded = classes.filter(cls => {
-            if (filterType === 'live') return cls.status === 'live'
-            if (filterType === 'upcoming') return cls.status === 'scheduled'
-            return true
-          })
+          const hasRecordings = recordingsList.length > 0
+          let items: any[] = hasRecordings ? recordingsList : classes.filter(cls => !!cls.recording_url || cls.status === 'ended')
 
           if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase()
-            recorded = recorded.filter(c =>
-              c.title.toLowerCase().includes(q) ||
+            items = items.filter(c =>
+              (c.title && c.title.toLowerCase().includes(q)) ||
               (c.subject_name && c.subject_name.toLowerCase().includes(q)) ||
               (c.teacher_name && c.teacher_name.toLowerCase().includes(q))
             )
           }
 
-          if (recorded.length === 0) {
+          if (items.length === 0) {
             return (
               <div className="py-12 text-center rounded-3xl bg-white border border-black/[0.06] p-6">
                 <Video className="w-8 h-8 mx-auto text-neutral-300 mb-2" />
                 <h3 className="text-xs font-bold text-neutral-700">No Recordings Found</h3>
-                <p className="text-[11px] text-neutral-400 mt-0.5">Classes and recorded streams will appear here.</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Classes and recorded Vimeo streams will appear here automatically.</p>
               </div>
             )
           }
 
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recorded.map((cls) => {
-                const thumb = getCourseThumbnail(cls.title, cls.subject_name)
-                const durationMin = cls.starts_at && cls.ends_at
-                  ? Math.round((new Date(cls.ends_at).getTime() - new Date(cls.starts_at).getTime()) / 60000)
-                  : 0
+              {items.map((item) => {
+                const isRecItem = !!item.zoom_recording_id || !!item.zoom_meeting_id
+                const recId = isRecItem ? item.id : ''
+                const classId = isRecItem ? item.class_id : item.id
+                const title = item.title || item.subject_name || 'Class Session'
+                const thumb = getCourseThumbnail(title, item.subject_name)
+                const recStatus = (item.status || 'available').toUpperCase()
+                const isReady = recStatus === 'READY' || recStatus === 'AVAILABLE' || !!item.vimeo_url
+                const isProcessing = recStatus === 'PROCESSING'
+                const isFailed = recStatus === 'FAILED'
+                const playUrl = item.vimeo_url || item.play_url || item.recording_url
+                const durationMin = item.duration_seconds
+                  ? Math.round(item.duration_seconds / 60)
+                  : (item.starts_at && item.ends_at ? Math.round((new Date(item.ends_at).getTime() - new Date(item.starts_at).getTime()) / 60000) : 0)
                 const duration = durationMin > 0 ? `${durationMin} min` : 'Recorded'
-                const displayDate = cls.starts_at
-                  ? new Date(cls.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                  : ''
-                const cleanTitle = cls.title || cls.subject_name || 'Class Session'
-                const cleanSub = cls.subject_name || ''
-                const teacher = cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'No teacher assigned'
+                const displayDate = (item.recording_start || item.starts_at)
+                  ? new Date(item.recording_start || item.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                  : 'Recent'
+                const teacher = item.teacher_name ? `Prof. ${item.teacher_name}` : 'Assigned Faculty'
 
                 return (
                   <div
-                    key={cls.id}
+                    key={item.id}
                     onClick={() => {
-                      if (cls.recording_url) {
-                        setSelectedRecordingUrl(cls.recording_url)
-                        setSelectedRecordingClass(cls)
-                      } else if (cls.status === 'ended') {
-                        handleSyncClassRecording(cls)
-                      } else {
-                        handleJoinClass(cls)
+                      if (isReady && playUrl) {
+                        setSelectedRecordingUrl(playUrl)
+                        setSelectedRecordingClass({ id: classId, title, subject_name: item.subject_name || title, recording_url: playUrl })
+                      } else if (isProcessing) {
+                        alert('Recording is currently uploading to Vimeo and encoding. It will be available shortly!')
+                      } else if (isFailed) {
+                        if (isHost && recId) {
+                          handleRetryVimeoUpload(recId)
+                        } else {
+                          alert(item.error_message || 'Recording upload failed. Please contact your instructor.')
+                        }
+                      } else if (item.status === 'ended') {
+                        handleSyncClassRecording(item)
                       }
                     }}
                     className="group bg-white rounded-3xl border border-black/[0.06] p-4 hover:border-black/[0.12] hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between"
@@ -6757,15 +6839,33 @@ const handleTriggerTeacherCopilot = async (
                       <div className="aspect-video w-full rounded-2xl bg-[#F5EEFF] relative overflow-hidden mb-3.5">
                         <img
                           src={thumb}
-                          alt={cleanTitle}
+                          alt={title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        {/* Play button overlay */}
-                        <div className="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-white/95 shadow-md flex items-center justify-center text-[#111827] group-hover:scale-110 transition-transform">
-                          {syncingRecordingId === cls.id ? (
-                            <Loader2 className="w-4 h-4 text-[#FF7A18] animate-spin" />
-                          ) : (
-                            <Play className="w-3.5 h-3.5 fill-current text-[#111827] ml-0.5" />
+                        {/* Play button or Status overlay */}
+                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/95 shadow-md flex items-center justify-center text-[#111827] group-hover:scale-110 transition-transform">
+                            {syncingRecordingId === classId || retryingRecordingId === recId || isProcessing ? (
+                              <Loader2 className="w-4 h-4 text-[#FF7A18] animate-spin" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5 fill-current text-[#111827] ml-0.5" />
+                            )}
+                          </div>
+                          {/* Status Badge */}
+                          {isReady && (
+                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/90 text-white text-[10px] font-bold backdrop-blur-sm">
+                              READY
+                            </span>
+                          )}
+                          {isProcessing && (
+                            <span className="px-2 py-0.5 rounded-lg bg-amber-500/90 text-white text-[10px] font-bold backdrop-blur-sm flex items-center gap-1">
+                              PROCESSING
+                            </span>
+                          )}
+                          {isFailed && (
+                            <span className="px-2 py-0.5 rounded-lg bg-rose-500/90 text-white text-[10px] font-bold backdrop-blur-sm">
+                              FAILED
+                            </span>
                           )}
                         </div>
 
@@ -6777,11 +6877,16 @@ const handleTriggerTeacherCopilot = async (
 
                       {/* Title & Subtitle */}
                       <h4 className="text-sm font-bold text-[#111827] group-hover:text-[#FF7A18] transition-colors line-clamp-1">
-                        {cleanTitle}
+                        {title}
                       </h4>
                       <p className="text-xs text-[#64748B] mt-1 line-clamp-1 font-medium">
-                        {cleanSub}
+                        {item.vimeo_video_id ? `Vimeo ID: ${item.vimeo_video_id}` : (item.subject_name || 'Academic Class')}
                       </p>
+                      {isFailed && item.error_message && (
+                        <p className="text-[11px] text-rose-600 mt-1 line-clamp-1 font-medium">
+                          {item.error_message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Metadata footer */}
@@ -6795,18 +6900,35 @@ const handleTriggerTeacherCopilot = async (
                         </span>
                       </div>
 
-                      {isHost && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteClass(cls.id)
-                          }}
-                          className="p-1 text-neutral-300 hover:text-rose-600 transition-colors"
-                          title="Delete class session"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {isFailed && isHost && recId && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRetryVimeoUpload(recId)
+                            }}
+                            disabled={retryingRecordingId === recId}
+                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200 transition-colors flex items-center gap-1"
+                            title="Retry Vimeo upload"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5" />
+                            <span>Retry</span>
+                          </button>
+                        )}
+                        {isHost && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteClass(classId)
+                            }}
+                            className="p-1 text-neutral-300 hover:text-rose-600 transition-colors"
+                            title="Delete class session"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -6817,166 +6939,129 @@ const handleTriggerTeacherCopilot = async (
       </div>
 
       {/* ── 5. LAUNCH LIVE CLASS MODAL ── */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-150 text-neutral-900">
-            <div className="flex items-center justify-between mb-1.5">
-              <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#FF7A00] fill-[#FF7A00]" />
-                Launch Live Class
-              </h2>
-              <button
-                onClick={() => setShowScheduleModal(false)}
-                className="text-neutral-400 hover:text-neutral-700 text-lg font-bold cursor-pointer transition-colors"
-              >
-                &times;
-              </button>
-            </div>
-            <p className="text-xs text-neutral-500 mb-5 leading-relaxed">
-              Start a scheduled Zoom class. The class status will sync automatically.
-            </p>
+      {showScheduleModal && (() => {
+        const launchCourses = availableCourses.length > 0 ? availableCourses : adminCourses
+        const currentSelectedCourse = launchCourses.find(c => c.id === selectedLaunchCourseId) || launchCourses[0]
+        const availableCourseSubjects = currentSelectedCourse?.subjects || []
 
-            {teacherSlots.length === 0 ? (
-              <div className="text-center py-6 px-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A00] flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="w-6 h-6" />
-                </div>
-                <h3 className="text-sm font-bold text-neutral-900 mb-1">
-                  No scheduled classes are currently available.
-                </h3>
-                <p className="text-xs text-neutral-500 max-w-sm mx-auto mb-6">
-                  Schedule a class from the timetable before launching a live class.
-                </p>
+        return (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-neutral-200 rounded-2xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-150 text-neutral-900">
+              <div className="flex items-center justify-between mb-1.5">
+                <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-[#FF7A00] fill-[#FF7A00]" />
+                  Launch Live Class
+                </h2>
                 <button
-                  type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer"
+                  className="text-neutral-400 hover:text-neutral-700 text-lg font-bold cursor-pointer transition-colors"
                 >
-                  Close
+                  &times;
                 </button>
               </div>
-            ) : (() => {
-              const coursesWithSlots = Array.from(
-                new Map(
-                  teacherSlots.map(s => {
-                    const cid = s.course_id || s.course_title || 'course'
-                    const title = s.course_title || (adminCourses.find(c => c.id === s.course_id)?.title) || 'Technical Course'
-                    return [cid, { id: cid, title }]
-                  })
-                ).values()
-              )
+              <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
+                Start an instant class or launch a scheduled timetable lecture. Zoom integration and cloud recording are automated.
+              </p>
 
-              const activeCourseId = selectedLaunchCourseId || coursesWithSlots[0]?.id || ''
-              const slotsForCourse = teacherSlots.filter(s =>
-                !activeCourseId || s.course_id === activeCourseId || s.course_title === activeCourseId
-              )
+              {/* Mode Switch Tabs */}
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setLaunchModalTab('instant')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    launchModalTab === 'instant'
+                      ? 'bg-[#FF7A00] text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                  <span>Start Instant Class</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLaunchModalTab('timetable')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    launchModalTab === 'timetable'
+                      ? 'bg-[#FF7A00] text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>From Timetable {teacherSlots.length > 0 ? `(${teacherSlots.length})` : ''}</span>
+                </button>
+              </div>
 
-              const subjectsWithSlots = Array.from(
-                new Map(
-                  slotsForCourse.map(s => {
-                    const sid = s.subject_id || s.subject_code || 'subject'
-                    return [sid, { id: sid, name: s.subject_name, code: s.subject_code }]
-                  })
-                ).values()
-              )
-
-              const activeSubjectId = selectedLaunchSubjectId || subjectsWithSlots[0]?.id || ''
-              const matchingSlots = slotsForCourse.filter(s =>
-                !activeSubjectId || (s.subject_id && s.subject_id === activeSubjectId) || s.subject_code === activeSubjectId
-              )
-
-              const selectedSlot = (matchingSlots.find(s => s.slot_id === selectedLaunchSlotId) || matchingSlots[0] || teacherSlots[0])
-
-              return (
-                <form onSubmit={handleScheduleSubmit} className="space-y-4">
-                  {/* Course Field */}
+              {/* TAB 1: INSTANT CLASS */}
+              {launchModalTab === 'instant' && (
+                <form onSubmit={handleInstantClassSubmit} className="space-y-4">
+                  {/* Course Dropdown */}
                   <div>
                     <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-                      Course
+                      Course <span className="text-rose-500">*</span>
                     </label>
                     <select
-                      value={activeCourseId}
+                      value={selectedLaunchCourseId || currentSelectedCourse?.id || ''}
                       onChange={e => {
-                        const newCid = e.target.value
-                        setSelectedLaunchCourseId(newCid)
+                        setSelectedLaunchCourseId(e.target.value)
                         setSelectedLaunchSubjectId('')
-                        setSelectedLaunchSlotId('')
                       }}
                       className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                      required
                     >
-                      {coursesWithSlots.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
+                      {launchCourses.length === 0 ? (
+                        <option value="">No courses available</option>
+                      ) : (
+                        launchCourses.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.title}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 
-                  {/* Subject Field */}
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-                      Subject
-                    </label>
-                    <select
-                      value={activeSubjectId}
-                      onChange={e => {
-                        const newSid = e.target.value
-                        setSelectedLaunchSubjectId(newSid)
-                        setSelectedLaunchSlotId('')
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
-                    >
-                      {subjectsWithSlots.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Scheduled Class Field */}
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-                      Scheduled Class
-                    </label>
-                    <select
-                      value={selectedSlot?.slot_id || ''}
-                      onChange={e => setSelectedLaunchSlotId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
-                    >
-                      {matchingSlots.map(slot => (
-                        <option key={slot.slot_id} value={slot.slot_id}>
-                          {slot.status === 'LIVE NOW' ? 'LIVE NOW' : 'UPCOMING'} • {slot.subject_name} ({slot.start_time} – {slot.end_time})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* If class is upcoming: show starting note */}
-                  {selectedSlot && selectedSlot.status === 'UPCOMING' && (
-                    <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-[#FF7A00] shrink-0" />
-                        <span>This class starts at <strong>{selectedSlot.start_time}</strong>.</span>
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/60 text-amber-900">
-                        Early Launch Allowed
-                      </span>
+                  {/* Optional Subject Dropdown if course has subjects */}
+                  {availableCourseSubjects.length > 0 && (
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                        Subject / Topic Area (Optional)
+                      </label>
+                      <select
+                        value={selectedLaunchSubjectId}
+                        onChange={e => setSelectedLaunchSubjectId(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                      >
+                        <option value="">All / General Session</option>
+                        {availableCourseSubjects.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
 
-                  {/* Session Topic (Optional) */}
+                  {/* Class Title / Topic */}
                   <div>
                     <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-                      Session Topic (Optional)
+                      Class Title / Topic <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={customTitle}
                       onChange={e => setCustomTitle(e.target.value)}
-                      placeholder="e.g. Chapter 4: Live Discussion & Lab Practice"
+                      placeholder={currentSelectedCourse ? `${currentSelectedCourse.title} - Live Session` : 'e.g. Chapter 4: Live Discussion & Lab Practice'}
                       className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#FF7A00]"
+                      required
                     />
+                  </div>
+
+                  {/* Instant Launch Note */}
+                  <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-[#FF7A00] shrink-0 fill-current" />
+                      <span>Starts immediately. No timetable slot required. Zoom meeting created automatically.</span>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -6990,19 +7075,188 @@ const handleTriggerTeacherCopilot = async (
                     </button>
                     <button
                       type="submit"
-                      disabled={submittingSchedule || !selectedSlot}
+                      disabled={submittingSchedule || !(selectedLaunchCourseId || currentSelectedCourse?.id)}
                       className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#FF7A00] hover:bg-[#E56E00] text-white shadow-sm shadow-[#FF7A00]/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       <Video className="w-3.5 h-3.5 text-white" />
-                      <span>{submittingSchedule ? 'Launching Zoom...' : 'Launch Zoom Classroom'}</span>
+                      <span>{submittingSchedule ? 'Starting Class...' : 'Start Live Class'}</span>
                     </button>
                   </div>
                 </form>
-              )
-            })()}
+              )}
+
+              {/* TAB 2: FROM TIMETABLE */}
+              {launchModalTab === 'timetable' && (
+                teacherSlots.length === 0 ? (
+                  <div className="text-center py-6 px-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A00] flex items-center justify-center mx-auto mb-3">
+                      <Calendar className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-neutral-900 mb-1">
+                      No scheduled timetable slots for today.
+                    </h3>
+                    <p className="text-xs text-neutral-500 max-w-sm mx-auto mb-5">
+                      You can start an instant live class immediately using the "Start Instant Class" tab!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setLaunchModalTab('instant')}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FF7A00] text-white hover:bg-[#E56E00] transition-colors cursor-pointer"
+                    >
+                      Switch to Instant Class
+                    </button>
+                  </div>
+                ) : (() => {
+                  const coursesWithSlots = Array.from(
+                    new Map(
+                      teacherSlots.map(s => {
+                        const cid = s.course_id || s.course_title || 'course'
+                        const title = s.course_title || (adminCourses.find(c => c.id === s.course_id)?.title) || 'Technical Course'
+                        return [cid, { id: cid, title }]
+                      })
+                    ).values()
+                  )
+
+                  const activeCourseId = selectedLaunchCourseId || coursesWithSlots[0]?.id || ''
+                  const slotsForCourse = teacherSlots.filter(s =>
+                    !activeCourseId || s.course_id === activeCourseId || s.course_title === activeCourseId
+                  )
+
+                  const subjectsWithSlots = Array.from(
+                    new Map(
+                      slotsForCourse.map(s => {
+                        const sid = s.subject_id || s.subject_code || 'subject'
+                        return [sid, { id: sid, name: s.subject_name, code: s.subject_code }]
+                      })
+                    ).values()
+                  )
+
+                  const activeSubjectId = selectedLaunchSubjectId || subjectsWithSlots[0]?.id || ''
+                  const matchingSlots = slotsForCourse.filter(s =>
+                    !activeSubjectId || (s.subject_id && s.subject_id === activeSubjectId) || s.subject_code === activeSubjectId
+                  )
+
+                  const selectedSlot = (matchingSlots.find(s => s.slot_id === selectedLaunchSlotId) || matchingSlots[0] || teacherSlots[0])
+
+                  return (
+                    <form onSubmit={handleScheduleSubmit} className="space-y-4">
+                      {/* Course Field */}
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                          Course
+                        </label>
+                        <select
+                          value={activeCourseId}
+                          onChange={e => {
+                            const newCid = e.target.value
+                            setSelectedLaunchCourseId(newCid)
+                            setSelectedLaunchSubjectId('')
+                            setSelectedLaunchSlotId('')
+                          }}
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                        >
+                          {coursesWithSlots.map(c => (
+                            <option key={c.id} value={c.id}>
+                              {c.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Subject Field */}
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                          Subject
+                        </label>
+                        <select
+                          value={activeSubjectId}
+                          onChange={e => {
+                            const newSid = e.target.value
+                            setSelectedLaunchSubjectId(newSid)
+                            setSelectedLaunchSlotId('')
+                          }}
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                        >
+                          {subjectsWithSlots.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Scheduled Class Field */}
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                          Scheduled Class
+                        </label>
+                        <select
+                          value={selectedSlot?.slot_id || ''}
+                          onChange={e => setSelectedLaunchSlotId(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                        >
+                          {matchingSlots.map(slot => (
+                            <option key={slot.slot_id} value={slot.slot_id}>
+                              {slot.status === 'LIVE NOW' ? 'LIVE NOW' : 'UPCOMING'} • {slot.subject_name} ({slot.start_time} – {slot.end_time})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* If class is upcoming: show starting note */}
+                      {selectedSlot && selectedSlot.status === 'UPCOMING' && (
+                        <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-[#FF7A00] shrink-0" />
+                            <span>This class starts at <strong>{selectedSlot.start_time}</strong>.</span>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/60 text-amber-900">
+                            Early Launch Allowed
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Session Topic (Optional) */}
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                          Session Topic (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={customTitle}
+                          onChange={e => setCustomTitle(e.target.value)}
+                          placeholder="e.g. Chapter 4: Live Discussion & Lab Practice"
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#FF7A00]"
+                        />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
+                        <button
+                          type="button"
+                          onClick={() => setShowScheduleModal(false)}
+                          className="px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submittingSchedule || !selectedSlot}
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#FF7A00] hover:bg-[#E56E00] text-white shadow-sm shadow-[#FF7A00]/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          <Video className="w-3.5 h-3.5 text-white" />
+                          <span>{submittingSchedule ? 'Launching Zoom...' : 'Launch Zoom Classroom'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  )
+                })()
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
+      
 
             {/* ── MODAL: TEACHER AI COPILOT & CLASSROOM ENHANCER (TEACHER ONLY) ─────────────────── */}
       {isHost && showTeacherCopilot && (

@@ -84,11 +84,29 @@ async def upload_zoom_recording(recording: dict) -> str | None:
                     },
                 },
             )
+            if create_response.status_code >= 400:
+                err_text = create_response.text
+                raise RuntimeError(f"Vimeo API video creation failed ({create_response.status_code}): {err_text}")
             create_json = create_response.json()
             upload_link = create_json.get("upload", {}).get("upload_link")
-            uri = create_json.get("player_embed_url") or create_json.get("link") or create_json.get("uri")
+            raw_uri = create_json.get("uri") or ""
+            link = create_json.get("link") or ""
+            player_embed_url = create_json.get("player_embed_url") or ""
+
+            # Extract Vimeo video ID
+            video_id = ""
+            if raw_uri:
+                video_id = raw_uri.replace("/videos/", "").strip("/")
+            elif link:
+                video_id = link.rstrip("/").split("/")[-1]
+            elif player_embed_url:
+                video_id = player_embed_url.rstrip("/").split("/")[-1].split("?")[0]
+
+            if not player_embed_url and video_id:
+                player_embed_url = f"https://player.vimeo.com/video/{video_id}"
+
             if not upload_link:
-                raise RuntimeError("Vimeo did not return an upload link")
+                raise RuntimeError(f"Vimeo did not return an upload link. Response: {create_json}")
 
             # Stream upload in 5MB TUS chunks to guarantee constant memory footprint
             chunk_size = 5 * 1024 * 1024
@@ -110,7 +128,13 @@ async def upload_zoom_recording(recording: dict) -> str | None:
                     upload_response.raise_for_status()
                     offset += len(chunk)
 
-            logger.info("Successfully uploaded Zoom recording to Vimeo: %s", uri)
-            return uri
+            logger.info("Successfully uploaded Zoom recording to Vimeo: %s (ID: %s)", player_embed_url, video_id)
+            return {
+                "vimeo_video_id": video_id,
+                "vimeo_url": player_embed_url,
+                "player_embed_url": player_embed_url,
+                "link": link,
+                "uri": raw_uri,
+            }
         finally:
             temp_path.unlink(missing_ok=True)

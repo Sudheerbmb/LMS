@@ -136,10 +136,17 @@ class ClassRecordingRead(BaseModel):
     play_url: Optional[str] = None
     download_url: Optional[str] = None
     vimeo_url: Optional[str] = None
+    vimeo_video_id: Optional[str] = None
+    course_id: Optional[UUID] = None
+    subject_id: Optional[UUID] = None
     duration_seconds: Optional[int] = None
     status: str
+    error_message: Optional[str] = None
+    title: Optional[str] = None
+    teacher_name: Optional[str] = None
     recording_start: Optional[datetime] = None
     recording_end: Optional[datetime] = None
+    created_at: Optional[datetime] = None
 
 
 class ClassTranscriptRead(BaseModel):

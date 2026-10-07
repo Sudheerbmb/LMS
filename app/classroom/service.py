@@ -29,7 +29,8 @@ from app.timetable.models import (
     TeacherSubjectSkill,
     TimetableSlot,
 )
-from app.vimeo import upload_zoom_recording
+from app.platform.database import SessionFactory
+from app.vimeo import get_vimeo_access_token, upload_zoom_recording
 
 logger = logging.getLogger(__name__)
 
@@ -752,11 +753,85 @@ async def get_class_attendances(session: AsyncSession, class_id: UUID) -> List[C
     )).all())
 
 
+async def execute_vimeo_upload_task(
+    recording_id: UUID,
+    live_class_id: UUID,
+    download_url: str,
+    download_token: Optional[str] = None,
+    file_name: Optional[str] = None,
+) -> None:
+    """
+    Asynchronous background worker that downloads a Zoom recording and uploads it to Vimeo.
+    Updates the ClassRecording row to READY or FAILED with proper error details.
+    Runs in an independent AsyncSession scope to guarantee safe background execution.
+    """
+    logger.info("Starting background Vimeo upload for ClassRecording %s (LiveClass %s)", recording_id, live_class_id)
+    async with SessionFactory() as session:
+        rec = await session.get(ClassRecording, recording_id)
+        live_class = await session.get(LiveClass, live_class_id)
+        if not rec:
+            logger.warning("execute_vimeo_upload_task: ClassRecording %s not found", recording_id)
+            return
+
+        # Deduplication / Idempotency check:
+        if rec.vimeo_video_id and rec.status in ("READY", "available"):
+            logger.info("ClassRecording %s already uploaded to Vimeo (%s). Skipping duplicate.", recording_id, rec.vimeo_video_id)
+            return
+
+        token = get_vimeo_access_token()
+        if not token:
+            rec.status = "FAILED"
+            rec.error_message = "VIMEO_ACCESS_TOKEN is not configured on the server."
+            await session.commit()
+            logger.warning("Vimeo upload skipped: VIMEO_ACCESS_TOKEN not configured for recording %s", recording_id)
+            return
+
+        rec.status = "PROCESSING"
+        rec.error_message = None
+        await session.commit()
+
+        try:
+            vimeo_res = await upload_zoom_recording({
+                "download_url": download_url,
+                "download_token": download_token,
+                "file_name": file_name or (f"{live_class.title if live_class else 'Lecture'} - {rec.zoom_meeting_id}"),
+            })
+
+            if not vimeo_res:
+                raise RuntimeError("Vimeo upload returned an empty response")
+
+            if isinstance(vimeo_res, dict):
+                v_id = vimeo_res.get("vimeo_video_id")
+                v_url = vimeo_res.get("vimeo_url") or vimeo_res.get("player_embed_url")
+            else:
+                v_url = str(vimeo_res)
+                v_id = v_url.split("/")[-1].split("?")[0]
+                if not v_url.startswith("http"):
+                    v_url = f"https://player.vimeo.com/video/{v_id}"
+
+            rec.vimeo_video_id = v_id
+            rec.vimeo_url = v_url
+            rec.play_url = v_url
+            rec.status = "READY"
+            rec.error_message = None
+
+            if live_class:
+                live_class.recording_url = v_url
+
+            await session.commit()
+            logger.info("Successfully uploaded ClassRecording %s to Vimeo: %s (ID: %s)", recording_id, v_url, v_id)
+        except Exception as exc:
+            logger.error("Vimeo upload failed for recording %s: %s", recording_id, exc)
+            rec.status = "FAILED"
+            rec.error_message = str(exc)
+            await session.commit()
+
+
 async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[ClassRecording]:
     recs = list((await session.scalars(
         select(ClassRecording)
         .where(ClassRecording.class_id == class_id)
-        .order_by(ClassRecording.recording_start.desc())
+        .order_by(ClassRecording.recording_start.desc().nullslast(), ClassRecording.created_at.desc())
     )).all())
 
     if not recs:
@@ -765,11 +840,19 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
             try:
                 recordings_data, transcript_text = await zoom_service.get_recordings_and_transcript(live_class.zoom_meeting_id)
                 if recordings_data and recordings_data.recording_files:
+                    bearer_token = None
+                    try:
+                        bearer_token = await zoom_service.client.auth.get_access_token()
+                    except Exception:
+                        pass
+
                     for rf in recordings_data.recording_files:
                         existing = await session.scalar(select(ClassRecording).where(ClassRecording.zoom_recording_id == rf.id))
                         if not existing:
                             rec_item = ClassRecording(
                                 class_id=class_id,
+                                course_id=live_class.course_id,
+                                subject_id=live_class.subject_id,
                                 zoom_meeting_id=str(recordings_data.id),
                                 zoom_recording_id=rf.id,
                                 recording_type=rf.recording_type,
@@ -777,12 +860,26 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
                                 file_size_bytes=rf.file_size,
                                 play_url=rf.play_url,
                                 download_url=rf.download_url,
-                                status=rf.status,
+                                status="PROCESSING" if rf.file_type == "MP4" else "READY",
                                 recording_start=rf.recording_start,
                                 recording_end=rf.recording_end,
                             )
                             session.add(rec_item)
                             recs.append(rec_item)
+
+                            if rf.file_type == "MP4" and rf.download_url:
+                                await session.commit()
+                                import asyncio
+                                asyncio.create_task(
+                                    execute_vimeo_upload_task(
+                                        recording_id=rec_item.id,
+                                        live_class_id=live_class.id,
+                                        download_url=rf.download_url,
+                                        download_token=bearer_token,
+                                        file_name=f"{live_class.title or 'Lecture'} - {live_class.zoom_meeting_id}",
+                                    )
+                                )
+
                         if not live_class.recording_url and (rf.play_url or rf.download_url):
                             live_class.recording_url = rf.play_url or rf.download_url
 
@@ -928,6 +1025,8 @@ async def process_zoom_webhook_event(
                     if not existing_rec:
                         target_rec = ClassRecording(
                             class_id=live_class.id,
+                            course_id=live_class.course_id,
+                            subject_id=live_class.subject_id,
                             zoom_meeting_id=meeting_id,
                             zoom_recording_id=rec_id,
                             recording_type=rec_type,
@@ -935,31 +1034,40 @@ async def process_zoom_webhook_event(
                             file_size_bytes=rf.get("file_size"),
                             play_url=play_url,
                             download_url=download_url,
-                            status="available",
+                            status="PROCESSING" if file_type == "MP4" else "READY",
                             recording_start=datetime.fromisoformat(rf["recording_start"].replace("Z", "+00:00")) if rf.get("recording_start") else None,
                             recording_end=datetime.fromisoformat(rf["recording_end"].replace("Z", "+00:00")) if rf.get("recording_end") else None,
                         )
                         session.add(target_rec)
+                    else:
+                        if not target_rec.course_id:
+                            target_rec.course_id = live_class.course_id
+                        if not target_rec.subject_id:
+                            target_rec.subject_id = live_class.subject_id
 
                     if not live_class.recording_url and play_url:
                         live_class.recording_url = play_url
 
-                    # Forward video to Vimeo pipeline if configured
-                    if file_type == "MP4" and (rec_type in ("shared_screen_with_speaker_view", "speaker_view", "shared_screen", "active_speaker") or not live_class.recording_url or "vimeo" not in (live_class.recording_url or "")):
-                        try:
-                            vimeo_uri = await upload_zoom_recording({**rf, "download_token": download_token, "file_name": f"{live_class.title or 'Lecture'} - {meeting_id}"})
-                            if vimeo_uri:
-                                if str(vimeo_uri).startswith("http"):
-                                    vimeo_embed_url = str(vimeo_uri)
-                                else:
-                                    v_id = str(vimeo_uri).split('/')[-1]
-                                    vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
-                                live_class.recording_url = vimeo_embed_url
-                                if target_rec:
-                                    target_rec.vimeo_url = vimeo_embed_url
-                                    target_rec.play_url = vimeo_embed_url
-                        except Exception as v_err:
-                            logger.warning("Vimeo forward note: %s", v_err)
+                    # Forward video to Vimeo pipeline asynchronously if MP4
+                    if file_type == "MP4" and download_url:
+                        # Deduplication: skip if already uploaded or already processing
+                        if target_rec.vimeo_video_id and target_rec.status in ("READY", "available"):
+                            logger.info("Recording %s already has Vimeo video ID %s. Skipping duplicate.", rec_id, target_rec.vimeo_video_id)
+                        elif existing_rec and existing_rec.status == "PROCESSING":
+                            logger.info("Recording %s is already processing. Skipping duplicate webhook.", rec_id)
+                        else:
+                            target_rec.status = "PROCESSING"
+                            await session.commit()
+                            import asyncio
+                            asyncio.create_task(
+                                execute_vimeo_upload_task(
+                                    recording_id=target_rec.id,
+                                    live_class_id=live_class.id,
+                                    download_url=download_url,
+                                    download_token=download_token,
+                                    file_name=f"{live_class.title or 'Lecture'} - {meeting_id}",
+                                )
+                            )
 
         audit_entry.status = "processed"
         await session.commit()

@@ -153,8 +153,10 @@ class ClassRecording(UUIDMixin, TimestampMixin, Base):
     play_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     download_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     vimeo_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    vimeo_video_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="available", nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     recording_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     recording_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

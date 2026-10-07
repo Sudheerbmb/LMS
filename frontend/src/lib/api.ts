@@ -1039,6 +1039,8 @@ export interface ClassAttendanceRecord {
 export interface ClassRecordingItem {
   id: string
   class_id: string
+  course_id?: string
+  subject_id?: string
   zoom_meeting_id: string
   zoom_recording_id: string
   recording_type: string
@@ -1047,10 +1049,15 @@ export interface ClassRecordingItem {
   play_url?: string
   download_url?: string
   vimeo_url?: string
+  vimeo_video_id?: string
   duration_seconds?: number
   status: string
+  error_message?: string
+  title?: string
+  teacher_name?: string
   recording_start?: string
   recording_end?: string
+  created_at?: string
 }
 
 export interface ClassTranscriptItem {
@@ -1172,6 +1179,20 @@ export const getClassAttendance = (classId: string) =>
 
 export const getClassRecordings = (classId: string) =>
   request<ClassRecordingItem[]>(`/api/v1/classroom/classes/${classId}/recordings`)
+
+export const getRecordings = (params?: { course_id?: string; status?: string }) => {
+  const q = new URLSearchParams()
+  if (params?.course_id) q.set('course_id', params.course_id)
+  if (params?.status) q.set('status', params.status)
+  const qStr = q.toString()
+  return request<ClassRecordingItem[]>(`/api/v1/classroom/recordings${qStr ? `?${qStr}` : ''}`)
+}
+
+export const retryVimeoUpload = (recordingId: string) =>
+  request<{ status: string; recording_id: string; message: string }>(
+    `/api/v1/classroom/recordings/${recordingId}/retry-vimeo`,
+    { method: 'POST' }
+  )
 
 export const getClassTranscript = (classId: string) =>
   request<ClassTranscriptItem | null>(`/api/v1/classroom/classes/${classId}/transcript`)

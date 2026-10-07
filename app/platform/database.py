@@ -203,6 +203,8 @@ def _patch_missing_columns(connection: Connection) -> None:
         _add_column("class_recordings", "download_url", "VARCHAR(1000)", cols)
         _add_column("class_recordings", "duration_seconds", "INTEGER", cols)
         _add_column("class_recordings", "status", "VARCHAR(32) DEFAULT 'available'", cols)
+        _add_column("class_recordings", "vimeo_video_id", "VARCHAR(64)", cols)
+        _add_column("class_recordings", "error_message", "TEXT", cols)
 
     # 6. Learning Resources Table
     if "learning_resources" in tables:

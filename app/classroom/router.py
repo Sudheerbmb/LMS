@@ -30,8 +30,9 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse, StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.classroom.models import (
     ClassAttendance,
@@ -59,6 +60,7 @@ from app.classroom.service import (
     attach_class_recording,
     cancel_school_live_class,
     delete_school_live_class,
+    execute_vimeo_upload_task,
     flush_all_school_live_classes,
     get_class_attendances,
     get_class_recordings,
@@ -72,6 +74,7 @@ from app.classroom.service import (
     schedule_school_live_class,
     update_live_class_status,
 )
+from app.enrollment.models import Enrollment
 from app.identity.auth import get_current_user
 from app.identity.models import User
 from app.integrations.zoom.service import zoom_service
@@ -532,6 +535,8 @@ async def sync_class_with_zoom_endpoint(
             if not existing:
                 target_rec = ClassRecording(
                     class_id=class_id,
+                    course_id=live_class.course_id,
+                    subject_id=live_class.subject_id,
                     zoom_meeting_id=str(recordings_data.id),
                     zoom_recording_id=rf.id,
                     recording_type=rf.recording_type,
@@ -539,36 +544,40 @@ async def sync_class_with_zoom_endpoint(
                     file_size_bytes=rf.file_size,
                     play_url=rf.play_url,
                     download_url=rf.download_url,
-                    status=rf.status,
+                    status="PROCESSING" if rf.file_type == "MP4" else rf.status,
                     recording_start=rf.recording_start,
                     recording_end=rf.recording_end,
                 )
                 session.add(target_rec)
                 recordings_count += 1
+            else:
+                if not target_rec.course_id:
+                    target_rec.course_id = live_class.course_id
+                if not target_rec.subject_id:
+                    target_rec.subject_id = live_class.subject_id
+
             if not live_class.recording_url and (rf.play_url or rf.download_url):
                 live_class.recording_url = rf.play_url or rf.download_url
 
-            # Forward video to Vimeo pipeline if configured
-            if rf.file_type == "MP4" and (not live_class.recording_url or "vimeo" not in (live_class.recording_url or "")):
-                try:
-                    from app.vimeo import upload_zoom_recording
-                    vimeo_uri = await upload_zoom_recording({
-                        "download_url": rf.download_url,
-                        "download_token": bearer_token,
-                        "file_name": f"{live_class.title or 'Lecture'} - {live_class.zoom_meeting_id}",
-                    })
-                    if vimeo_uri:
-                        if str(vimeo_uri).startswith("http"):
-                            vimeo_embed_url = str(vimeo_uri)
-                        else:
-                            v_id = str(vimeo_uri).split('/')[-1]
-                            vimeo_embed_url = f"https://player.vimeo.com/video/{v_id}"
-                        live_class.recording_url = vimeo_embed_url
-                        if target_rec:
-                            target_rec.vimeo_url = vimeo_embed_url
-                            target_rec.play_url = vimeo_embed_url
-                except Exception as v_err:
-                    logging.getLogger(__name__).warning("Vimeo forward note during sync: %s", v_err)
+            # Forward video to Vimeo pipeline asynchronously if MP4
+            if rf.file_type == "MP4" and rf.download_url:
+                if target_rec.vimeo_video_id and target_rec.status in ("READY", "available"):
+                    logger.info("Recording %s already has Vimeo video ID %s. Skipping duplicate.", rf.id, target_rec.vimeo_video_id)
+                elif existing and existing.status == "PROCESSING":
+                    logger.info("Recording %s is already processing Vimeo upload. Skipping.", rf.id)
+                else:
+                    target_rec.status = "PROCESSING"
+                    await session.commit()
+                    import asyncio
+                    asyncio.create_task(
+                        execute_vimeo_upload_task(
+                            recording_id=target_rec.id,
+                            live_class_id=live_class.id,
+                            download_url=rf.download_url,
+                            download_token=bearer_token,
+                            file_name=f"{live_class.title or 'Lecture'} - {live_class.zoom_meeting_id}",
+                        )
+                    )
         await session.commit()
 
     if transcript_text:
@@ -606,8 +615,187 @@ async def get_class_recordings_endpoint(
     class_id: UUID,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
-) -> List[ClassRecording]:
-    return await get_class_recordings(session, class_id)
+) -> List[Dict[str, Any]]:
+    live_class = await session.get(LiveClass, class_id)
+    if not live_class:
+        raise HTTPException(status_code=404, detail="Live class not found")
+
+    if current_user.role == "student" and live_class.course_id:
+        enrolled = await session.scalar(
+            select(Enrollment.id).where(
+                Enrollment.user_id == current_user.id,
+                Enrollment.course_id == live_class.course_id,
+                Enrollment.status == "active",
+            )
+        )
+        if not enrolled:
+            raise HTTPException(status_code=403, detail="You are not enrolled in this course")
+
+    recs = await get_class_recordings(session, class_id)
+    teacher_name = None
+    if live_class.teacher_id:
+        t_user = await session.get(User, live_class.teacher_id)
+        if t_user:
+            teacher_name = t_user.display_name
+
+    results = []
+    for r in recs:
+        results.append({
+            "id": r.id,
+            "class_id": r.class_id,
+            "course_id": r.course_id or live_class.course_id,
+            "subject_id": r.subject_id or live_class.subject_id,
+            "zoom_meeting_id": r.zoom_meeting_id,
+            "zoom_recording_id": r.zoom_recording_id,
+            "recording_type": r.recording_type,
+            "file_type": r.file_type,
+            "file_size_bytes": r.file_size_bytes,
+            "play_url": r.play_url,
+            "download_url": r.download_url,
+            "vimeo_url": r.vimeo_url,
+            "vimeo_video_id": r.vimeo_video_id,
+            "duration_seconds": r.duration_seconds,
+            "status": r.status,
+            "error_message": r.error_message,
+            "title": live_class.title,
+            "teacher_name": teacher_name,
+            "recording_start": r.recording_start,
+            "recording_end": r.recording_end,
+            "created_at": r.created_at,
+        })
+    return results
+
+
+@router.get("/recordings", response_model=List[ClassRecordingRead])
+async def list_recordings_endpoint(
+    course_id: Optional[UUID] = Query(None),
+    status: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> List[Dict[str, Any]]:
+    """
+    Returns LMS Recordings according to user role and enrollment permissions.
+    - Students: ONLY view recordings for courses they are actively enrolled in (or open recordings).
+    - Teachers / Admins: View institute recordings with optional course filtering.
+    """
+    stmt = select(ClassRecording).options(selectinload(ClassRecording.live_class))
+
+    if current_user.role == "student":
+        enrolled_course_ids = (
+            await session.scalars(
+                select(Enrollment.course_id).where(
+                    Enrollment.user_id == current_user.id,
+                    Enrollment.status == "active",
+                )
+            )
+        ).all()
+        if course_id:
+            if course_id not in enrolled_course_ids:
+                raise HTTPException(status_code=403, detail="You are not enrolled in this course")
+            stmt = stmt.where(ClassRecording.course_id == course_id)
+        else:
+            stmt = stmt.where(
+                or_(
+                    ClassRecording.course_id.in_(enrolled_course_ids),
+                    ClassRecording.course_id.is_(None),
+                )
+            )
+    else:
+        if course_id:
+            stmt = stmt.where(ClassRecording.course_id == course_id)
+
+    if status:
+        stmt = stmt.where(ClassRecording.status == status)
+
+    stmt = stmt.order_by(ClassRecording.recording_start.desc().nullslast(), ClassRecording.created_at.desc())
+    recs = (await session.scalars(stmt)).all()
+
+    teacher_ids = {r.live_class.teacher_id for r in recs if r.live_class and r.live_class.teacher_id}
+    teachers = {}
+    if teacher_ids:
+        t_users = (await session.scalars(select(User).where(User.id.in_(teacher_ids)))).all()
+        teachers = {t.id: t.display_name for t in t_users}
+
+    results = []
+    for r in recs:
+        t_name = teachers.get(r.live_class.teacher_id) if r.live_class and r.live_class.teacher_id else None
+        results.append({
+            "id": r.id,
+            "class_id": r.class_id,
+            "course_id": r.course_id or (r.live_class.course_id if r.live_class else None),
+            "subject_id": r.subject_id or (r.live_class.subject_id if r.live_class else None),
+            "zoom_meeting_id": r.zoom_meeting_id,
+            "zoom_recording_id": r.zoom_recording_id,
+            "recording_type": r.recording_type,
+            "file_type": r.file_type,
+            "file_size_bytes": r.file_size_bytes,
+            "play_url": r.play_url,
+            "download_url": r.download_url,
+            "vimeo_url": r.vimeo_url,
+            "vimeo_video_id": r.vimeo_video_id,
+            "duration_seconds": r.duration_seconds,
+            "status": r.status,
+            "error_message": r.error_message,
+            "title": r.live_class.title if r.live_class else "Lecture Recording",
+            "teacher_name": t_name,
+            "recording_start": r.recording_start,
+            "recording_end": r.recording_end,
+            "created_at": r.created_at,
+        })
+    return results
+
+
+@router.post("/recordings/{recording_id}/retry-vimeo")
+async def retry_vimeo_upload_endpoint(
+    recording_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Retries failed or pending Vimeo upload for a specific recording file.
+    Only Teachers and Admins can trigger retries.
+    """
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(status_code=403, detail="Unauthorized to retry Vimeo recording upload")
+
+    rec = await session.get(ClassRecording, recording_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    live_class = await session.get(LiveClass, rec.class_id)
+    if not live_class:
+        raise HTTPException(status_code=404, detail="Live class not found")
+
+    if not rec.download_url:
+        raise HTTPException(status_code=400, detail="Recording does not have a download URL to upload to Vimeo")
+
+    bearer_token = None
+    try:
+        if zoom_service.is_configured():
+            bearer_token = await zoom_service.client.auth.get_access_token()
+    except Exception:
+        pass
+
+    rec.status = "PROCESSING"
+    rec.error_message = None
+    await session.commit()
+
+    import asyncio
+    asyncio.create_task(
+        execute_vimeo_upload_task(
+            recording_id=rec.id,
+            live_class_id=live_class.id,
+            download_url=rec.download_url,
+            download_token=bearer_token,
+            file_name=f"{live_class.title or 'Lecture'} - {rec.zoom_meeting_id}",
+        )
+    )
+
+    return {
+        "status": "PROCESSING",
+        "recording_id": str(rec.id),
+        "message": "Vimeo upload queued for processing",
+    }
 
 
 @router.get("/classes/{class_id}/transcript")
