@@ -19,6 +19,8 @@ import {
   flushAllOperationalData,
   enrollStudentInCourse,
   unenrollStudentFromCourse,
+  approveUser,
+  rejectUser,
   getZoomStatus,
   getNotifications,
   deleteNotification,
@@ -61,6 +63,9 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('')
   const [courseFilter, setCourseFilter] = useState('ALL')
+  const [studentStatusFilter, setStudentStatusFilter] = useState<'ALL' | 'pending' | 'active' | 'rejected'>('ALL')
+  const [teacherStatusFilter, setTeacherStatusFilter] = useState<'ALL' | 'pending' | 'active' | 'rejected'>('ALL')
+  const [approvingUserId, setApprovingUserId] = useState<string | null>(null)
 
   // Modals
   const [showAddUserModal, setShowAddUserModal] = useState(false)
@@ -263,6 +268,31 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     }
   }
 
+  const handleApproveUser = async (userId: string, role: 'student' | 'teacher') => {
+    try {
+      setApprovingUserId(`approve-${userId}`)
+      await approveUser(userId, role)
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Error approving user: ${err.message}`)
+    } finally {
+      setApprovingUserId(null)
+    }
+  }
+
+  const handleRejectUser = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to reject this registration?')) return
+    try {
+      setApprovingUserId(`reject-${userId}`)
+      await rejectUser(userId)
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Error rejecting user: ${err.message}`)
+    } finally {
+      setApprovingUserId(null)
+    }
+  }
+
   // ── Handlers: Course & Subject Management ──────────────────────────────────
   const handleAddSubjectRow = () => {
     setCourseSubjects((prev) => [
@@ -390,15 +420,19 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     const matchesCourse =
       courseFilter === 'ALL' ||
       s.enrolled_courses?.some((c) => c.id === courseFilter || c.slug === courseFilter)
-    return matchesSearch && matchesCourse
+    const matchesStatus =
+      studentStatusFilter === 'ALL' || s.status.toLowerCase() === studentStatusFilter.toLowerCase()
+    return matchesSearch && matchesCourse && matchesStatus
   })
 
   const filteredTeachers = teachersList.filter((t) => {
-    return (
+    const matchesSearch =
       t.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.phone_number && t.phone_number.includes(searchQuery))
-    )
+    const matchesStatus =
+      teacherStatusFilter === 'ALL' || t.status.toLowerCase() === teacherStatusFilter.toLowerCase()
+    return matchesSearch && matchesStatus
   })
 
   return (
@@ -535,20 +569,36 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               />
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="text-xs text-[#64748B] font-bold shrink-0">Filter Course:</label>
-              <select
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
-                className="bg-white border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-xs font-medium"
-              >
-                <option value="ALL">All Courses ({courses.length})</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[#64748B] font-bold shrink-0">Status:</label>
+                <select
+                  value={studentStatusFilter}
+                  onChange={(e) => setStudentStatusFilter(e.target.value as any)}
+                  className="bg-white border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-xs font-medium cursor-pointer"
+                >
+                  <option value="ALL">All Status</option>
+                  <option value="pending">Pending Approvals</option>
+                  <option value="active">Active</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[#64748B] font-bold shrink-0">Course:</label>
+                <select
+                  value={courseFilter}
+                  onChange={(e) => setCourseFilter(e.target.value)}
+                  className="bg-white border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-xs font-medium cursor-pointer"
+                >
+                  <option value="ALL">All Courses ({courses.length})</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -663,21 +713,45 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                           </span>
                         </td>
 
-                        <td className="p-4 text-right space-x-2">
-                          <button
-                            onClick={() => openEditUser(s)}
-                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
-                            title="Edit Student & Reset Password"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(s)}
-                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                            title="Delete Student"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {s.status !== 'active' ? (
+                              <>
+                                <button
+                                  onClick={() => handleApproveUser(s.id, 'student')}
+                                  disabled={approvingUserId === `approve-${s.id}`}
+                                  className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer inline-flex items-center gap-1 transition-colors"
+                                  title="Approve student registration"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Approve</span>
+                                </button>
+                                <button
+                                  onClick={() => handleRejectUser(s.id)}
+                                  disabled={approvingUserId === `reject-${s.id}`}
+                                  className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] cursor-pointer inline-flex items-center gap-1 transition-colors"
+                                  title="Reject student registration"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </>
+                            ) : null}
+                            <button
+                              onClick={() => openEditUser(s)}
+                              className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
+                              title="Edit Student & Reset Password"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(s)}
+                              className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Student"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -693,7 +767,8 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       {activeTab === 'teachers' && (
         <div className="space-y-6">
           {/* Search */}
-          <div className="flex items-center justify-between gap-4">
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
               <input
@@ -703,6 +778,20 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-black/[0.08] rounded-2xl text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#FF7A18] shadow-xs"
               />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <label className="text-xs text-[#64748B] font-bold shrink-0">Status:</label>
+              <select
+                value={teacherStatusFilter}
+                onChange={(e) => setTeacherStatusFilter(e.target.value as any)}
+                className="bg-white border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-xs text-[#111827] focus:outline-none focus:border-[#FF7A18] shadow-xs font-medium cursor-pointer"
+              >
+                <option value="ALL">All Status</option>
+                <option value="pending">Pending Approvals</option>
+                <option value="active">Active</option>
+                <option value="rejected">Rejected</option>
+              </select>
             </div>
           </div>
 
@@ -786,21 +875,45 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                           </span>
                         </td>
 
-                        <td className="p-4 text-right space-x-2">
-                          <button
-                            onClick={() => openEditUser(t)}
-                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
-                            title="Edit Faculty & Password"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(t)}
-                            className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                            title="Delete Faculty"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {t.status !== 'active' ? (
+                              <>
+                                <button
+                                  onClick={() => handleApproveUser(t.id, 'teacher')}
+                                  disabled={approvingUserId === `approve-${t.id}`}
+                                  className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer inline-flex items-center gap-1 transition-colors"
+                                  title="Approve faculty registration"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Approve</span>
+                                </button>
+                                <button
+                                  onClick={() => handleRejectUser(t.id)}
+                                  disabled={approvingUserId === `reject-${t.id}`}
+                                  className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] cursor-pointer inline-flex items-center gap-1 transition-colors"
+                                  title="Reject faculty registration"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </>
+                            ) : null}
+                            <button
+                              onClick={() => openEditUser(t)}
+                              className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-[#FF7A18] hover:bg-neutral-200 transition-colors cursor-pointer"
+                              title="Edit Faculty & Password"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(t)}
+                              className="p-2 rounded-xl bg-neutral-100 text-[#334155] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Faculty"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

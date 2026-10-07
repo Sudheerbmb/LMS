@@ -38,6 +38,7 @@ export function App() {
   const [authConfirmPassword, setAuthConfirmPassword] = useState('')
   const [authName, setAuthName] = useState('')
   const [authPhone, setAuthPhone] = useState('')
+  const [authRole, setAuthRole] = useState<'student' | 'teacher'>('student')
   const [authError, setAuthError] = useState('')
   const [submittingAuth, setSubmittingAuth] = useState(false)
 
@@ -92,9 +93,9 @@ export function App() {
           password: authPassword,
           display_name: authName,
           phone_number: authPhone ? authPhone.trim() : undefined,
-          role: 'student',
+          role: authRole,
         })
-        alert('Student registration submitted successfully! Your account will be activated by the Admin.')
+        alert(`Registration submitted successfully! Your ${authRole === 'teacher' ? 'Faculty' : 'Student'} account is pending administrator approval.`)
         setAuthMode('login')
         setAuthPassword('')
         setAuthConfirmPassword('')
@@ -340,6 +341,30 @@ export function App() {
                       }}
                     />
                   </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Registering As Role *
+                    </label>
+                    <select
+                      value={authRole}
+                      onChange={(e) => setAuthRole(e.target.value as 'student' | 'teacher')}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid var(--border-med)',
+                        background: 'white',
+                        fontSize: 13,
+                        color: 'var(--ink)',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher (Faculty)</option>
+                    </select>
+                  </div>
                 </>
               )}
 
@@ -439,7 +464,7 @@ export function App() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                {submittingAuth ? 'Verifying...' : authMode === 'login' ? 'Sign in to Workspace' : 'Register Student Account'}
+                {submittingAuth ? 'Verifying...' : authMode === 'login' ? 'Sign in to Workspace' : `Register as ${authRole === 'teacher' ? 'Faculty' : 'Student'}`}
               </button>
             </form>
 

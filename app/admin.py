@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
 class ApprovalUpdate(BaseModel):
-    role: Literal["student", "teacher", "admin"]
+    role: Optional[Literal["student", "teacher", "admin"]] = None
 
 
 class StatusUpdate(BaseModel):
@@ -278,6 +278,55 @@ async def update_user_status(
         "id": str(user.id),
         "email": user.email,
         "status": user.status,
+    }
+
+
+@router.post("/users/{user_id}/approve")
+@router.put("/users/{user_id}/approve")
+async def approve_user(
+    user_id: UUID,
+    data: Optional[ApprovalUpdate] = None,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if data and data.role in ("student", "teacher"):
+        user.role = data.role
+    user.status = "active"
+    user.email_verified = True
+    await session.commit()
+    await session.refresh(user)
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "role": user.role,
+        "status": user.status,
+        "message": "User approved successfully",
+    }
+
+
+@router.post("/users/{user_id}/reject")
+@router.put("/users/{user_id}/reject")
+async def reject_user(
+    user_id: UUID,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == _admin.id:
+        raise HTTPException(status_code=400, detail="You cannot reject your own account")
+    user.status = "rejected"
+    await session.commit()
+    await session.refresh(user)
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "status": user.status,
+        "message": "User registration rejected",
     }
 
 

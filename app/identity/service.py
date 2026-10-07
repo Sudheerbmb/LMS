@@ -27,6 +27,10 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
 
     raw_token, expires = create_email_verify_token()
 
+    req_role = (data.role or "student").strip().lower()
+    if req_role not in ("student", "teacher"):
+        req_role = "student"
+
     user = User(
         email=data.email.lower(),
         display_name=data.display_name,
@@ -34,10 +38,9 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
         phone_number=data.phone_number,
         timezone=data.timezone,
         locale=data.locale,
-        role="student",
+        role=req_role,
         status="pending",
-        email_verify_token=hash_token(raw_token),
-        email_verify_expires=expires,
+        email_verified=True,
     )
     session.add(user)
     await session.flush()
@@ -102,10 +105,10 @@ async def authenticate_user(
         raise UnauthorizedError("Invalid email or password")
 
     if user.status == "pending":
-        raise ForbiddenError("Account pending approval. Please wait for admin activation or verify your email.")
+        raise ForbiddenError("Account pending approval. Please wait for administrator approval.")
 
-    if user.status == "suspended":
-        raise ForbiddenError("Account suspended. Contact support.")
+    if user.status == "rejected":
+        raise ForbiddenError("Account registration has been rejected. Contact administrator.")
 
     if user.status not in ("active",):
         raise ForbiddenError("Account is not active")
