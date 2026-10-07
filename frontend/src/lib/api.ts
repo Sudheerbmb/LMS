@@ -126,15 +126,94 @@ export type DashboardSummary = { role: User['role']; user: User; stats: Record<s
 
 export type Notification = { id: string; notification_type: string; title: string; body: string; read_at: string | null; created_at: string }
 
-export type AssessmentQuestion = { id: string; question_text: string; question_type: string; options?: any; points: number }
+export type AssessmentQuestion = {
+  id: string
+  assessment_id?: string
+  prompt?: string
+  question_text?: string
+  question_type: string
+  options?: string[]
+  correct_answer?: string
+  points: number
+  cognitive_level?: string
+  concept_name?: string
+  explanation?: string
+  position?: number
+}
 
-export type Assessment = { id: string; course_id: string; title: string; description?: string; passing_score: number; questions: AssessmentQuestion[] }
+export type Assessment = {
+  id: string
+  course_id: string
+  subject_id?: string | null
+  title: string
+  description?: string
+  target_grade?: string
+  subject_name?: string
+  topic_syllabus?: string
+  teacher_id?: string | null
+  teacher_name?: string
+  schedule_type?: string
+  start_time?: string | null
+  end_time?: string | null
+  duration_minutes?: number
+  passing_score: number
+  total_points?: number
+  requires_proctoring?: boolean
+  status?: string
+  created_at?: string
+  submissions_count?: number
+  questions?: AssessmentQuestion[]
+}
 
-export type AssessmentAttempt = { id: string; assessment_id: string; score: number; passed: boolean; created_at: string }
+export type AssessmentAttempt = {
+  id: string
+  assessment_id: string
+  user_id?: string
+  student_name?: string
+  student_grade?: string
+  subject_name?: string
+  answers?: Record<string, any>
+  score: number
+  total_points_earned?: number
+  max_points?: number
+  passed: boolean
+  feedback?: string
+  cheated?: boolean
+  cheating_reasons?: string[]
+  violation_count?: number
+  created_at?: string
+}
 
-export type AssignmentSubmission = { id: string; assignment_id: string; student_id?: string; user_id?: string; content: string; file_url?: string; grade?: number; score?: number | null; status?: string; feedback?: string | null; created_at?: string }
+export type AssignmentSubmission = {
+  id: string
+  assignment_id: string
+  student_id?: string
+  student_name?: string
+  user_id?: string
+  content: string
+  file_url?: string
+  grade?: number
+  score?: number | null
+  status?: string
+  feedback?: string | null
+  created_at?: string
+}
 
-export type Assignment = { id: string; course_id: string; title: string; description: string; instructions?: string; status?: string; due_date?: string; max_score: number; submissions?: AssignmentSubmission[] }
+export type Assignment = {
+  id: string
+  course_id: string
+  subject_id?: string | null
+  subject_name?: string
+  title: string
+  description?: string
+  instructions?: string
+  starter_code?: string
+  status?: string
+  due_date?: string
+  max_score: number
+  created_at?: string
+  submissions?: AssignmentSubmission[]
+}
 
 export type Certificate = { id: string; user_id: string; course_id: string; certificate_number: string; issued_at: string; pdf_url?: string }
 
@@ -348,19 +427,34 @@ export const getMyEnrollments = () => request<Enrollment[]>('/api/v1/enrollments
 
 // Assessments
 
-export const createAssessment = (courseId: string, payload: { title: string; description?: string; passing_score: number }) =>
+export const getAllAssessments = () =>
+  request<Assessment[]>('/api/v1/assessment')
 
+export const getCourseAssessments = (courseId: string) =>
+  request<Assessment[]>(`/api/v1/assessment/courses/${courseId}`)
+
+export const createAssessment = (courseId: string, payload: Partial<Assessment> & { title: string; passing_score?: number }) =>
   request<Assessment>(`/api/v1/assessment/courses/${courseId}`, { method: 'POST', body: JSON.stringify(payload) })
 
-export const addQuestion = (assessmentId: string, payload: { question_text: string; question_type: string; options?: any; points: number }) =>
+export const deleteAssessmentApi = (assessmentId: string) =>
+  request<{ status: string; message: string }>(`/api/v1/assessment/${assessmentId}`, { method: 'DELETE' })
 
-  request<AssessmentQuestion>(`/api/v1/assessment/${assessmentId}/questions`, { method: 'POST', body: JSON.stringify(payload) })
-
-export const submitAssessmentAttempt = (assessmentId: string, payload: { answers: Record<string, any> }) =>
-
+export const submitAssessmentAttempt = (assessmentId: string, payload: { answers: Record<string, any>; cheated?: boolean; cheating_reasons?: string[]; violation_count?: number }) =>
   request<AssessmentAttempt>(`/api/v1/assessment/${assessmentId}/attempts`, { method: 'POST', body: JSON.stringify(payload) })
 
+export const getAssessmentSubmissions = (assessmentId: string) =>
+  request<AssessmentAttempt[]>(`/api/v1/assessment/${assessmentId}/submissions`)
+
+export const getMyAssessmentSubmissions = () =>
+  request<AssessmentAttempt[]>('/api/v1/assessment/my-submissions')
+
+export const generateAssessmentQuestionsAI = (payload: { grade: string; subject: string; topic: string; question_count?: number; document_text?: string }) =>
+  request<{ topic: string; questions: any[] }>('/api/v1/assessment/generate-ai', { method: 'POST', body: JSON.stringify(payload) })
+
 // Assignments
+
+export const getAllAssignments = () =>
+  request<Assignment[]>('/api/v1/assignments/all')
 
 export const getAssignments = (courseId: string) =>
   request<Assignment[]>(`/api/v1/assignments/courses/${courseId}`)
@@ -368,17 +462,26 @@ export const getAssignments = (courseId: string) =>
 export const getAssignmentSubmissions = (assignmentId: string) =>
   request<AssignmentSubmission[]>(`/api/v1/assignments/${assignmentId}/submissions`)
 
-export const createAssignment = (courseId: string, payload: { title: string; description: string; due_date?: string; max_score: number }) =>
-
+export const createAssignment = (courseId: string, payload: Partial<Assignment> & { title: string; max_score: number }) =>
   request<Assignment>(`/api/v1/assignments/courses/${courseId}`, { method: 'POST', body: JSON.stringify(payload) })
 
 export const submitAssignment = (assignmentId: string, payload: { content: string; file_url?: string }) =>
-
   request<AssignmentSubmission>(`/api/v1/assignments/${assignmentId}/submissions`, { method: 'POST', body: JSON.stringify(payload) })
 
-export const gradeSubmission = (submissionId: string, payload: { grade: number; feedback?: string }) =>
+export const gradeSubmission = (submissionId: string, payload: { score?: number; grade?: number; feedback?: string }) =>
+  request<AssignmentSubmission>(`/api/v1/assignments/submissions/${submissionId}/grade`, {
+    method: 'POST',
+    body: JSON.stringify({ score: payload.score ?? payload.grade ?? 100, feedback: payload.feedback })
+  })
 
-  request<AssignmentSubmission>(`/api/v1/assignments/submissions/${submissionId}/grade`, { method: 'POST', body: JSON.stringify(payload) })
+export const getMyAssignmentSubmissions = () =>
+  request<AssignmentSubmission[]>('/api/v1/assignments/my-submissions')
+
+export const generateAssignmentAI = (payload: { grade: string; subject: string; topic: string }) =>
+  request<{ title: string; description: string; instructions: string; starter_code: string; max_score: number }>('/api/v1/assignments/generate-ai', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
 
 // Certificates
 

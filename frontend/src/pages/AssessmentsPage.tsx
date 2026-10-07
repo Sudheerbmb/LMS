@@ -37,7 +37,8 @@ import {
   generateAIQuestionSet,
   submitStudentAssessment,
   getAllSubmissions,
-  isAssessmentCompletedByStudent
+  isAssessmentCompletedByStudent,
+  syncAssessmentsWithBackend
 } from '../lib/assessmentStore'
 import type {
   ScheduledAssessment,
@@ -175,8 +176,11 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
       setAdminCourses(crs)
       setEnrollments(enrs)
 
+      // Sync latest assessments from backend PostgreSQL database
+      const syncedAssessments = await syncAssessmentsWithBackend()
+
       if (isAdmin) {
-        setAssessmentsList(getScheduledAssessments())
+        setAssessmentsList(syncedAssessments)
       } else if (user?.role === 'teacher') {
         const mySubNames: string[] = []
         crs.forEach(c => {
@@ -317,16 +321,17 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
       setIsDisqualified(true)
       setShowWarningModal(null)
       if (takingTest) {
-        const sub = submitStudentAssessment(
+        submitStudentAssessment(
           takingTest,
           user?.id || 'demo_student',
           user?.display_name || 'Student',
           studentEnrolledCourse,
           studentAnswers,
           { cheated: true, violations: newViolations, count: newCount }
-        )
-        setTestResult(sub)
-        refreshData()
+        ).then(sub => {
+          setTestResult(sub)
+          refreshData()
+        })
       }
       stopProctoringSession()
     } else {
@@ -374,12 +379,13 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
   }
 
   // Handle Save / Publish Assessment
-  const handlePublishAssessment = () => {
+  const handlePublishAssessment = async () => {
     if (!title.trim()) return
 
     const totalPts = questionItems.reduce((acc, q) => acc + q.points, 0)
     const newAssessment: ScheduledAssessment = {
       id: `asmt_${Date.now()}`,
+      course_id: activeCourse?.id,
       title,
       description: description || `Scheduled assessment for ${targetGrade} ${subject} covering ${topicSyllabus}.`,
       target_grade: targetGrade,
@@ -417,8 +423,8 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
       ]
     }
 
-    saveScheduledAssessment(newAssessment)
-    refreshData()
+    await saveScheduledAssessment(newAssessment, activeCourse?.id)
+    await refreshData()
     setShowCreateModal(false)
     setCreateStep('details')
     setTitle('')
@@ -450,11 +456,11 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
   }
 
   // Handle Student Submit Test
-  const handleSubmitTest = () => {
+  const handleSubmitTest = async () => {
     if (!takingTest) return
     setSubmittingTest(true)
 
-    const submission = submitStudentAssessment(
+    const submission = await submitStudentAssessment(
       takingTest,
       user?.id || 'demo_student',
       user?.display_name || 'Student',
@@ -466,13 +472,13 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
     setTestResult(submission)
     setSubmittingTest(false)
     stopProctoringSession()
-    refreshData()
+    await refreshData()
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this scheduled assessment?')) {
-      deleteScheduledAssessment(id)
-      refreshData()
+      await deleteScheduledAssessment(id)
+      await refreshData()
     }
   }
 

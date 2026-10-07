@@ -266,6 +266,56 @@ def _patch_missing_columns(connection: Connection) -> None:
             # Add proper FK constraint referencing users(id)
             _exec_safe("ALTER TABLE timetable_slots ADD CONSTRAINT timetable_slots_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL")
 
+    # 9. Assessments Table
+    if "assessments" in tables:
+        cols = {c["name"] for c in inspector.get_columns("assessments")}
+        _add_column("assessments", "description", "TEXT", cols)
+        _add_column("assessments", "subject_id", uuid_type, cols)
+        _add_column("assessments", "subject_name", "VARCHAR(200)", cols)
+        _add_column("assessments", "target_grade", "VARCHAR(200)", cols)
+        _add_column("assessments", "topic_syllabus", "VARCHAR(500)", cols)
+        _add_column("assessments", "teacher_id", uuid_type, cols)
+        _add_column("assessments", "teacher_name", "VARCHAR(200)", cols)
+        _add_column("assessments", "schedule_type", "VARCHAR(32) DEFAULT 'ALWAYS_AVAILABLE'", cols)
+        _add_column("assessments", "start_time", dt_type, cols)
+        _add_column("assessments", "end_time", dt_type, cols)
+        _add_column("assessments", "duration_minutes", "INTEGER DEFAULT 45", cols)
+        _add_column("assessments", "total_points", "INTEGER DEFAULT 50", cols)
+        _add_column("assessments", "requires_proctoring", f"BOOLEAN DEFAULT {bool_true}", cols)
+
+    if "assessment_questions" in tables:
+        cols = {c["name"] for c in inspector.get_columns("assessment_questions")}
+        _add_column("assessment_questions", "points", "INTEGER DEFAULT 10", cols)
+        _add_column("assessment_questions", "cognitive_level", "VARCHAR(64) DEFAULT 'APPLICATION'", cols)
+        _add_column("assessment_questions", "concept_name", "VARCHAR(200)", cols)
+        _add_column("assessment_questions", "explanation", "TEXT", cols)
+
+    if "assessment_attempts" in tables:
+        cols = {c["name"] for c in inspector.get_columns("assessment_attempts")}
+        _add_column("assessment_attempts", "student_name", "VARCHAR(200)", cols)
+        _add_column("assessment_attempts", "student_grade", "VARCHAR(200)", cols)
+        _add_column("assessment_attempts", "subject_name", "VARCHAR(200)", cols)
+        _add_column("assessment_attempts", "total_points_earned", "INTEGER DEFAULT 0", cols)
+        _add_column("assessment_attempts", "max_points", "INTEGER DEFAULT 0", cols)
+        _add_column("assessment_attempts", "feedback", "TEXT", cols)
+        _add_column("assessment_attempts", "cheated", f"BOOLEAN DEFAULT {bool_false}", cols)
+        _add_column("assessment_attempts", "cheating_reasons", json_type, cols)
+        _add_column("assessment_attempts", "violation_count", "INTEGER DEFAULT 0", cols)
+
+    # 10. Assignments Table
+    if "assignments" in tables:
+        cols = {c["name"] for c in inspector.get_columns("assignments")}
+        _add_column("assignments", "description", "TEXT", cols)
+        _add_column("assignments", "subject_id", uuid_type, cols)
+        _add_column("assignments", "subject_name", "VARCHAR(200)", cols)
+        _add_column("assignments", "starter_code", "TEXT", cols)
+        _add_column("assignments", "due_date", dt_type, cols)
+
+    if "assignment_submissions" in tables:
+        cols = {c["name"] for c in inspector.get_columns("assignment_submissions")}
+        _add_column("assignment_submissions", "student_name", "VARCHAR(200)", cols)
+        _add_column("assignment_submissions", "file_url", "VARCHAR(1000)", cols)
+
 
 
 async def purge_legacy_school_data(session: AsyncSession) -> None:
@@ -571,6 +621,168 @@ async def _bootstrap_defaults() -> None:
                     enr_priya = await session.scalar(select(Enrollment).where(Enrollment.user_id == priya.id, Enrollment.course_id == c_ai.id))
                     if not enr_priya:
                         session.add(Enrollment(user_id=priya.id, course_id=c_ai.id, status="active"))
+
+                # 3. Ensure Realistic Assignments
+                from app.assignments.models import Assignment
+                if c_fs:
+                    asg_fs = await session.scalar(select(Assignment).where(Assignment.course_id == c_fs.id))
+                    if not asg_fs:
+                        session.add(Assignment(
+                            course_id=c_fs.id,
+                            subject_name="Full Stack Architecture & Cloud Services",
+                            title="Lab 1: Production REST API & React State Machine Architecture",
+                            description="Design an asynchronous FastAPI backend service integrated with a React TypeScript client, JWT authentication, and resilient state synchronization.",
+                            instructions="1. Implement async SQLAlchemy session management.\n2. Construct React query caching hooks.\n3. Submit GitHub repo URL or source code derivation.",
+                            starter_code="# FastAPI + React Architecture Boilerplate\nimport asyncio\nfrom fastapi import FastAPI, Depends\n\napp = FastAPI(title='Enterprise Omni-Service')\n\n@app.get('/api/v1/health')\nasync def health_check():\n    return {'status': 'healthy', 'uptime_ms': 1250}\n",
+                            max_score=100,
+                            status="published",
+                        ))
+
+                if c_ai:
+                    asg_ai = await session.scalar(select(Assignment).where(Assignment.course_id == c_ai.id))
+                    if not asg_ai:
+                        session.add(Assignment(
+                            course_id=c_ai.id,
+                            subject_name="Generative AI & LLM Systems",
+                            title="Lab 1: Enterprise Multi-Agent RAG Pipeline with LangGraph & Groq LPU",
+                            description="Construct a hierarchical multi-agent retrieval system featuring semantic chunking, HNSW vector search, and sub-100ms Groq LPU inference.",
+                            instructions="1. Setup LangGraph state graph with supervisory routing.\n2. Implement dense retrieval reranking.\n3. Verify token throughput telemetry.",
+                            starter_code="# Multi-Agent LangGraph Pipeline\nfrom typing import TypedDict, Annotated, Sequence\nimport operator\n\nclass AgentState(TypedDict):\n    messages: Annotated[Sequence[dict], operator.add]\n    current_agent: str\n    confidence_score: float\n",
+                            max_score=100,
+                            status="published",
+                        ))
+
+                # 4. Ensure Realistic Assessments
+                from app.assessment.models import Assessment, AssessmentQuestion
+                if c_fs and sarah:
+                    asmt_fs = await session.scalar(select(Assessment).where(Assessment.course_id == c_fs.id))
+                    if not asmt_fs:
+                        asmt_fs = Assessment(
+                            course_id=c_fs.id,
+                            title="Full Stack Web & Cloud Architecture Certification Benchmark",
+                            description="Comprehensive examination assessing async Python, FastAPI middleware, React state lifecycle, and PostgreSQL query optimization.",
+                            target_grade="Full Stack Web Development",
+                            subject_name="FS-101: Full Stack Architecture & Cloud Services",
+                            topic_syllabus="FastAPI AsyncIO, React Hooks Memoization & SQL Indexing",
+                            teacher_id=sarah.id,
+                            teacher_name="Dr. Sarah Connor",
+                            schedule_type="ALWAYS_AVAILABLE",
+                            duration_minutes=45,
+                            passing_score=70,
+                            total_points=30,
+                            requires_proctoring=True,
+                            status="PUBLISHED",
+                        )
+                        session.add(asmt_fs)
+                        await session.flush()
+                        session.add_all([
+                            AssessmentQuestion(
+                                assessment_id=asmt_fs.id,
+                                prompt="In Python AsyncIO and FastAPI, what is the key advantage of 'asyncio.TaskGroup' over 'asyncio.gather'?",
+                                question_type="multiple_choice",
+                                options=[
+                                    "TaskGroup guarantees structured concurrency by cancelling sibling tasks if any task raises an exception",
+                                    "TaskGroup spawns separate operating system processes for CPU parallelism",
+                                    "TaskGroup disables the GIL during network I/O",
+                                    "TaskGroup forces synchronous blocking execution"
+                                ],
+                                correct_answer="0",
+                                points=10,
+                                cognitive_level="APPLICATION",
+                                concept_name="AsyncIO Structured Concurrency",
+                                explanation="TaskGroup provides structured concurrency in Python 3.11+, propagating failures cleanly and avoiding orphaned tasks.",
+                                position=1,
+                            ),
+                            AssessmentQuestion(
+                                assessment_id=asmt_fs.id,
+                                prompt="When optimizing PostgreSQL for high-volume tenant lookups, which index structure provides O(log N) equality and range queries?",
+                                question_type="multiple_choice",
+                                options=["B-Tree Index", "GIN Inverted Index", "BRIN Block Range Index", "Hash Index"],
+                                correct_answer="0",
+                                points=10,
+                                cognitive_level="REASONING",
+                                concept_name="Database Indexing",
+                                explanation="B-Tree indexes are the default and most efficient general-purpose structure for equality and range queries in PostgreSQL.",
+                                position=2,
+                            ),
+                            AssessmentQuestion(
+                                assessment_id=asmt_fs.id,
+                                prompt="Describe the architectural difference between React Server Components (RSC) and standard Client Components regarding bundle size.",
+                                question_type="descriptive",
+                                options=[],
+                                correct_answer="",
+                                points=10,
+                                cognitive_level="TRANSFER",
+                                concept_name="React Architecture",
+                                explanation="RSC execute strictly on the server and their dependencies are never shipped in the client JavaScript bundle, significantly decreasing client load time.",
+                                position=3,
+                            ),
+                        ])
+
+                if c_ai and alan:
+                    asmt_ai = await session.scalar(select(Assessment).where(Assessment.course_id == c_ai.id))
+                    if not asmt_ai:
+                        asmt_ai = Assessment(
+                            course_id=c_ai.id,
+                            title="Generative AI, LLMs & Multi-Agent Systems Benchmark",
+                            description="Rigorous evaluation on transformer attention mechanisms, vector databases (HNSW), LangChain LCEL, and Groq LPU inference architectures.",
+                            target_grade="Generative AI & LLMs",
+                            subject_name="AI-201: Generative AI & LLM Systems",
+                            topic_syllabus="LangChain LCEL, RAG Vector Search & Agentic Graphs",
+                            teacher_id=alan.id,
+                            teacher_name="Dr. Alan Turing",
+                            schedule_type="ALWAYS_AVAILABLE",
+                            duration_minutes=45,
+                            passing_score=70,
+                            total_points=30,
+                            requires_proctoring=True,
+                            status="PUBLISHED",
+                        )
+                        session.add(asmt_ai)
+                        await session.flush()
+                        session.add_all([
+                            AssessmentQuestion(
+                                assessment_id=asmt_ai.id,
+                                prompt="In Retrieval-Augmented Generation (RAG), why does HNSW (Hierarchical Navigable Small World) outperform naive cosine scanning for 1M+ embeddings?",
+                                question_type="multiple_choice",
+                                options=[
+                                    "HNSW constructs multi-layer proximity graphs providing sub-linear logarithmic O(log N) ANN search time",
+                                    "HNSW compresses all embeddings into 8-bit integers without vectors",
+                                    "HNSW eliminates the need for query embedding generation",
+                                    "HNSW runs strictly on GPU tensor cores only"
+                                ],
+                                correct_answer="0",
+                                points=10,
+                                cognitive_level="REASONING",
+                                concept_name="Vector Search Algorithms",
+                                explanation="HNSW creates hierarchical skip-list graphs where search navigates coarse to fine layers, achieving rapid O(log N) retrieval.",
+                                position=1,
+                            ),
+                            AssessmentQuestion(
+                                assessment_id=asmt_ai.id,
+                                prompt="In LangChain 0.3 LCEL, which component passes incoming inputs unmodified into a parallel dictionary branch?",
+                                question_type="multiple_choice",
+                                options=["RunnablePassthrough()", "RunnableParallel()", "RunnableLambda()", "RunnableBranch()"],
+                                correct_answer="0",
+                                points=10,
+                                cognitive_level="APPLICATION",
+                                concept_name="LangChain LCEL",
+                                explanation="RunnablePassthrough allows an input value to flow unmodified into subsequent runnables.",
+                                position=2,
+                            ),
+                            AssessmentQuestion(
+                                assessment_id=asmt_ai.id,
+                                prompt="How does FlashAttention optimize self-attention memory bandwidth on modern GPUs?",
+                                question_type="descriptive",
+                                options=[],
+                                correct_answer="",
+                                points=10,
+                                cognitive_level="TRANSFER",
+                                concept_name="Transformer Architecture",
+                                explanation="FlashAttention tiles inputs and computes softmax on-chip in SRAM without materializing the full N x N attention matrix to slow GPU High Bandwidth Memory (HBM).",
+                                position=3,
+                            ),
+                        ])
 
             await session.commit()
         except Exception as err:

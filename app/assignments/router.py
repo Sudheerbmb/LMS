@@ -3,15 +3,25 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.assignments.schemas import AssignmentCreate, AssignmentRead, GradeRequest, SubmissionCreate, SubmissionRead
+from app.assignments.schemas import (
+    AIAssignmentGenerateRequest,
+    AIAssignmentGenerateResponse,
+    AssignmentCreate,
+    AssignmentRead,
+    GradeRequest,
+    SubmissionCreate,
+    SubmissionRead,
+)
 from app.assignments.service import (
     AssignmentAccessError,
     AssignmentNotFoundError,
     SubmissionAlreadyExistsError,
     create_assignment,
+    generate_ai_assignment_groq,
     get_all_assignments,
     get_assignment_submissions,
     get_course_assignments,
+    get_student_submissions,
     grade_submission,
     submit_assignment,
 )
@@ -54,6 +64,14 @@ async def create(
         raise HTTPException(status_code=403, detail=str(error)) from error
 
 
+@router.post("/generate-ai", response_model=AIAssignmentGenerateResponse)
+async def generate_ai(
+    req: AIAssignmentGenerateRequest,
+    current_user: User = Depends(require_permission("course:read")),
+) -> AIAssignmentGenerateResponse:
+    return await generate_ai_assignment_groq(req)
+
+
 @router.get("/{assignment_id}/submissions", response_model=list[SubmissionRead])
 async def list_submissions_for_assignment(
     assignment_id: UUID,
@@ -91,3 +109,12 @@ async def grade(
         raise HTTPException(status_code=404, detail=str(error)) from error
     except AssignmentAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
+
+
+@router.get("/my-submissions", response_model=list[SubmissionRead])
+async def list_my_submissions(
+    current_user: User = Depends(require_permission("course:read")),
+    session: AsyncSession = Depends(get_session),
+) -> list[SubmissionRead]:
+    return await get_student_submissions(session, current_user)
+

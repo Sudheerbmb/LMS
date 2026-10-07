@@ -7,7 +7,9 @@ import {
   submitAssignment,
   getAssignments,
   getAssignmentSubmissions,
-  gradeSubmission
+  gradeSubmission,
+  generateAssignmentAI,
+  getMyAssignmentSubmissions
 } from '../lib/api'
 import {
   FileText,
@@ -40,9 +42,12 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [instructions, setInstructions] = useState('')
+  const [starterCode, setStarterCode] = useState('')
   const [assignmentSubject, setAssignmentSubject] = useState('')
   const [maxScore, setMaxScore] = useState(100)
   const [dueDate, setDueDate] = useState('')
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
   // Submit Assignment Modal
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null)
@@ -59,7 +64,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
   const [feedbackInput, setFeedbackInput] = useState<string>('')
   const [gradingInProgress, setGradingInProgress] = useState(false)
 
-  // Local student submission tracking
+  // Student submission tracking
   const [mySubmissionsMap, setMySubmissionsMap] = useState<Record<string, { status: string; score?: number; feedback?: string }>>({})
 
   useEffect(() => {
@@ -109,6 +114,19 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
         setCourses(normalized)
         setSelectedCourse(normalized[0].id)
       }
+
+      if (user.role === 'student') {
+        const mySubs = await getMyAssignmentSubmissions().catch(() => [])
+        const subMap: Record<string, { status: string; score?: number; feedback?: string }> = {}
+        mySubs.forEach(s => {
+          subMap[s.assignment_id] = {
+            status: s.status || 'submitted',
+            score: s.score ?? undefined,
+            feedback: s.feedback ?? undefined
+          }
+        })
+        setMySubmissionsMap(subMap)
+      }
     } catch (err) {
       console.error('Failed to load courses for assignments:', err)
     }
@@ -118,36 +136,35 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
     setLoading(true)
     try {
       const data = await getAssignments(courseId)
-      if (data && data.length > 0) {
-        setAssignments(data)
-      } else {
-        const defaultAsgs: Assignment[] = [
-          {
-            id: `asg_${courseId}_1`,
-            course_id: courseId,
-            title: 'Lab 1: Quadratic Equations & Discriminant Derivation',
-            description: 'Derive algebraic solution steps for quadratic roots and implement discriminant test matrix.',
-            instructions: 'Submit either Markdown text derivation or Git repo URL.',
-            max_score: 100,
-            due_date: new Date(Date.now() + 7 * 86400000).toISOString()
-          },
-          {
-            id: `asg_${courseId}_2`,
-            course_id: courseId,
-            title: 'Lab 2: Arithmetic Progressions & Summation Proofs',
-            description: 'Prove the sum of first N terms formula and demonstrate edge cases when d=0.',
-            instructions: 'Provide structured steps and formal proof.',
-            max_score: 100,
-            due_date: new Date(Date.now() + 14 * 86400000).toISOString()
-          }
-        ]
-        setAssignments(defaultAsgs)
-      }
+      setAssignments(data || [])
     } catch (err) {
       console.error(err)
       setAssignments([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAIGenerateAssignment = async () => {
+    setIsGeneratingAI(true)
+    try {
+      const crs = adminCourses.find(c => c.id === selectedCourse)
+      const res = await generateAssignmentAI({
+        grade: crs?.title || 'Full Stack Web Development',
+        subject: assignmentSubject || (crs?.subjects?.[0]?.name) || 'Software Architecture',
+        topic: title.trim() || 'System Architecture & Concurrency Implementation'
+      })
+      if (res) {
+        if (res.title) setTitle(res.title)
+        if (res.description) setDescription(res.description)
+        if (res.instructions) setInstructions(res.instructions)
+        if (res.starter_code) setStarterCode(res.starter_code)
+        if (res.max_score) setMaxScore(res.max_score)
+      }
+    } catch (err) {
+      console.error('AI assignment generation error:', err)
+    } finally {
+      setIsGeneratingAI(false)
     }
   }
 
@@ -159,6 +176,8 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
       const newAsg = await createAssignment(selectedCourse, {
         title: assignmentSubject ? `[${assignmentSubject}] ${title}` : title,
         description,
+        instructions,
+        starter_code: starterCode || undefined,
         max_score: maxScore,
         due_date: dueDate ? new Date(dueDate).toISOString() : undefined
       })
@@ -166,6 +185,8 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
       setShowCreateModal(false)
       setTitle('')
       setDescription('')
+      setInstructions('')
+      setStarterCode('')
       setAssignmentSubject('')
       setDueDate('')
     } catch (err: any) {
@@ -609,6 +630,51 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
               </button>
             </div>
 
+            <div style={{
+              background: '#F8FAFC',
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 16,
+              border: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12
+            }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Sparkles style={{ width: 14, height: 14, color: '#8B5CF6' }} />
+                  Groq LPU AI Synthesis
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                  Auto-generate comprehensive assignment rubric & starter code
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isGeneratingAI}
+                onClick={handleAIGenerateAssignment}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: isGeneratingAI ? 'not-allowed' : 'pointer',
+                  opacity: isGeneratingAI ? 0.7 : 1,
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)'
+                }}
+              >
+                {isGeneratingAI ? <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" /> : <Sparkles style={{ width: 14, height: 14 }} />}
+                {isGeneratingAI ? 'Synthesizing...' : 'Auto-Generate (AI)'}
+              </button>
+            </div>
+
             <form onSubmit={handleCreateAssignment} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -619,7 +685,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Lab 3: Matrix Transformations & Projections"
+                  placeholder="e.g. Lab: Production REST API & React State Architecture"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none' }}
                 />
               </div>
@@ -632,22 +698,48 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
                   type="text"
                   value={assignmentSubject}
                   onChange={(e) => setAssignmentSubject(e.target.value)}
-                  placeholder="e.g. PY-101"
+                  placeholder="e.g. FS-101"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', fontFamily: 'monospace' }}
                 />
               </div>
 
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Instructions & Guidelines *
+                  Problem Statement & Description *
                 </label>
                 <textarea
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Provide rigorous problem context, derivation instructions, and rubrics..."
-                  rows={4}
+                  placeholder="Provide problem context, architectural goals, and real-world scenario..."
+                  rows={3}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', resize: 'vertical' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Implementation Instructions & Milestones
+                </label>
+                <textarea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="Step-by-step requirements, edge case constraints, and evaluation rubric..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 13, outline: 'none', resize: 'vertical' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Starter Boilerplate Code (Optional)
+                </label>
+                <textarea
+                  value={starterCode}
+                  onChange={(e) => setStarterCode(e.target.value)}
+                  placeholder="# Optional starter code or skeleton functions..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-med)', fontSize: 12, outline: 'none', resize: 'vertical', fontFamily: 'monospace', background: '#0F172A', color: '#F8FAFC' }}
                 />
               </div>
 

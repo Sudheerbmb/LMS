@@ -11,6 +11,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "admin": frozenset({"*"}),
     "teacher": frozenset({
         "course:view",
+        "course:read",
         "course:manage",
         "content:manage",
         "content:view",
@@ -31,6 +32,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     }),
     "student": frozenset({
         "course:view",
+        "course:read",
         "content:view",
         "learning:use",
         "assessment:attempt",
