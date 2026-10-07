@@ -9,8 +9,14 @@ from app.platform.models import Base, TimestampMixin, UUIDMixin
 class LearningResource(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "learning_resources"
 
-    course_version_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("course_versions.id", ondelete="CASCADE"), nullable=False, index=True
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("course_subjects.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    course_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("course_versions.id", ondelete="CASCADE"), nullable=True, index=True
     )
     section_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("course_sections.id", ondelete="SET NULL"), nullable=True

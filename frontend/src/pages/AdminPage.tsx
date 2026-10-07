@@ -88,7 +88,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
   const [courseTitle, setCourseTitle] = useState('')
   const [courseSlug, setCourseSlug] = useState('')
   const [courseDesc, setCourseDesc] = useState('')
-  const [courseLevel, setCourseLevel] = useState('beginner')
   const [coursePrice, setCoursePrice] = useState(0)
   const [courseSubjects, setCourseSubjects] = useState<
     Array<{ code: string; name: string; description: string; teacher_id: string; color: string }>
@@ -286,7 +285,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
         title: courseTitle.trim(),
         slug: courseSlug.trim() || undefined,
         description: courseDesc.trim() || undefined,
-        level: courseLevel,
         price: Number(coursePrice) || 0,
         subjects: courseSubjects
           .filter((s) => s.code.trim() && s.name.trim())
@@ -1515,19 +1513,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[#334155] font-bold mb-1">Skill Level</label>
-                  <select
-                    value={courseLevel}
-                    onChange={(e) => setCourseLevel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-black/[0.08] rounded-2xl text-[#111827] focus:outline-none focus:border-[#FF7A18]"
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </select>
-                </div>
+              <div>
 
                 <div>
                   <label className="block text-[#334155] font-bold mb-1">Price (USD / INR, 0 for free)</label>

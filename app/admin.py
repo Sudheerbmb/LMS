@@ -324,22 +324,20 @@ async def delete_user(
 
 TECH_COURSES_DATA = [
     {
-        "title": "Python with Generative AI (GenAI)",
+        "title": "Python with Generative AI",
         "slug": "python-genai",
-        "description": "Master Python 3.12, LangChain, OpenAI & Gemini SDKs, RAG vector search, and autonomous multi-agent systems.",
-        "level": "intermediate",
+        "description": "Master Python, LLM application development, RAG architectures, and autonomous AI agents.",
         "subjects": [
             {"code": "PY-101", "name": "Python Core & Advanced OOP", "color": "#3b82f6", "desc": "AsyncIO, data structures, decorators, and production Python design patterns."},
-            {"code": "GEN-201", "name": "Prompt Engineering, LLMs & LangChain", "color": "#8b5cf6", "desc": "Prompt chaining, tool calling, memory, and LCEL expression graphs."},
+            {"code": "GEN-201", "name": "Prompt Engineering & LLMs", "color": "#8b5cf6", "desc": "Prompt chaining, tool calling, memory, and LCEL expression graphs."},
             {"code": "RAG-301", "name": "RAG Architectures & Vector Databases", "color": "#10b981", "desc": "Chunking, embeddings, ChromaDB, Pinecone, and cross-encoder re-ranking."},
-            {"code": "AI-401", "name": "Autonomous AI Agents & FastAPI Deployment", "color": "#f59e0b", "desc": "LangGraph multi-agent workflows, FastAPI REST APIs, and Docker deployment."}
+            {"code": "AI-401", "name": "Autonomous AI Agents", "color": "#f59e0b", "desc": "LangGraph multi-agent workflows, FastAPI REST APIs, and Docker deployment."}
         ]
     },
     {
         "title": "Salesforce Administration & Development",
         "slug": "salesforce-developer",
-        "description": "Comprehensive Salesforce certification curriculum covering Admin essentials, Apex OOP, SOQL, and Lightning Web Components (LWC).",
-        "level": "intermediate",
+        "description": "Salesforce administration, Apex, SOQL and Lightning Web Components.",
         "subjects": [
             {"code": "SF-ADM", "name": "Salesforce Administrator & Security", "color": "#0284c7", "desc": "Objects, fields, profiles, OWD sharing rules, and Flow Builder automation."},
             {"code": "SF-APEX", "name": "Apex Programming, Triggers & SOQL", "color": "#0ea5e9", "desc": "Apex triggers, handler patterns, governor limits, and unit test suites."},
@@ -348,10 +346,9 @@ TECH_COURSES_DATA = [
         ]
     },
     {
-        "title": "ServiceNow Administration & Development (CSA / CAD)",
+        "title": "ServiceNow Administration & Development",
         "slug": "servicenow-csa-cad",
-        "description": "Official ServiceNow CSA & CAD aligned training covering ITSM workflows, GlideRecord scripting, Script Includes, and Service Portal.",
-        "level": "intermediate",
+        "description": "ITSM, ServiceNow administration and development.",
         "subjects": [
             {"code": "SN-CSA", "name": "ServiceNow Certified System Administrator Core", "color": "#10b981", "desc": "User management, CMDB, tables, UI policies, dictionary overrides, and SLAs."},
             {"code": "SN-ITSM", "name": "IT Service Management (ITSM Processes)", "color": "#059669", "desc": "Incident routing, problem root-cause, change advisory boards, and knowledge management."},
@@ -360,10 +357,9 @@ TECH_COURSES_DATA = [
         ]
     },
     {
-        "title": "Full Stack Web Engineering (React & FastAPI)",
+        "title": "Full Stack Web Engineering",
         "slug": "full-stack-web",
-        "description": "Build end-to-end full stack web platforms using modern HTML5, Tailwind CSS, React 19, FastAPI REST backends, and PostgreSQL.",
-        "level": "beginner",
+        "description": "Build end-to-end full stack web platforms using modern HTML5, React, and FastAPI REST backends.",
         "subjects": [
             {"code": "WEB-101", "name": "HTML5, Semantic UI & Tailwind CSS Layouts", "color": "#f59e0b", "desc": "Semantic HTML, Flexbox, Grid systems, responsive design, and Tailwind utility styling."},
             {"code": "JS-201", "name": "Modern JavaScript ES6+ & React 19 Ecosystem", "color": "#3b82f6", "desc": "State management, React hooks, component hierarchy, React Router, Vite, and API integration."},
@@ -371,10 +367,9 @@ TECH_COURSES_DATA = [
         ]
     },
     {
-        "title": "Cloud Computing & DevOps Engineering (AWS & Kubernetes)",
+        "title": "Cloud Computing & DevOps Engineering",
         "slug": "cloud-devops-aws",
-        "description": "Hands-on DevOps engineering covering Linux administration, Docker containerization, Kubernetes cluster management, CI/CD, and AWS.",
-        "level": "advanced",
+        "description": "Hands-on DevOps engineering covering Linux administration, Docker containerization, and AWS cloud.",
         "subjects": [
             {"code": "DO-101", "name": "Linux Administration, Shell Scripting & Networking", "color": "#eab308", "desc": "Bash scripting, user permissions, systemd services, SSH, firewalls, and network inspection."},
             {"code": "DO-201", "name": "Docker Containerization & Kubernetes Orchestration", "color": "#0284c7", "desc": "Dockerfiles, compose, multi-stage builds, pods, deployments, services, ingress, and Helm charts."},
@@ -405,7 +400,6 @@ async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
                 organization_id=org_id,
                 slug=c_data["slug"],
                 status="published",
-                level=c_data["level"],
                 price=0.0,
                 is_free=True,
             )
@@ -433,17 +427,6 @@ async def seed_tech_courses_internal(session: AsyncSession) -> list[Course]:
                     order_index=idx
                 ))
             created.append(c)
-
-    # Enroll all students in the primary tech courses if they have none
-    all_students = (await session.scalars(select(User).where(User.role == "student"))).all()
-    all_courses = (await session.scalars(select(Course))).all()
-    for stu in all_students:
-        for c in all_courses:
-            existing_enroll = await session.scalar(
-                select(Enrollment).where(Enrollment.user_id == stu.id, Enrollment.course_id == c.id)
-            )
-            if not existing_enroll:
-                session.add(Enrollment(user_id=stu.id, course_id=c.id, status="active"))
 
     await session.commit()
     return created

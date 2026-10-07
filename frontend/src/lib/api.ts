@@ -255,6 +255,121 @@ export const addCourseReview = (courseId: string, payload: { rating: number; com
 
   request<Review>(`/api/v1/courses/${courseId}/reviews`, { method: 'POST', body: JSON.stringify(payload) })
 
+// ── True LMS Product Hierarchy (Course -> Subject -> Class -> Recording / Resource) ──
+
+export interface SubjectTeacher {
+  id: string
+  display_name: string
+  email: string
+}
+
+export interface LMSCourseSubject {
+  id: string
+  course_id: string
+  course_title?: string
+  code: string
+  name: string
+  description?: string
+  color: string
+  order_index: number
+  teacher?: SubjectTeacher | null
+  scheduled_classes_count: number
+  recordings_count: number
+  resources_count: number
+}
+
+export interface StudentCourse {
+  id: string
+  slug: string
+  title: string
+  description?: string
+  subjects_count: number
+  status: string
+}
+
+export interface StudentCourseHierarchy {
+  id: string
+  slug: string
+  title: string
+  description?: string
+  subjects: LMSCourseSubject[]
+}
+
+export interface LMSClassSchedule {
+  id: string
+  subject_id?: string
+  subject_code?: string
+  subject_name?: string
+  course_id?: string
+  course_title?: string
+  teacher_name?: string
+  title: string
+  day_of_week?: string
+  start_time?: string
+  end_time?: string
+  starts_at?: string
+  ends_at?: string
+  status: 'live_now' | 'upcoming'
+  room_or_venue?: string
+  meeting_url?: string
+  zoom_join_url?: string
+}
+
+export interface SubjectClassesResponse {
+  live_now?: LMSClassSchedule | null
+  upcoming: LMSClassSchedule[]
+}
+
+export interface LMSRecording {
+  id: string
+  title: string
+  recorded_at?: string
+  duration?: string
+  duration_seconds?: number
+  play_url?: string
+  vimeo_url?: string
+  teacher_name?: string
+}
+
+export interface LMSResource {
+  id: string
+  title: string
+  description?: string
+  resource_type: string
+  file_url?: string
+  external_url?: string
+  downloadable: boolean
+}
+
+export const getMyCourses = () => request<StudentCourse[]>('/api/v1/courses/my-courses')
+
+export const getCourseHierarchy = (courseId: string) =>
+  request<StudentCourseHierarchy>(`/api/v1/courses/hierarchy/${courseId}`)
+
+export const getSubjectDetail = (subjectId: string) =>
+  request<LMSCourseSubject>(`/api/v1/courses/subjects/${subjectId}`)
+
+export const getSubjectClasses = (subjectId: string) =>
+  request<SubjectClassesResponse>(`/api/v1/courses/subjects/${subjectId}/classes`)
+
+export const getSubjectRecordings = (subjectId: string) =>
+  request<LMSRecording[]>(`/api/v1/courses/subjects/${subjectId}/recordings`)
+
+export const getSubjectResources = (subjectId: string) =>
+  request<LMSResource[]>(`/api/v1/courses/subjects/${subjectId}/resources`)
+
+export const createSubjectResource = (subjectId: string, payload: {
+  title: string
+  description?: string
+  resource_type?: string
+  file_url?: string
+  external_url?: string
+  downloadable?: boolean
+}) => request<LMSResource>(`/api/v1/courses/subjects/${subjectId}/resources`, {
+  method: 'POST',
+  body: JSON.stringify(payload)
+})
+
 // Enrollments
 
 export const enrollInCourse = (courseId: string) =>

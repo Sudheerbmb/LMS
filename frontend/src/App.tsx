@@ -24,11 +24,11 @@ import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
 
 const STANDARD_TRACKS = [
-  { id: 'python-genai', title: 'Python with Generative AI (GenAI)' },
+  { id: 'python-genai', title: 'Python with Generative AI' },
   { id: 'salesforce-developer', title: 'Salesforce Administration & Development' },
-  { id: 'servicenow-csa-cad', title: 'ServiceNow Administration & Development (CSA / CAD)' },
-  { id: 'full-stack-web', title: 'Full Stack Web Engineering (React & FastAPI)' },
-  { id: 'cloud-devops-aws', title: 'Cloud Computing & DevOps Engineering (AWS & Kubernetes)' },
+  { id: 'servicenow-csa-cad', title: 'ServiceNow Administration & Development' },
+  { id: 'full-stack-web', title: 'Full Stack Web Engineering' },
+  { id: 'cloud-devops-aws', title: 'Cloud Computing & DevOps Engineering' },
 ]
 
 export function App() {

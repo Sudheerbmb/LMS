@@ -139,6 +139,12 @@ class ClassRecording(UUIDMixin, TimestampMixin, Base):
     class_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("live_classes.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("course_subjects.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     zoom_meeting_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
     zoom_recording_id: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
     recording_type: Mapped[str] = mapped_column(String(64), default="shared_screen_with_speaker_view", nullable=False)
