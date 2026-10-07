@@ -1284,10 +1284,10 @@ Generate JSON with:
             pass
 
     return summary_data or {
-        "overview": f"Comprehensive lecture on {title} covering foundational {subject} topics.",
-        "key_topics": ["Foundational Principles", "Problem Solving", "Applications"],
-        "whiteboard_notes": ["Core theorem definition", "Step-by-step resolution technique"],
-        "exam_takeaways": ["Review practice questions in chapter syllabus"],
+        "overview": f"Lecture recording for {title}." if title else "Classroom lecture recording.",
+        "key_topics": [],
+        "whiteboard_notes": [],
+        "exam_takeaways": [],
         "quiz": []
     }
 

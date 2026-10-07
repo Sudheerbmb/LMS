@@ -6,7 +6,6 @@ import {
   FileText,
   CheckCircle2,
   X,
-  ExternalLink,
   Video,
   Clock,
   User,
@@ -16,9 +15,16 @@ import {
   Copy,
   Play,
   Search,
-  List
+  List,
+  Loader2
 } from 'lucide-react'
-import { askClassAiDoubt, getClassAiSummary, getClassTranscript, getApiBaseUrl } from '../lib/api'
+import {
+  askClassAiDoubt,
+  getClassAiSummary,
+  getClassTranscript,
+  getClassRecordings,
+  syncClassWithZoom
+} from '../lib/api'
 import type { ClassAiSummaryData, AgentAction } from '../lib/api'
 
 export interface ClassInfo {
@@ -57,8 +63,7 @@ interface ChatMessage {
 interface TranscriptSegment {
   timestamp: string
   seconds: number
-  end_timestamp?: string
-  speaker?: string
+  speaker: string
   text: string
 }
 
@@ -71,47 +76,46 @@ interface TopicChapter {
 export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
   recordingUrl,
   classInfo,
-  onClose,
+  onClose
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const vimeoPlayerRef = useRef<Player | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const chatBottomRef = useRef<HTMLDivElement>(null)
 
   const [currentTime, setCurrentTime] = useState<number>(0)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
 
-  // Extract Vimeo Video ID & URL
-  const isVimeo = !!(recordingUrl && (recordingUrl.includes('vimeo.com') || recordingUrl.includes('player.vimeo.com'))) || !!classInfo?.vimeo_video_id
-  let vimeoId = classInfo?.vimeo_video_id || ''
-  let vimeoEmbedUrl = ''
+  // Resolve initial Vimeo URL from props
+  const resolveVimeoEmbed = (url?: string, vidId?: string): { vId: string; embedUrl: string } => {
+    let vId = vidId || ''
+    let embedUrl = ''
 
-  if (recordingUrl) {
-    if (recordingUrl.includes('player.vimeo.com/video/')) {
-      const match = recordingUrl.match(/player\.vimeo\.com\/video\/(\d+)/)
-      if (match) vimeoId = match[1]
-      vimeoEmbedUrl = recordingUrl
-    } else if (recordingUrl.includes('vimeo.com')) {
-      const match = recordingUrl.match(/(?:vimeo\.com\/(?:video\/|manage\/videos\/)?|player\.vimeo\.com\/video\/)(\d+)(?:\/([a-zA-Z0-9]+))?/)
-      if (match) {
-        vimeoId = match[1]
-        const vimeoHash = match[2] ? `&h=${match[2]}` : ''
-        vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0${vimeoHash}`
+    if (url) {
+      if (url.includes('player.vimeo.com/video/')) {
+        const match = url.match(/player\.vimeo\.com\/video\/(\d+)/)
+        if (match) vId = match[1]
+        embedUrl = url
+      } else if (url.includes('vimeo.com')) {
+        const match = url.match(/(?:vimeo\.com\/(?:video\/|manage\/videos\/)?|player\.vimeo\.com\/video\/)(\d+)(?:\/([a-zA-Z0-9]+))?/)
+        if (match) {
+          vId = match[1]
+          const vimeoHash = match[2] ? `&h=${match[2]}` : ''
+          embedUrl = `https://player.vimeo.com/video/${vId}?autoplay=1&title=0&byline=0&portrait=0${vimeoHash}`
+        }
       }
     }
+
+    if (!embedUrl && vId) {
+      embedUrl = `https://player.vimeo.com/video/${vId}?autoplay=1&title=0&byline=0&portrait=0`
+    }
+
+    return { vId, embedUrl }
   }
 
-  if (!vimeoEmbedUrl && vimeoId) {
-    vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0`
-  }
-
-  const isZoom = !isVimeo && !!(recordingUrl && (recordingUrl.includes('zoom.us') || recordingUrl.includes('zoomgov.com')))
-  const isDirectVideo = !isVimeo && !!(recordingUrl && (
-    recordingUrl.includes('.mp4') ||
-    recordingUrl.includes('.webm') ||
-    recordingUrl.includes('cloudinary.com') ||
-    recordingUrl.startsWith('blob:')
-  ))
+  const initial = resolveVimeoEmbed(recordingUrl || classInfo?.recording_url || classInfo?.vimeo_url, classInfo?.vimeo_video_id)
+  const [vimeoVideoId, setVimeoVideoId] = useState<string>(initial.vId)
+  const [currentVimeoUrl, setCurrentVimeoUrl] = useState<string>(initial.embedUrl)
+  const [isSyncingVimeo, setIsSyncingVimeo] = useState<boolean>(false)
 
   const [activeTab, setActiveTab] = useState<'topics' | 'transcript' | 'doubt' | 'summary'>('topics')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -128,13 +132,28 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
 
   const classTitle = classInfo?.title || 'Classroom Lecture Recording'
   const classSubject = classInfo?.subject || classInfo?.subject_name || 'Academic Class'
-  const classGrade = classInfo?.grade_number || classInfo?.grade || ''
-  const classId = classInfo?.id || 'demo_class_id'
-  const backendStreamUrl = classInfo?.id ? `${getApiBaseUrl()}/api/v1/classroom/classes/${classId}/video-stream` : ''
+
+  // On mount: Check if Vimeo video was created on backend or needs sync
+  useEffect(() => {
+    if (classInfo?.id) {
+      getClassRecordings(classInfo.id).then((recs) => {
+        if (Array.isArray(recs) && recs.length > 0) {
+          const vimeoRec = recs.find(r => r.vimeo_url || r.play_url?.includes('vimeo') || r.vimeo_video_id)
+          if (vimeoRec) {
+            const res = resolveVimeoEmbed(vimeoRec.vimeo_url || vimeoRec.play_url, vimeoRec.vimeo_video_id)
+            if (res.embedUrl) {
+              setVimeoVideoId(res.vId)
+              setCurrentVimeoUrl(res.embedUrl)
+            }
+          }
+        }
+      }).catch(() => {})
+    }
+  }, [classInfo?.id])
 
   // Initialize Vimeo Player SDK instance
   useEffect(() => {
-    if (iframeRef.current && isVimeo) {
+    if (iframeRef.current && currentVimeoUrl) {
       try {
         const player = new Player(iframeRef.current)
         vimeoPlayerRef.current = player
@@ -152,13 +171,13 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
         console.warn('Vimeo Player init warning:', err)
       }
     }
-  }, [vimeoEmbedUrl, isVimeo])
+  }, [currentVimeoUrl])
 
   useEffect(() => {
     const greeting: ChatMessage = {
       id: 'msg-init',
       sender: 'ai',
-      text: `Hello! I am your AI Lecture Assistant for "${classTitle}". Click any topic or transcript timestamp to jump to that moment in the video.`,
+      text: `Hello! I am your AI Lecture Assistant for "${classTitle}". Click any topic or transcript timestamp to jump to that moment in the Vimeo video.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedFollowups: [
         'Summarize key topics',
@@ -175,20 +194,36 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isAsking])
 
+  const handleTriggerVimeoSync = async () => {
+    if (!classInfo?.id || isSyncingVimeo) return
+    setIsSyncingVimeo(true)
+    try {
+      await syncClassWithZoom(classInfo.id)
+      const recs = await getClassRecordings(classInfo.id)
+      if (Array.isArray(recs) && recs.length > 0) {
+        const vimeoRec = recs.find(r => r.vimeo_url || r.play_url?.includes('vimeo') || r.vimeo_video_id)
+        if (vimeoRec) {
+          const res = resolveVimeoEmbed(vimeoRec.vimeo_url || vimeoRec.play_url, vimeoRec.vimeo_video_id)
+          if (res.embedUrl) {
+            setVimeoVideoId(res.vId)
+            setCurrentVimeoUrl(res.embedUrl)
+          }
+        }
+      }
+      await fetchTranscript()
+    } catch (err) {
+      console.warn('Vimeo sync check error:', err)
+    } finally {
+      setIsSyncingVimeo(false)
+    }
+  }
+
   const fetchSummary = async () => {
     if (!classInfo?.id) return
     setIsLoadingSummary(true)
     try {
       const data = await getClassAiSummary(classInfo.id)
       setSummaryData(data)
-      if (data?.key_topics && topics.length === 0) {
-        const genTopics: TopicChapter[] = data.key_topics.map((t: string, idx: number) => ({
-          title: t,
-          timestamp: `0${idx * 4}:00`,
-          seconds: idx * 240
-        }))
-        setTopics(genTopics)
-      }
     } catch (err) {
       console.warn('Could not load AI summary:', err)
     } finally {
@@ -218,9 +253,10 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           setSegments(parsed)
         }
 
-        if (data.summary_json?.topics && Array.isArray(data.summary_json.topics)) {
+        // Only use real topics extracted from transcript (NO fake generator)
+        if (Array.isArray(data.summary_json?.topics) && data.summary_json.topics.length > 0) {
           setTopics(data.summary_json.topics)
-        } else if (data.summary_json?.chapters && Array.isArray(data.summary_json.chapters)) {
+        } else if (Array.isArray(data.summary_json?.chapters) && data.summary_json.chapters.length > 0) {
           setTopics(data.summary_json.chapters)
         }
       }
@@ -283,10 +319,6 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
       } catch (err) {
         console.warn('Vimeo seek error:', err)
       }
-    } else if (videoRef.current) {
-      videoRef.current.currentTime = seconds
-      videoRef.current.play()
-      setCurrentTime(seconds)
     }
   }
 
@@ -318,17 +350,19 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
       setMessages((prev) => [...prev, aiMsg])
 
       // Auto-seek if AI returns a seek action
-      if (res.actions && res.actions.length > 0) {
-        const seekAction = res.actions.find(a => a.type === 'SEEK_VIDEO' && typeof a.timestamp === 'number')
-        if (seekAction && typeof seekAction.timestamp === 'number') {
-          handleSeek(seekAction.timestamp)
+      if (res.actions && Array.isArray(res.actions)) {
+        for (const act of res.actions) {
+          const actionObj = act as any
+          if (actionObj.type === 'seek_video' && typeof actionObj.payload?.seconds === 'number') {
+            handleSeek(actionObj.payload.seconds)
+          }
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'ai',
-        text: "I couldn't process that question right now. You can click on any topic or transcript timestamp to jump to that lecture section.",
+        text: 'I am having trouble answering right now. Please try asking again in a moment.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
       setMessages((prev) => [...prev, errorMsg])
@@ -337,64 +371,61 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
     }
   }
 
-  const handleCopyTranscript = () => {
-    if (!transcriptText) return
-    navigator.clipboard.writeText(transcriptText)
-    setHasCopiedTranscript(true)
-    setTimeout(() => setHasCopiedTranscript(false), 2000)
+  const copyTranscriptToClipboard = () => {
+    if (!transcriptText && segments.length === 0) return
+    const content = transcriptText || segments.map((s) => `[${s.timestamp}] ${s.speaker}: ${s.text}`).join('\n')
+    navigator.clipboard.writeText(content).then(() => {
+      setHasCopiedTranscript(true)
+      setTimeout(() => setHasCopiedTranscript(false), 2000)
+    })
   }
 
-  const filteredSegments = transcriptSearch.trim()
-    ? segments.filter(s => s.text.toLowerCase().includes(transcriptSearch.toLowerCase()) || (s.speaker && s.speaker.toLowerCase().includes(transcriptSearch.toLowerCase())))
-    : segments
+  const filteredSegments = segments.filter((s) =>
+    transcriptSearch.trim() === '' ||
+    s.text.toLowerCase().includes(transcriptSearch.toLowerCase()) ||
+    s.speaker.toLowerCase().includes(transcriptSearch.toLowerCase())
+  )
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fadeIn">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-7xl h-[94vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-6xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
         
-        {/* TOP MODAL HEADER */}
-        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-2xl bg-amber-50 text-[#FF7A00] border border-amber-200 flex items-center justify-center shrink-0">
-              <Video className="w-4 h-4" />
+        {/* HEADER */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
+              <Video className="w-5 h-5" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
                   {classSubject}
                 </span>
-                {classGrade && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">
-                    Grade {classGrade}
-                  </span>
-                )}
-                {vimeoId && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1AB7EA]/10 text-[#0088cc] border border-[#1AB7EA]/30">
-                    Vimeo: {vimeoId}
+                {vimeoVideoId && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+                    <span>Vimeo Player</span>
                   </span>
                 )}
               </div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">{classTitle}</h2>
+              <h2 className="font-extrabold text-slate-900 text-base sm:text-lg line-clamp-1 mt-0.5">
+                {classTitle}
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {recordingUrl && (
-              <a
-                href={recordingUrl}
-                target="_blank"
-                rel="noreferrer"
-                title="Open video in new tab"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 shadow-xs transition"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#FF7A00]" />
-                <span>{isVimeo ? 'Open Vimeo' : isZoom ? 'Open Zoom' : 'Open Video'}</span>
-              </a>
-            )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleTriggerVimeoSync}
+              disabled={isSyncingVimeo}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+              title="Sync recording to Vimeo & refresh transcript"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingVimeo ? 'animate-spin text-[#FF7A00]' : ''}`} />
+              <span>{isSyncingVimeo ? 'Syncing...' : 'Sync Vimeo'}</span>
+            </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-              aria-label="Close recording viewer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -407,68 +438,44 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
           {/* LEFT COLUMN: REAL VIMEO PLAYER & EMBED (7/12) */}
           <div className="lg:col-span-7 flex flex-col bg-slate-950 overflow-y-auto">
             <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
-              {isVimeo && vimeoEmbedUrl ? (
+              {currentVimeoUrl ? (
                 <iframe
                   ref={iframeRef}
-                  src={vimeoEmbedUrl}
+                  src={currentVimeoUrl}
                   title="Vimeo Recording Player"
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   allowFullScreen
                 />
-              ) : isDirectVideo ? (
-                <video
-                  ref={videoRef}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-contain"
-                  src={recordingUrl}
-                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                >
-                  Your browser does not support HTML5 video playback.
-                </video>
-              ) : isZoom ? (
+              ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 p-6 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-[#FFF3EA] border border-[#FFDEC4] flex items-center justify-center shadow-lg">
-                    <Video className="w-8 h-8 text-[#FF7A18]" />
+                  <div className="w-16 h-16 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-lg">
+                    {isSyncingVimeo ? (
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    ) : (
+                      <Video className="w-8 h-8 text-blue-400" />
+                    )}
                   </div>
                   <div className="max-w-md space-y-1.5">
-                    <h3 className="text-base font-bold text-white">Zoom Cloud Recording</h3>
+                    <h3 className="text-base font-bold text-white">Vimeo Cloud Sync</h3>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      This lecture recording is processing or hosted on Zoom Cloud. Click below to stream directly on Zoom Cloud or use the transcript on the right.
+                      {isSyncingVimeo
+                        ? 'Uploading & syncing Zoom recording to your Vimeo account...'
+                        : 'Recording is currently processing and syncing to Vimeo Cloud. Click below to check status.'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 pt-2">
-                    <a
-                      href={recordingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF7A18] to-[#FF9138] hover:from-[#EA6C0A] hover:to-[#FF7A18] text-white font-bold text-xs shadow-md shadow-[#FF7A18]/25 flex items-center gap-2 transition hover:scale-[1.02] cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={handleTriggerVimeoSync}
+                      disabled={isSyncingVimeo}
+                      className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition hover:scale-[1.02] cursor-pointer disabled:opacity-50"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Watch on Zoom Cloud →</span>
-                    </a>
+                      <RefreshCw className={`w-4 h-4 ${isSyncingVimeo ? 'animate-spin' : ''}`} />
+                      <span>{isSyncingVimeo ? 'Checking Vimeo Status...' : 'Sync / Load Vimeo Player →'}</span>
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <video
-                  ref={videoRef}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-contain"
-                  src={backendStreamUrl || recordingUrl}
-                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                  onError={(e) => {
-                    const target = e.currentTarget
-                    if (recordingUrl && target.src !== recordingUrl) {
-                      target.src = recordingUrl
-                    }
-                  }}
-                >
-                  Your browser does not support HTML5 video playback.
-                </video>
               )}
             </div>
 
@@ -586,7 +593,8 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
                 {topics.length === 0 ? (
                   <div className="py-12 text-center text-slate-400">
                     <Clock className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-                    <p className="text-xs font-medium">No chapters detected yet for this lecture.</p>
+                    <p className="text-xs font-medium">No chapters detected in transcript yet.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Real chapters will appear here once the spoken transcript has been processed.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -650,146 +658,148 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
                       className="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400"
                     />
                   </div>
-                  {transcriptText && (
-                    <button
-                      onClick={handleCopyTranscript}
-                      className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1 cursor-pointer shrink-0"
-                    >
-                      <Copy className="w-3 h-3" />
-                      <span>{hasCopiedTranscript ? 'Copied!' : 'Copy'}</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={copyTranscriptToClipboard}
+                    className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
+                    title="Copy full transcript"
+                  >
+                    {hasCopiedTranscript ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {isLoadingTranscript ? (
-                    <div className="py-12 text-center text-slate-500">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#FF7A00] mb-2" />
-                      <p className="text-xs font-medium">Loading lecture transcript...</p>
+                    <div className="py-12 text-center text-slate-400">
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                      <p className="text-xs">Fetching transcript segments...</p>
                     </div>
-                  ) : filteredSegments.length > 0 ? (
-                    <div className="space-y-3">
+                  ) : filteredSegments.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400">
+                      <AlignLeft className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs font-medium">
+                        {transcriptSearch ? 'No matching speech found.' : 'Speech transcript is not available yet.'}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Transcripts are generated automatically after Zoom processes the audio recording.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
                       {filteredSegments.map((seg, idx) => {
-                        const isActive = currentTime >= seg.seconds && (idx === filteredSegments.length - 1 || currentTime < filteredSegments[idx + 1].seconds)
+                        const isCurrent = currentTime >= seg.seconds && (idx === filteredSegments.length - 1 || currentTime < filteredSegments[idx + 1].seconds)
                         return (
                           <div
                             key={idx}
-                            className={`p-3 rounded-2xl border transition-colors flex items-start gap-3 ${
-                              isActive
+                            onClick={() => handleSeek(seg.seconds)}
+                            className={`p-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
+                              isCurrent
                                 ? 'bg-amber-50/90 border-[#FF7A00] shadow-xs'
-                                : 'bg-slate-50/80 border-slate-100 hover:border-amber-200 hover:bg-amber-50/40'
+                                : 'bg-slate-50/50 border-slate-100 hover:bg-slate-100/80 hover:border-slate-200'
                             }`}
                           >
-                            <button
-                              type="button"
-                              onClick={() => handleSeek(seg.seconds)}
-                              className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer shadow-xs ${
-                                isActive
-                                  ? 'bg-[#FF7A00] text-white border border-[#FF7A00]'
-                                  : 'bg-white hover:bg-[#FF7A00] hover:text-white border border-slate-200 hover:border-[#FF7A00] text-slate-700'
-                              }`}
-                              title={`Jump to ${seg.timestamp}`}
-                            >
-                              <Play className="w-2.5 h-2.5 fill-current" />
-                              <span>{seg.timestamp}</span>
-                            </button>
-                            <div className="flex-1 min-w-0 text-xs leading-relaxed">
-                              <span className="font-bold text-slate-800 mr-1.5">{seg.speaker || 'Teacher'}:</span>
-                              <span className={isActive ? 'text-slate-900 font-medium' : 'text-slate-700'}>{seg.text}</span>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-mono text-[10px] font-bold text-amber-600 hover:underline flex items-center gap-1">
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                {seg.timestamp}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-400">
+                                {seg.speaker}
+                              </span>
                             </div>
+                            <p className="text-slate-800 leading-relaxed">
+                              {seg.text}
+                            </p>
                           </div>
                         )
                       })}
-                    </div>
-                  ) : transcriptText ? (
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                      {transcriptText}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center text-slate-400">
-                      <AlignLeft className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-                      <p className="text-xs font-medium">No spoken audio transcript available yet.</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Zoom cloud transcripts take 5-15 minutes after the lecture concludes.</p>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* TAB CONTENT 3: AI DOUBT SOLVER CHAT */}
+            {/* TAB CONTENT 3: AI DOUBT SOLVER */}
             {activeTab === 'doubt' && (
               <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
-                  {messages.map((msg) => (
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {messages.map((m) => (
                     <div
-                      key={msg.id}
-                      className={`flex flex-col ${
-                        msg.sender === 'user' ? 'items-end' : 'items-start'
-                      }`}
+                      key={m.id}
+                      className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
+                      {m.sender === 'ai' && (
+                        <div className="w-7 h-7 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </div>
+                      )}
                       <div
-                        className={`max-w-[88%] p-3.5 rounded-2xl text-xs leading-relaxed ${
-                          msg.sender === 'user'
-                            ? 'bg-[#FF7A00] text-white font-medium rounded-br-xs shadow-xs'
-                            : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-xs shadow-xs'
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                          m.sender === 'user'
+                            ? 'bg-[#FF7A00] text-white rounded-br-none shadow-xs'
+                            : 'bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200/60'
                         }`}
                       >
-                        {msg.sender === 'ai' && (
-                          <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-amber-800">
-                            <Sparkles className="w-3 h-3 text-[#FF7A00]" />
-                            <span>Ask Acharya AI</span>
+                        <p>{m.text}</p>
+
+                        {/* Suggested Followups */}
+                        {m.suggestedFollowups && m.suggestedFollowups.length > 0 && (
+                          <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-1">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                              Suggested:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {m.suggestedFollowups.map((f, fi) => (
+                                <button
+                                  key={fi}
+                                  onClick={() => handleAskDoubt(f)}
+                                  className="px-2 py-0.5 rounded-lg bg-white hover:bg-amber-50 text-[10px] text-slate-700 font-medium border border-slate-200 transition-colors text-left"
+                                >
+                                  {f}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.timestamp}</span>
                     </div>
                   ))}
+
                   {isAsking && (
-                    <div className="flex items-center gap-2 text-xs text-slate-500 p-3 bg-slate-50 rounded-2xl border border-slate-200 w-fit">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#FF7A00]" />
-                      <span>Thinking with lecture context...</span>
+                    <div className="flex gap-2.5 justify-start">
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                      </div>
+                      <div className="bg-slate-100 rounded-2xl rounded-bl-none px-4 py-3 border border-slate-200/60">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
                     </div>
                   )}
                   <div ref={chatBottomRef} />
                 </div>
 
-                {/* QUICK PROMPT CHIPS */}
-                <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex gap-1.5 overflow-x-auto shrink-0">
-                  {[
-                    'What is this video about?',
-                    'Explain core topics covered',
-                    'Give me a key takeaway check'
-                  ].map((prompt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleAskDoubt(prompt)}
-                      className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium whitespace-nowrap shadow-xs cursor-pointer transition"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-
-                {/* INPUT BAR */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault()
                     handleAskDoubt()
                   }}
-                  className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
+                  className="p-3 bg-slate-50 border-t border-slate-200 flex items-center gap-2"
                 >
                   <input
                     type="text"
                     value={inputQuery}
                     onChange={(e) => setInputQuery(e.target.value)}
-                    placeholder="Ask anything from this class..."
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-400"
+                    placeholder="Ask AI a doubt about this lecture..."
+                    disabled={isAsking}
+                    className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400"
                   />
                   <button
                     type="submit"
-                    disabled={isAsking || !inputQuery.trim()}
-                    className="p-2.5 rounded-xl bg-[#FF7A00] hover:bg-[#EA6C0A] text-white font-bold text-xs disabled:opacity-40 transition cursor-pointer shadow-xs"
+                    disabled={!inputQuery.trim() || isAsking}
+                    className="p-2 rounded-xl bg-[#FF7A00] hover:bg-[#E66E00] text-white disabled:opacity-40 transition-colors shadow-xs"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -797,45 +807,68 @@ export const AiRecordingPlayerModal: React.FC<AiRecordingPlayerModalProps> = ({
               </div>
             )}
 
-            {/* TAB CONTENT 4: SUMMARY */}
+            {/* TAB CONTENT 4: SUMMARY & NOTES */}
             {activeTab === 'summary' && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {isLoadingSummary ? (
-                  <div className="py-12 text-center text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#FF7A00] mb-2" />
-                    <span>Analyzing recording contents...</span>
-                  </div>
-                ) : summaryData ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm mb-1">Overview</h3>
-                      <p className="text-slate-600 leading-relaxed">{summaryData.overview}</p>
-                    </div>
-
-                    {summaryData.exam_takeaways && summaryData.exam_takeaways.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="font-bold text-slate-900 text-xs">Exam Takeaways</h4>
-                        <ul className="space-y-1.5 pl-2">
-                          {summaryData.exam_takeaways.map((item: string, i: number) => (
-                            <li key={i} className="flex items-start gap-2 text-slate-600">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div className="py-12 text-center text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                    <p className="text-xs">Generating lecture summary...</p>
                   </div>
                 ) : (
-                  <p className="text-slate-500 text-center py-12">Summary not generated yet for this recording.</p>
+                  <>
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                        Lecture Overview
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        {summaryData?.overview || `Comprehensive class recording for ${classTitle}.`}
+                      </p>
+                    </div>
+
+                    {summaryData?.whiteboard_notes && summaryData.whiteboard_notes.length > 0 && (
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Key Board Notes
+                        </h4>
+                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5">
+                          {summaryData.whiteboard_notes.map((note, ni) => (
+                            <div key={ni} className="flex items-start gap-2 text-xs text-slate-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                              <span>{note}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {summaryData?.exam_takeaways && summaryData.exam_takeaways.length > 0 && (
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Exam Takeaways
+                        </h4>
+                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5">
+                          {summaryData.exam_takeaways.map((takeaway, ti) => (
+                            <div key={ti} className="flex items-start gap-2 text-xs text-slate-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                              <span>{takeaway}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
           </div>
+
         </div>
+
       </div>
     </div>
   )
 }
+
 export default AiRecordingPlayerModal
