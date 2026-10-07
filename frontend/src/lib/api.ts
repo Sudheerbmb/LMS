@@ -574,6 +574,16 @@ export const deleteAdminCourseSubject = (courseId: string, subjectId: string) =>
     method: 'DELETE',
   })
 
+export const deleteAdminCourse = (courseId: string) =>
+  request<{ id: string; deleted: boolean }>(`/api/v1/admin/courses/${courseId}`, {
+    method: 'DELETE',
+  })
+
+export const flushAllOperationalData = () =>
+  request<{ status: string; message: string; counts: Record<string, number> }>('/api/v1/admin/flush-data', {
+    method: 'POST',
+  })
+
 export const seedTechCourses = () =>
   request<{ status: string; courses_seeded: number; message: string }>('/api/v1/admin/seed-tech-courses', {
     method: 'POST',

@@ -518,7 +518,7 @@ export function App() {
                   userSelect: 'none',
                   outline: 'none'
                 }}>
-                  Instant Demo Access & Quick Login
+                  System Admin Quick Access
                 </summary>
 
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -534,46 +534,9 @@ export function App() {
                       </button>
                     </div>
                   </div>
-
-                  <div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Faculty</span>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                      {[
-                        ['sarah.connor@institute.edu', 'Dr. Sarah (Python)'],
-                        ['alan.turing@institute.edu', 'Prof. Turing (LLMs)'],
-                        ['marc.b@institute.edu', 'Marc B. (Salesforce)'],
-                      ].map(([email, label]) => (
-                        <button
-                          key={email}
-                          type="button"
-                          onClick={() => { setAuthEmail(email); setAuthPassword('Teacher123!'); setAuthError(''); }}
-                          style={{ padding: '4px 8px', borderRadius: 6, background: 'var(--canvas-warm)', border: '1px solid var(--border-med)', fontSize: 11, fontWeight: 600, color: 'var(--ink)', cursor: 'pointer' }}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Students</span>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                      {[
-                        ['priya.s@student.edu', 'Priya S. (Python GenAI)'],
-                        ['alex.r@student.edu', 'Alex R. (Full Stack)'],
-                        ['rahul.k@student.edu', 'Rahul K. (DevOps)'],
-                      ].map(([email, label]) => (
-                        <button
-                          key={email}
-                          type="button"
-                          onClick={() => { setAuthEmail(email); setAuthPassword('Student123!'); setAuthError(''); }}
-                          style={{ padding: '4px 8px', borderRadius: 6, background: 'var(--canvas-warm)', border: '1px solid var(--border-med)', fontSize: 11, fontWeight: 600, color: 'var(--ink)', cursor: 'pointer' }}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--ink-2)', margin: 0 }}>
+                    Create Faculty, Students, Courses, and Timetables dynamically via the Admin console.
+                  </p>
                 </div>
               </details>
             )}

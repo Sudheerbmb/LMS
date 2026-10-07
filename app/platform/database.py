@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
+from typing import Any
 
-from sqlalchemy import Connection, func, inspect, select, text
+from sqlalchemy import Connection, delete, func, inspect, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.platform.config import settings
@@ -370,31 +371,12 @@ async def purge_legacy_school_data(session: AsyncSession) -> None:
 
 
 async def _bootstrap_defaults() -> None:
-    """Bootstrap all default demo accounts, tech tracks, faculty, students, and timetable schedule."""
+    """Ensure essential System Admin account and Organization exist so admin can log in and manage the LMS.
+    Strictly NO auto-seeding of courses, subjects, teachers, students, enrollments, or timetable slots.
+    """
     from app.identity.models import User
     from app.identity.security import hash_password
     from app.tenancy.models import Organization
-    from app.timetable.models import TimetableSlot
-    from app.timetable.service import generate_school_timetable, seed_school_defaults
-
-    student_seeds = [
-        {"email": "student@example.com", "name": "Alex Rivera", "role": "student"},
-        {"email": "priya.s@student.edu", "name": "Priya Sharma", "role": "student"},
-        {"email": "rahul.k@student.edu", "name": "Rahul Kumar", "role": "student"},
-        {"email": "ananya.r@student.edu", "name": "Ananya Roy", "role": "student"},
-        {"email": "vikram.m@student.edu", "name": "Vikram Malhotra", "role": "student"},
-        {"email": "sneha.p@student.edu", "name": "Sneha Patel", "role": "student"},
-    ]
-
-    teacher_seeds = [
-        {"email": "teacher@example.com", "name": "Dr. Sarah Connor", "role": "teacher"},
-        {"email": "sarah.connor@institute.edu", "name": "Dr. Sarah Connor", "role": "teacher"},
-        {"email": "alan.turing@institute.edu", "name": "Prof. Alan Turing", "role": "teacher"},
-        {"email": "marc.b@institute.edu", "name": "Marc Benioff", "role": "teacher"},
-        {"email": "fred.l@institute.edu", "name": "Fred Luddy", "role": "teacher"},
-        {"email": "dan.a@institute.edu", "name": "Dan Abramov", "role": "teacher"},
-        {"email": "linus.t@institute.edu", "name": "Linus Torvalds", "role": "teacher"},
-    ]
 
     admins = [
         ("admin@example.com", "System Admin", "ChangeMe123!"),
@@ -404,10 +386,26 @@ async def _bootstrap_defaults() -> None:
         admins.append((settings.bootstrap_admin_email.lower(), settings.bootstrap_admin_name, settings.bootstrap_admin_password))
 
     async with SessionFactory() as session:
-        # 0. Clean up legacy school dummy accounts & outdated users
+        # 1. Clean up legacy school dummy accounts & outdated users
         await purge_legacy_school_data(session)
 
-        # 1. Ensure Admins
+        # 2. Ensure default Organization
+        try:
+            org = await session.scalar(select(Organization).where(Organization.slug == "omni-institute"))
+            if not org:
+                session.add(Organization(
+                    name="Omni Technical Training Institute",
+                    slug="omni-institute",
+                    website="https://institute.edu",
+                    status="active",
+                    is_public=True,
+                ))
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure organization: {err}")
+
+        # 3. Ensure Admins
         try:
             for email, name, pwd in admins:
                 u = await session.scalar(select(User).where(User.email == email.lower()))
@@ -430,115 +428,84 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] ensure admins: {err}")
 
-        # 2. Ensure default Organization
-        try:
-            org = await session.scalar(select(Organization).where(Organization.slug == "omni-institute"))
-            if not org:
-                session.add(Organization(
-                    name="Omni Technical Training Institute",
-                    slug="omni-institute",
-                    website="https://institute.edu",
-                    status="active",
-                    is_public=True,
-                ))
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] ensure organization: {err}")
 
-        # 3. Ensure Technical Faculty
-        try:
-            for t_data in teacher_seeds:
-                t = await session.scalar(select(User).where(User.email == t_data["email"].lower()))
-                if not t:
-                    session.add(User(
-                        email=t_data["email"].lower(),
-                        display_name=t_data["name"],
-                        password_hash=hash_password("Teacher123!"),
-                        role="teacher",
-                        status="active",
-                        email_verified=True,
-                    ))
-                else:
-                    t.display_name = t_data["name"]
-                    t.password_hash = hash_password("Teacher123!")
-                    t.role = "teacher"
-                    t.status = "active"
-                    t.email_verified = True
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] ensure teachers: {err}")
+async def flush_all_operational_data(session: AsyncSession) -> dict[str, Any]:
+    """Completely flushes all demo/test/seed operational data across the entire database:
+    - timetable slots -> 0
+    - live classes -> 0
+    - recordings -> 0
+    - resources -> 0
+    - enrollments -> 0
+    - courses & subjects -> 0
+    - legacy school records -> 0
+    - non-admin test users -> 0
+    Preserves ONLY System Admin accounts.
+    """
+    from app.classroom.models import LiveClass, ClassRecording, ClassAttendance, ClassParticipantLog, ClassTranscript, ZoomWebhookEvent
+    from app.content.models import LearningResource, CourseSection
+    from app.courses.models import Course, CourseSubject, CourseVersion, CourseReview, Category
+    from app.enrollment.models import Enrollment
+    from app.identity.models import User, RefreshToken, OrganizationMembership
+    from app.learning.models import ResourceProgress, LearningEvidence, LearnerConceptState, LearningActionFeedback
+    from app.notifications.models import Notification
+    from app.timetable.models import (
+        TimetableSlot, TeacherProfile, TeacherSubjectSkill, TeacherFeedback,
+        TeacherClassRestriction, TeacherLeave, TimetableRule, SchoolGrade,
+        SchoolSection, Subject, GradeCurriculum, CurriculumCourseOverride
+    )
 
-        # 4. Ensure Students
-        try:
-            for s_data in student_seeds:
-                stu = await session.scalar(select(User).where(User.email == s_data["email"].lower()))
-                if not stu:
-                    session.add(User(
-                        email=s_data["email"].lower(),
-                        display_name=s_data["name"],
-                        password_hash=hash_password("Student123!"),
-                        role="student",
-                        status="active",
-                        email_verified=True,
-                    ))
-                else:
-                    stu.display_name = s_data["name"]
-                    stu.password_hash = hash_password("Student123!")
-                    stu.role = "student"
-                    stu.status = "active"
-                    stu.email_verified = True
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] ensure students: {err}")
+    # 1. Learning progress & evidence
+    await session.execute(delete(ResourceProgress))
+    await session.execute(delete(LearningActionFeedback))
+    await session.execute(delete(LearnerConceptState))
+    await session.execute(delete(LearningEvidence))
 
-        # 5. Seed Training Institute Technical Courses & Subjects
-        try:
-            from app.admin import seed_tech_courses_internal
-            from app.courses.models import Course
-            from app.enrollment.models import Enrollment
+    # 2. Timetable & Live classes & Recordings & Resources
+    await session.execute(delete(ClassAttendance))
+    await session.execute(delete(ClassParticipantLog))
+    await session.execute(delete(ClassTranscript))
+    await session.execute(delete(ZoomWebhookEvent))
+    await session.execute(delete(ClassRecording))
+    await session.execute(delete(LiveClass))
+    await session.execute(delete(TimetableSlot))
+    await session.execute(delete(LearningResource))
+    await session.execute(delete(CourseSection))
 
-            await seed_tech_courses_internal(session)
-            await session.commit()
+    # 3. Enrollments & Reviews & Notifications
+    await session.execute(delete(Enrollment))
+    await session.execute(delete(CourseReview))
+    await session.execute(delete(Notification))
 
-            # Auto-enroll default candidate accounts into their specialized technical tracks
-            candidate_track_map = {
-                "priya.s@student.edu": "python-genai",
-                "rahul.k@student.edu": "salesforce-developer",
-                "vikram.m@student.edu": "servicenow-csa-cad",
-                "alex.r@student.edu": "full-stack-web",
-                "student@example.com": "full-stack-web",
-                "ananya.r@student.edu": "cloud-devops-aws",
-                "sneha.p@student.edu": "full-stack-web",
-            }
-            for s_email, c_slug in candidate_track_map.items():
-                stu_user = await session.scalar(select(User).where(User.email == s_email.lower()))
-                target_course = await session.scalar(select(Course).where(Course.slug == c_slug))
-                if stu_user and target_course:
-                    existing_en = await session.scalar(
-                        select(Enrollment).where(
-                            Enrollment.user_id == stu_user.id,
-                            Enrollment.course_id == target_course.id,
-                        )
-                    )
-                    if not existing_en:
-                        session.add(Enrollment(
-                            user_id=stu_user.id,
-                            course_id=target_course.id,
-                            status="active",
-                        ))
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] seed tech courses / enrollments error: {err}")
+    # 4. Subjects & Courses
+    await session.execute(delete(CourseSubject))
+    await session.execute(delete(CourseVersion))
+    await session.execute(delete(Course))
+    await session.execute(delete(Category))
 
-        # 6. Synchronize Course Structure (No AI Timetable Engine)
-        try:
-            await seed_school_defaults(session)
-            await session.commit()
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] timetable sync error: {err}")
+    # 5. Legacy school structures
+    await session.execute(delete(CurriculumCourseOverride))
+    await session.execute(delete(GradeCurriculum))
+    await session.execute(delete(SchoolSection))
+    await session.execute(delete(SchoolGrade))
+    await session.execute(delete(Subject))
+
+    # 6. Teacher profiles & auxiliary records
+    await session.execute(delete(TeacherSubjectSkill))
+    await session.execute(delete(TeacherFeedback))
+    await session.execute(delete(TeacherClassRestriction))
+    await session.execute(delete(TeacherLeave))
+    await session.execute(delete(TeacherProfile))
+
+    # 7. Remove non-admin users and their sessions
+    admin_users = (await session.scalars(select(User).where(User.role == "admin"))).all()
+    admin_ids = [u.id for u in admin_users]
+    if admin_ids:
+        await session.execute(delete(OrganizationMembership).where(OrganizationMembership.user_id.not_in(admin_ids)))
+        await session.execute(delete(RefreshToken).where(RefreshToken.user_id.not_in(admin_ids)))
+        await session.execute(delete(User).where(User.id.not_in(admin_ids)))
+    else:
+        await session.execute(delete(User).where(User.role != "admin"))
+
+    await session.commit()
+    return {"status": "success", "message": "All operational data completely flushed. System ready for dynamic Admin creation."}
 

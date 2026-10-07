@@ -448,20 +448,6 @@ async def list_admin_courses(
         )
     ).all()
 
-    # If no courses exist, auto-seed standard tech tracks
-    if not courses:
-        await seed_tech_courses_internal(session)
-        courses = (
-            await session.scalars(
-                select(Course)
-                .options(
-                    selectinload(Course.versions),
-                    selectinload(Course.subjects),
-                )
-                .order_by(Course.created_at.desc())
-            )
-        ).all()
-
     # Load teacher names for subject mapping
     teachers = (await session.scalars(select(User).where(User.role == "teacher"))).all()
     teacher_map = {t.id: t.display_name for t in teachers}
@@ -568,20 +554,40 @@ async def create_admin_course(
     await session.commit()
     await session.refresh(course)
 
-    # Automatically sync Course & Subjects into Timetable and regenerate schedule
-    try:
-        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
-        await sync_courses_to_timetable_curriculum(session)
-        await generate_school_timetable(session)
-    except Exception as e:
-        print(f"[Admin Course Sync Warning]: {e}")
-
     return {
         "id": str(course.id),
         "title": data.title,
         "slug": course.slug,
         "status": course.status,
     }
+
+
+@router.delete("/courses/{course_id}")
+async def delete_admin_course(
+    course_id: UUID,
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    from app.classroom.models import LiveClass, ClassRecording
+    from app.content.models import LearningResource
+    from app.timetable.models import TimetableSlot
+    from sqlalchemy import delete
+
+    # Cascade delete all dependent rows
+    await session.execute(delete(TimetableSlot).where(TimetableSlot.course_id == course_id))
+    await session.execute(delete(ClassRecording).where(ClassRecording.course_id == course_id))
+    await session.execute(delete(LearningResource).where(LearningResource.course_id == course_id))
+    await session.execute(delete(LiveClass).where(LiveClass.course_id == course_id))
+    await session.execute(delete(Enrollment).where(Enrollment.course_id == course_id))
+    await session.execute(delete(CourseSubject).where(CourseSubject.course_id == course_id))
+    await session.execute(delete(CourseVersion).where(CourseVersion.course_id == course_id))
+    await session.delete(course)
+    await session.commit()
+    return {"id": str(course_id), "deleted": True}
 
 
 @router.post("/courses/{course_id}/subjects", status_code=status.HTTP_201_CREATED)
@@ -606,13 +612,6 @@ async def add_course_subject(
     session.add(subject)
     await session.commit()
     await session.refresh(subject)
-
-    try:
-        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
-        await sync_courses_to_timetable_curriculum(session)
-        await generate_school_timetable(session)
-    except Exception as e:
-        print(f"[Admin Subject Add Sync Warning]: {e}")
 
     return {
         "id": str(subject.id),
@@ -645,13 +644,6 @@ async def update_course_subject(
     await session.commit()
     await session.refresh(subject)
 
-    try:
-        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
-        await sync_courses_to_timetable_curriculum(session)
-        await generate_school_timetable(session)
-    except Exception as e:
-        print(f"[Admin Subject Update Sync Warning]: {e}")
-
     return {
         "id": str(subject.id),
         "course_id": str(course_id),
@@ -673,13 +665,6 @@ async def delete_course_subject(
         raise HTTPException(status_code=404, detail="Subject not found")
     await session.delete(subject)
     await session.commit()
-
-    try:
-        from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
-        await sync_courses_to_timetable_curriculum(session)
-        await generate_school_timetable(session)
-    except Exception as e:
-        print(f"[Admin Subject Delete Sync Warning]: {e}")
 
     return {"id": str(subject_id), "deleted": True}
 
@@ -724,10 +709,17 @@ async def purge_legacy_data_endpoint(
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     from app.platform.database import purge_legacy_school_data
-    from app.timetable.service import sync_courses_to_timetable_curriculum
     await purge_legacy_school_data(session)
-    await sync_courses_to_timetable_curriculum(session)
-    return {"status": "success", "message": "Legacy school data purged and technical institute curriculum synchronized"}
+    return {"status": "success", "message": "Legacy school data purged"}
+
+
+@router.post("/flush-data")
+async def flush_operational_data_endpoint(
+    _admin: User = Depends(require_permission("admin:users")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    from app.platform.database import flush_all_operational_data
+    return await flush_all_operational_data(session)
 
 
 

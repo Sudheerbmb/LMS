@@ -13,18 +13,17 @@ import {
   deleteAdminUser,
   getAdminCourses,
   createAdminCourse,
+  deleteAdminCourse,
   addAdminCourseSubject,
   deleteAdminCourseSubject,
+  flushAllOperationalData,
   enrollStudentInCourse,
   unenrollStudentFromCourse,
   getZoomStatus,
-  seedTechCourses,
   getNotifications,
   deleteNotification,
   flushAllNotifications,
   updateAdminCourseSubject,
-  syncCoursesToTimetable,
-  purgeLegacyData,
 } from '../lib/api'
 import {
   Users,
@@ -41,7 +40,6 @@ import {
   Phone,
   Layers,
   RefreshCw,
-  Sparkles,
   X,
   Bell,
 } from 'lucide-react'
@@ -347,13 +345,25 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
     }
   }
 
-  const handleSeedTechTracks = async () => {
+  const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
+    if (!window.confirm(`Delete course "${courseTitle}" and all its subjects? This will permanently remove it from the database.`)) return
     try {
-      setLoading(true)
-      await seedTechCourses()
+      await deleteAdminCourse(courseId)
       await loadAllData()
     } catch (err: any) {
-      alert(`Seeding failed: ${err.message}`)
+      alert(`Error deleting course: ${err.message}`)
+    }
+  }
+
+  const handleFlushAllData = async () => {
+    if (!window.confirm('WARNING: Are you sure you want to perform a complete CLEAN DATA RESET? All courses, subjects, timetable slots, live classes, recordings, resources, enrollments, and demo users will be permanently purged. Only system admin accounts will remain.')) return
+    try {
+      setLoading(true)
+      const res = await flushAllOperationalData()
+      alert(`Clean Data Reset Complete: ${res.message}`)
+      await loadAllData()
+    } catch (err: any) {
+      alert(`Failed to flush data: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -365,33 +375,6 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
       await loadAllData()
     } catch (err: any) {
       alert(`Failed to assign instructor: ${err.message}`)
-    }
-  }
-
-  const handleSyncCoursesAndTimetable = async () => {
-    try {
-      setLoading(true)
-      const res = await syncCoursesToTimetable()
-      alert(`Synced! ${res.courses_synced} courses and ${res.subjects_synced} subjects synchronized with master timetable.`)
-      await loadAllData()
-    } catch (err: any) {
-      alert(`Sync failed: ${err.message}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handlePurgeLegacyData = async () => {
-    if (!window.confirm('Reset and purge legacy demo accounts and obsolete data from the database? This action cannot be undone.')) return
-    try {
-      setLoading(true)
-      const res = await purgeLegacyData()
-      alert(res.message || 'Legacy data successfully purged!')
-      await loadAllData()
-    } catch (err: any) {
-      alert(`Purge failed: ${err.message}`)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -458,20 +441,12 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             <span>+ New Course</span>
           </button>
           <button
-            onClick={handleSeedTechTracks}
-            title="Seed Standard Courses (Python GenAI, Salesforce, ServiceNow, etc.)"
-            className="px-4 py-2.5 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#FF7A18]" />
-            <span>Seed Standard Courses</span>
-          </button>
-          <button
-            onClick={handlePurgeLegacyData}
-            title="Reset and purge legacy demo accounts and old data"
+            onClick={handleFlushAllData}
+            title="Clean Data Reset: Purge all courses, timetable slots, and operational data"
             className="px-4 py-2.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Purge Legacy Data</span>
+            <span>Reset All Data</span>
           </button>
           <button
             onClick={loadAllData}
@@ -844,32 +819,24 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 bg-white border border-black/[0.06] rounded-3xl shadow-xs">
             <div>
               <h3 className="text-sm font-bold text-[#111827]">Course Tracks & Modular Hierarchy</h3>
-              <p className="text-xs text-[#64748B]">All subjects automatically link to teacher timetable grids and student dashboards.</p>
+              <p className="text-xs text-[#64748B]">All courses and subjects are persisted directly in PostgreSQL. Single source of truth.</p>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <button
-                onClick={handleSyncCoursesAndTimetable}
+                onClick={handleFlushAllData}
                 disabled={loading}
-                className="px-3.5 py-2 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A18] hover:bg-[#FFE8D6] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
-                title="Synchronize course subjects into timetable slots"
+                className="px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Completely reset all courses, timetable slots, and operational data"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                <span>Sync with Timetable</span>
-              </button>
-              <button
-                onClick={handleSeedTechTracks}
-                disabled={loading}
-                className="px-3.5 py-2 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-[#111827] border border-black/[0.06] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#FF7A18]" />
-                <span>Re-seed 5 Tracks</span>
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Reset All Data</span>
               </button>
               <button
                 onClick={() => setShowAddCourseModal(true)}
                 className="px-4 py-2 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#FF7A18]/25 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Create Track</span>
+                <span>Create Course</span>
               </button>
             </div>
           </div>
@@ -879,24 +846,18 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
               <div className="p-12 text-center bg-white border border-black/[0.06] rounded-3xl text-[#64748B] space-y-4 shadow-xs">
                 <BookOpen className="w-10 h-10 mx-auto text-[#94A3B8]" />
                 <div>
-                  <h3 className="text-[#111827] font-bold text-base">No Technical Courses Initialized</h3>
+                  <h3 className="text-[#111827] font-bold text-base">No courses available.</h3>
                   <p className="text-xs text-[#64748B] mt-1">
-                    Seed standard courses (Python with GenAI, Salesforce, ServiceNow, Full Stack, DevOps) with one click.
+                    Create courses dynamically using the button below. All courses are stored directly in PostgreSQL.
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <button
-                    onClick={handleSeedTechTracks}
+                    onClick={() => setShowAddCourseModal(true)}
                     className="px-5 py-2.5 rounded-2xl bg-[#FF7A18] text-white font-bold text-xs shadow-md shadow-[#FF7A18]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                   >
-                    <Sparkles className="w-4 h-4 text-white" />
-                    <span>Seed All 5 Technical Tracks</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAddCourseModal(true)}
-                    className="px-4 py-2.5 rounded-2xl bg-neutral-100 border border-black/[0.06] text-[#111827] font-bold text-xs hover:bg-neutral-200 transition-all cursor-pointer"
-                  >
-                    Create Custom Track
+                    <Plus className="w-4 h-4 text-white" />
+                    <span>Create Course</span>
                   </button>
                 </div>
               </div>
@@ -940,6 +901,15 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add Subject / Class</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteCourse(course.id, course.title)}
+                        className="px-3.5 py-2 rounded-2xl bg-neutral-100 hover:bg-rose-50 text-[#64748B] hover:text-red-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-black/[0.06]"
+                        title="Delete this course"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>

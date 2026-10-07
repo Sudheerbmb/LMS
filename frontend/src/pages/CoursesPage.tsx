@@ -190,7 +190,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
   // ─────────────────────────────────────────────────────────────────────────────
   if (currentView === 'subject' && selectedSubject) {
     const parentCourseTitle = selectedCourseData?.title || selectedSubject.course_title || 'Course'
-    const teacherName = selectedSubject.teacher?.display_name || 'Assigned Instructor'
+    const teacherName = selectedSubject.teacher?.display_name || selectedSubject.teacher?.name || 'No teacher assigned'
 
     return (
       <div className="min-h-screen bg-[#FDFBF9] text-slate-900 pb-20">
@@ -744,7 +744,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
                   const teacherDisplay = subj.teachers?.[0]?.name 
                     || subj.teacher?.name 
                     || subj.teacher?.display_name 
-                    || 'Assigned Instructor'
+                    || 'No teacher assigned'
 
                   return (
                     <div

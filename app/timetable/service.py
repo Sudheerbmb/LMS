@@ -192,20 +192,15 @@ async def sync_courses_to_timetable_curriculum(session: AsyncSession) -> Dict[st
         )
     ).all()
 
-    # If no courses exist, seed internal tech courses
+    # If no courses exist, do not auto-seed. Respect empty state.
     if not courses:
-        from app.admin import seed_tech_courses_internal
-        await seed_tech_courses_internal(session)
-        courses = (
-            await session.scalars(
-                select(Course)
-                .options(
-                    selectinload(Course.versions),
-                    selectinload(Course.subjects),
-                )
-                .order_by(Course.created_at.asc())
-            )
-        ).all()
+        return {
+            "status": "success",
+            "message": "No courses found in database to synchronize.",
+            "courses_synced": 0,
+            "subjects_synced": 0,
+            "teachers_linked": 0,
+        }
 
     # Clean out any old legacy SchoolGrades named "Class 1", "Class 2", ...
     valid_titles = {(c.versions[0].title if c.versions else c.slug.replace("-", " ").title()) for c in courses}
@@ -1108,20 +1103,6 @@ async def get_school_courses_and_syllabus(
             .order_by(SchoolGrade.grade_number)
         )
     ).all()
-    # A fresh hosted database has no curriculum rows yet. Materialize the
-    # idempotent default catalog on first access so every portal has content.
-    if not grades:
-        await seed_school_defaults(session)
-        grades = (
-            await session.scalars(
-                select(SchoolGrade)
-                .options(
-                    selectinload(SchoolGrade.curriculum).selectinload(GradeCurriculum.subject),
-                    selectinload(SchoolGrade.sections),
-                )
-                .order_by(SchoolGrade.grade_number)
-            )
-        ).all()
 
     grade_map = {g.grade_number: g for g in grades}
     grade_by_id = {g.id: g for g in grades}

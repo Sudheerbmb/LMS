@@ -629,6 +629,23 @@ async def create_subject_resource(
     return SubjectResourceRead.model_validate(resource)
 
 
+@router.delete("/subjects/{subject_id}/resources/{resource_id}")
+async def delete_subject_resource(
+    subject_id: UUID,
+    resource_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    if current_user.role not in ["teacher", "admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only teachers and admins can delete resources")
+    resource = await session.get(LearningResource, resource_id)
+    if not resource or resource.subject_id != subject_id:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    await session.delete(resource)
+    await session.commit()
+    return {"id": str(resource_id), "deleted": True}
+
+
 # ── Generic Course Detail ─────────────────────────────────────────────────────
 
 @router.get("/{course_identifier}", response_model=StudentCourseDetailRead)

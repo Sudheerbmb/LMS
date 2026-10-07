@@ -2587,7 +2587,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
             sharerId: myPeerIdRef.current,
 
-            sharerName: user.display_name || (isTeacher ? 'Dr. Sarah Connor' : 'Presenter')
+            sharerName: user.display_name || (isTeacher ? 'Instructor' : 'Presenter')
 
           })
 
@@ -2633,7 +2633,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
 
                 sharerId: myPeerIdRef.current,
 
-                sharerName: user.display_name || (isTeacher ? 'Dr. Sarah Connor' : 'Presenter'),
+                sharerName: user.display_name || (isTeacher ? 'Instructor' : 'Presenter'),
 
                 frameData
 
@@ -6608,10 +6608,10 @@ const handleTriggerTeacherCopilot = async (
                   </p>
                   <div className="flex items-center gap-4 text-xs text-[#64748B] pt-1">
                     <span className="flex items-center gap-1.5">
-                      👤 {featuredClass.teacher_name ? `Prof. ${featuredClass.teacher_name}` : 'Prof. Sarah Connor'}
+                      👤 {featuredClass.teacher_name ? `Prof. ${featuredClass.teacher_name}` : 'No teacher assigned'}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      🏫 {featuredClass.room_number || 'Main Classroom'}
+                      🏫 {featuredClass.room_number || 'Online Class'}
                     </span>
                   </div>
                 </div>
@@ -6718,13 +6718,18 @@ const handleTriggerTeacherCopilot = async (
 
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recorded.map((cls, idx) => {
+              {recorded.map((cls) => {
                 const thumb = getCourseThumbnail(cls.title, cls.subject_name)
-                const duration = idx === 0 ? '46 min' : idx === 1 ? '52 min' : '38 min'
-                const displayDate = idx === 0 ? 'Oct 03, 2026' : idx === 1 ? 'Oct 01, 2026' : 'Sep 28, 2026'
-                const cleanTitle = cls.title || (idx === 0 ? 'Python Core & Advanced OOP' : idx === 1 ? 'Docker Containerization & Kubernetes' : 'Salesforce Administration & Development')
-                const cleanSub = cls.subject_name || (idx === 0 ? 'Object oriented programming fundamentals' : idx === 1 ? 'Build, deploy and orchestrate modern applications' : 'Core concepts, automation and integrations')
-                const teacher = cls.teacher_name || (idx === 0 ? 'Prof. Marc Benioff' : idx === 1 ? 'Prof. Alan Turing' : 'Dr. Sarah Connor')
+                const durationMin = cls.starts_at && cls.ends_at
+                  ? Math.round((new Date(cls.ends_at).getTime() - new Date(cls.starts_at).getTime()) / 60000)
+                  : 0
+                const duration = durationMin > 0 ? `${durationMin} min` : 'Recorded'
+                const displayDate = cls.starts_at
+                  ? new Date(cls.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                  : ''
+                const cleanTitle = cls.title || cls.subject_name || 'Class Session'
+                const cleanSub = cls.subject_name || ''
+                const teacher = cls.teacher_name ? `Prof. ${cls.teacher_name}` : 'No teacher assigned'
 
                 return (
                   <div
