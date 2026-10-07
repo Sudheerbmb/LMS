@@ -35,7 +35,6 @@ from app.timetable.schemas import (
     TeacherLeaveCreate,
     TeacherLeaveRead,
     TeacherProfileRead,
-    TimetableGenerationResult,
     TimetableRuleCreate,
     TimetableRuleRead,
     TimetableRuleUpdate,
@@ -47,11 +46,9 @@ from app.timetable.service import (
     delete_slot,
     delete_timetable_rule,
     find_available_substitutes,
-    generate_school_timetable,
     get_all_teachers_with_feedback,
     get_all_timetable_rules,
     get_timetable_grid,
-    seed_school_defaults,
     sync_courses_to_timetable_curriculum,
     swap_slots,
     toggle_timetable_rule,
@@ -64,35 +61,6 @@ from app.timetable.service import (
 router = APIRouter(prefix="/api/v1/timetable", tags=["timetable"])
 
 
-@router.post("/seed-defaults", response_model=Dict[str, Any])
-async def seed_defaults_endpoint(
-    session: AsyncSession = Depends(get_session),
-):
-    """Initializes courses, tracks, subjects, curricula, teacher profiles, dynamic policy rules, and sample reviews."""
-    result = await seed_school_defaults(session)
-    return {
-        "status": "success",
-        "message": "Initialized course tracks, subjects, teacher faculty, dynamic rules, and sample feedback restrictions.",
-        "data": result,
-    }
-
-
-@router.post("/sync-courses", response_model=Dict[str, Any])
-async def sync_courses_endpoint(
-    session: AsyncSession = Depends(get_session),
-):
-    """Synchronizes active course catalog modules and assigned teachers into the timetable curriculum engine."""
-    result = await sync_courses_to_timetable_curriculum(session)
-    return result
-
-
-@router.post("/generate", response_model=TimetableGenerationResult)
-async def generate_timetable_endpoint(
-    session: AsyncSession = Depends(get_session),
-):
-    """Triggers the LangGraph Autonomous Timetable Agent using live Neon DB policy rules."""
-    result = await generate_school_timetable(session)
-    return result
 
 
 @router.get("/my-today-classes", response_model=Dict[str, Any])
@@ -261,8 +229,8 @@ async def create_slot_endpoint(
     session: AsyncSession = Depends(get_session),
 ):
     """Schedules a new timetable class linked to a course and teacher."""
-    if current_user.role not in ("admin", "teacher"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins or faculty can schedule timetable slots")
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only administrators can schedule classes")
     slot = await create_slot(session, payload.model_dump(), current_user=current_user)
     if not slot:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create timetable slot")
@@ -504,19 +472,3 @@ async def update_school_course_endpoint(
     await session.commit()
 
     return {"status": "success", "message": "Curriculum course updated"}
-
-
-@router.post("/generate-zoom-classes")
-async def generate_zoom_classes_from_timetable_endpoint(
-    days_ahead: int = Query(7, ge=1, le=30),
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
-) -> Dict[str, Any]:
-    """
-    Administrator / Faculty endpoint to generate Zoom meetings for upcoming timetable slots.
-    """
-    if current_user.role not in ("admin", "teacher"):
-        raise HTTPException(status_code=403, detail="Only faculty and administrators can trigger timetable Zoom generation")
-
-    from app.timetable.service import generate_zoom_classes_from_timetable_service
-    return await generate_zoom_classes_from_timetable_service(session, days_ahead=days_ahead)

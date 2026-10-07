@@ -129,19 +129,6 @@ async def test_autogen_oral_viva_defense():
         assert "Dr. Soren Kierkegaard" in speakers
         assert data2["current_evaluation"]["rigor_score"] > 0
 
-@pytest.mark.asyncio
-async def test_learning_agent_cognitive_state():
-    """Validates Learning Agent state and cognitive recommendations."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Testing LENS API endpoint
-        res = await client.post("/api/v1/lens/diagnostic/generate", json={
-            "grade_name": "Class 10",
-            "subjects": ["Mathematics", "Physics"],
-            "num_questions": 3
-        })
-        # Returns 401 Unauthorized without auth headers (strict enterprise standard security)
-        assert res.status_code in [200, 401]
 
 @pytest.mark.asyncio
 async def test_autonomous_copilot_reasoning_engine():

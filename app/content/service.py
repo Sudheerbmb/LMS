@@ -27,14 +27,15 @@ async def create_resource(
     if not course:
         raise CourseNotFoundError("Course not found")
 
-    membership = await session.scalar(
-        select(OrganizationMembership).where(
-            OrganizationMembership.organization_id == course.organization_id,
-            OrganizationMembership.user_id == owner.id,
+    if owner.role != "admin" and course.organization_id:
+        membership = await session.scalar(
+            select(OrganizationMembership).where(
+                OrganizationMembership.organization_id == course.organization_id,
+                OrganizationMembership.user_id == owner.id,
+            )
         )
-    )
-    if not membership:
-        raise ContentAccessError("User is not a member of this organization")
+        if not membership:
+            raise ContentAccessError("User is not authorized for this course")
 
     version = await session.scalar(
         select(CourseVersion).where(

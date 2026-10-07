@@ -70,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ]
 
   const progressGroup = [
-    ...(user.role === 'admin'   ? [{ id: 'admin',         label: 'Institute Admin', icon: Users }] : []),
+    ...(user.role === 'admin'   ? [{ id: 'admin',         label: 'Admin', icon: Users }] : []),
   ]
 
   const handleDeleteSingle = async (e: React.MouseEvent, id: string) => {

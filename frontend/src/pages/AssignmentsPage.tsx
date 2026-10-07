@@ -192,35 +192,6 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ user }) => {
       [activeAssignment.id]: { status: 'submitted' }
     }))
 
-    try {
-      const { ingestLearningEvidenceEvent } = await import('../lib/evidenceEngine')
-      const courseName = courses.find((c) => c.id === selectedCourse)?.title || 'Python with Generative AI'
-      const subjectName = courseName.toLowerCase().includes('salesforce')
-        ? 'Apex Programming & SOQL'
-        : courseName.toLowerCase().includes('servicenow')
-        ? 'ServiceNow Platform & ITSM Core'
-        : courseName.toLowerCase().includes('web')
-        ? 'React 19 & TypeScript'
-        : 'Python Core & Advanced OOP'
-
-      ingestLearningEvidenceEvent({
-        id: `assignment_sub_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        student_id: user.id,
-        grade_name: courseName || user.display_name || 'Technical Course',
-        subject: subjectName,
-        concept_name: activeAssignment.title,
-        event_type: 'ASSIGNMENT',
-        title: activeAssignment.title,
-        score_ratio: 0.85,
-        difficulty: 0.55,
-        misconception_detected: false,
-        feedback: `Submitted assignment: ${activeAssignment.title}.`
-      })
-    } catch (ingestErr) {
-      console.warn('LENS ingestion non-fatal warning:', ingestErr)
-    }
-
     alert('Assignment work submitted successfully!')
     setActiveAssignment(null)
     setSubContent('')

@@ -7,9 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.platform.models import Base, TimestampMixin, UUIDMixin
 
-if TYPE_CHECKING:
-    from app.identity.models import User
-    from app.courses.models import Course
+from app.courses import models as _course_models  # noqa: F401
+from app.identity import models as _identity_models  # noqa: F401
 
 
 class SchoolGrade(UUIDMixin, TimestampMixin, Base):

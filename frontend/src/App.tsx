@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react'
 import type { 
   User, 
   Notification, 
-  DashboardSummary,
-  AdminInstituteCourse
+  DashboardSummary
 } from './lib/api'
 import { 
   getCurrentUser, 
   getDashboardSummary, 
   getNotifications, 
   login as loginApi, 
-  register as registerApi,
-  getAdminCourses
+  register as registerApi
 } from './lib/api'
 import { Sidebar } from './components/Sidebar'
 import { Search, Bell, ChevronDown } from 'lucide-react'
@@ -23,13 +21,7 @@ import { ClassroomPage } from './pages/ClassroomPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
 
-const STANDARD_TRACKS = [
-  { id: 'python-genai', title: 'Python with Generative AI' },
-  { id: 'salesforce-developer', title: 'Salesforce Administration & Development' },
-  { id: 'servicenow-csa-cad', title: 'ServiceNow Administration & Development' },
-  { id: 'full-stack-web', title: 'Full Stack Web Engineering' },
-  { id: 'cloud-devops-aws', title: 'Cloud Computing & DevOps Engineering' },
-]
+
 
 export function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('lms_access_token'))
@@ -43,11 +35,9 @@ export function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('')
   const [authName, setAuthName] = useState('')
   const [authPhone, setAuthPhone] = useState('')
-  const [authRole, setAuthRole] = useState<'student' | 'teacher'>('student')
-  const [authCourseId, setAuthCourseId] = useState<string>('')
-  const [availableCourses, setAvailableCourses] = useState<AdminInstituteCourse[]>([])
   const [authError, setAuthError] = useState('')
   const [submittingAuth, setSubmittingAuth] = useState(false)
 
@@ -56,15 +46,6 @@ export function App() {
       loadInitialData()
     } else {
       setLoading(false)
-      // Preload courses for registration dropdown
-      getAdminCourses()
-        .then((res) => {
-          if (res && res.length > 0) {
-            setAvailableCourses(res)
-            setAuthCourseId(res[0].id)
-          }
-        })
-        .catch(() => {})
     }
   }, [token])
 
@@ -102,17 +83,21 @@ export function App() {
         localStorage.setItem('lms_access_token', res.access_token)
         setToken(res.access_token)
       } else {
+        if (authPassword !== authConfirmPassword) {
+          setAuthError('Passwords do not match.')
+          return
+        }
         await registerApi({
           email: authEmail,
           password: authPassword,
           display_name: authName,
-          phone_number: authPhone,
-          role: authRole,
-          course_id: authCourseId || undefined,
-          course_ids: authCourseId ? [authCourseId] : undefined,
+          phone_number: authPhone ? authPhone.trim() : undefined,
+          role: 'student',
         })
-        alert('Registration complete! Your account is active. Please log in.')
+        alert('Student registration submitted successfully! Your account will be activated by the Admin.')
         setAuthMode('login')
+        setAuthPassword('')
+        setAuthConfirmPassword('')
       }
     } catch (err: any) {
       setAuthError(err.message || 'Authentication failed.')
@@ -336,14 +321,13 @@ export function App() {
                   </div>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Phone Number *
+                      Phone Number
                     </label>
                     <input
                       type="tel"
-                      required
                       value={authPhone}
                       onChange={(e) => setAuthPhone(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="+91 98765 43210 (optional)"
                       style={{
                         width: '100%',
                         padding: '10px 12px',
@@ -355,63 +339,6 @@ export function App() {
                         outline: 'none'
                       }}
                     />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Role *
-                      </label>
-                      <select
-                        value={authRole}
-                        onChange={(e) => setAuthRole(e.target.value as 'student' | 'teacher')}
-                        style={{
-                          width: '100%',
-                          padding: '10px 10px',
-                          borderRadius: 10,
-                          border: '1px solid var(--border-med)',
-                          background: 'white',
-                          fontSize: 12,
-                          color: 'var(--ink)',
-                          outline: 'none'
-                        }}
-                      >
-                        <option value="student">Student</option>
-                        <option value="teacher">Faculty / Mentor</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Track *
-                      </label>
-                      <select
-                        value={authCourseId}
-                        onChange={(e) => setAuthCourseId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 10px',
-                          borderRadius: 10,
-                          border: '1px solid var(--border-med)',
-                          background: 'white',
-                          fontSize: 12,
-                          color: 'var(--ink)',
-                          outline: 'none'
-                        }}
-                      >
-                        {availableCourses.length > 0 ? (
-                          availableCourses.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.title}
-                            </option>
-                          ))
-                        ) : (
-                          STANDARD_TRACKS.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.title}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                    </div>
                   </div>
                 </>
               )}
@@ -425,7 +352,7 @@ export function App() {
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  placeholder="you@institute.edu"
+                  placeholder="you@domain.com"
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -469,6 +396,31 @@ export function App() {
                 />
               </div>
 
+              {authMode === 'register' && (
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Confirm Password *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={authConfirmPassword}
+                    onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border: '1px solid var(--border-med)',
+                      background: 'white',
+                      fontSize: 13,
+                      color: 'var(--ink)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={submittingAuth}
@@ -487,7 +439,7 @@ export function App() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                {submittingAuth ? 'Verifying...' : authMode === 'login' ? 'Sign in to Workspace' : 'Complete Enrollment'}
+                {submittingAuth ? 'Verifying...' : authMode === 'login' ? 'Sign in to Workspace' : 'Register Student Account'}
               </button>
             </form>
 

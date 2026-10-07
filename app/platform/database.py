@@ -446,7 +446,7 @@ async def flush_all_operational_data(session: AsyncSession) -> dict[str, Any]:
     from app.courses.models import Course, CourseSubject, CourseVersion, CourseReview, Category
     from app.enrollment.models import Enrollment
     from app.identity.models import User, RefreshToken, OrganizationMembership
-    from app.learning.models import ResourceProgress, LearningEvidence, LearnerConceptState, LearningActionFeedback
+    from app.learning.models import ResourceProgress
     from app.notifications.models import Notification
     from app.timetable.models import (
         TimetableSlot, TeacherProfile, TeacherSubjectSkill, TeacherFeedback,
@@ -454,11 +454,13 @@ async def flush_all_operational_data(session: AsyncSession) -> dict[str, Any]:
         SchoolSection, Subject, GradeCurriculum, CurriculumCourseOverride
     )
 
-    # 1. Learning progress & evidence
+    # 1. Learning progress & drop obsolete LENS tables
     await session.execute(delete(ResourceProgress))
-    await session.execute(delete(LearningActionFeedback))
-    await session.execute(delete(LearnerConceptState))
-    await session.execute(delete(LearningEvidence))
+    try:
+        from sqlalchemy import text
+        await session.execute(text("DROP TABLE IF EXISTS learning_action_feedback, learner_concept_states, learning_evidence, lens_sn1_decision_audits, lens_teacher_escalations, lens_learner_states, lens_sn1_runs, lens_sn1_threads CASCADE"))
+    except Exception:
+        pass
 
     # 2. Timetable & Live classes & Recordings & Resources
     await session.execute(delete(ClassAttendance))

@@ -9,7 +9,6 @@ from sqlalchemy.orm import selectinload
 
 from app.identity.models import User
 from app.identity.security import hash_password
-from app.timetable.agent import build_timetable_graph
 from app.timetable.models import (
     GradeCurriculum,
     CurriculumCourseOverride,
@@ -365,83 +364,6 @@ async def seed_school_defaults(session: AsyncSession) -> Dict[str, Any]:
     return await sync_courses_to_timetable_curriculum(session)
 
 
-async def generate_school_timetable(session: AsyncSession) -> Dict[str, Any]:
-    """Runs the LangGraph agent to generate the master school schedule with live database rules."""
-    # Ensure Courses and Subjects are synced into Timetable graph inputs
-    await sync_courses_to_timetable_curriculum(session)
-
-    # 1. Fetch live rules from Neon DB
-    rules = (await session.scalars(select(TimetableRule).where(TimetableRule.is_enabled == True))).all()
-    rules_dict = {r.rule_type: r.parameters for r in rules}
-
-    # Fetch active teacher leaves
-    leaves = (await session.scalars(select(TeacherLeave).where(TeacherLeave.is_active == True))).all()
-    teacher_leaves_list = [{"teacher_id": l.teacher_id, "day_of_week": l.day_of_week} for l in leaves]
-
-    grades = (await session.scalars(select(SchoolGrade).order_by(SchoolGrade.grade_number))).all()
-    sections = (await session.scalars(select(SchoolSection).options(selectinload(SchoolSection.grade)).order_by(SchoolSection.name))).all()
-    subjects = (await session.scalars(select(Subject))).all()
-    teachers = (await session.scalars(select(TeacherProfile).options(selectinload(TeacherProfile.skills)))).all()
-    restrictions = (await session.scalars(select(TeacherClassRestriction).where(TeacherClassRestriction.is_active == True))).all()
-    curricula = (await session.scalars(select(GradeCurriculum))).all()
-
-    teacher_users = (await session.scalars(select(User).where(User.id.in_([t.user_id for t in teachers])))).all()
-    user_name_map = {u.id: u.display_name for u in teacher_users}
-
-    state_input = {
-        "grades": [{"id": g.id, "number": g.grade_number, "name": g.name} for g in grades],
-        "sections": [{"id": s.id, "name": s.name, "grade_id": s.grade_id, "room_number": s.room_number, "grade_name": s.grade.name if s.grade else ""} for s in sections],
-        "subjects": [{"id": s.id, "code": s.code, "name": s.name, "requires_ground": s.requires_ground, "requires_lab": s.requires_lab, "category": s.category} for s in subjects],
-        "teachers": [{
-            "id": t.id,
-            "display_name": user_name_map.get(t.user_id, f"Faculty {t.employee_id}"),
-            "employee_id": t.employee_id,
-            "max_daily_periods": t.max_daily_periods,
-            "rating_avg": t.rating_avg,
-            "skills": [sk.subject_id for sk in t.skills],
-        } for t in teachers],
-        "restrictions": [{"teacher_id": r.teacher_id, "section_id": r.section_id, "subject_id": r.subject_id, "reason": r.reason} for r in restrictions],
-        "curricula": [{"grade_id": c.grade_id, "subject_id": c.subject_id, "periods_per_week": c.periods_per_week} for c in curricula],
-        "rules": rules_dict,
-        "teacher_leaves": teacher_leaves_list,
-        "slots": [],
-        "clashes": [],
-        "autonomous_decisions": [],
-        "iteration": 0,
-        "is_complete": False,
-    }
-
-    graph = build_timetable_graph()
-    final_state = graph.invoke(state_input)
-
-    generated_slots = final_state.get("slots", [])
-    decisions = final_state.get("autonomous_decisions", [])
-
-    await session.execute(delete(TimetableSlot))
-    for s_dict in generated_slots:
-        slot = TimetableSlot(
-            day_of_week=s_dict["day_of_week"],
-            period_number=s_dict["period_number"],
-            start_time=s_dict["start_time"],
-            end_time=s_dict["end_time"],
-            slot_type=s_dict["slot_type"],
-            room_or_venue=s_dict.get("room_or_venue", "Tech Sandbox"),
-            section_id=s_dict["section_id"],
-            subject_id=s_dict.get("subject_id"),
-            teacher_id=s_dict.get("teacher_id"),
-        )
-        session.add(slot)
-
-    await session.commit()
-
-    return {
-        "status": "success",
-        "academic_year": "2026-2027",
-        "total_slots_scheduled": len(generated_slots),
-        "total_sections": len(sections),
-        "autonomous_decisions": decisions[:12],
-        "audit_summary": f"Successfully generated dynamic master timetable using live Neon DB policy rules for all technical tracks across weekly periods.",
-    }
 
 
 def resolve_current_weekday_and_date(tz_name: Optional[str] = None) -> tuple[str, str]:
@@ -889,15 +811,60 @@ async def create_slot(
     payload: Dict[str, Any],
     current_user: Optional[User] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Creates a new timetable slot dynamically linked to a course and teacher."""
-    from app.courses.models import Course
+    """Creates a new timetable slot dynamically linked to a course and teacher with strict validation."""
+    from fastapi import HTTPException
+    from app.courses.models import Course, CourseSubject
 
+    # 1. Validate start < end
+    start_time = str(payload.get("start_time", "09:00")).strip()
+    end_time = str(payload.get("end_time", "10:30")).strip()
+    if start_time >= end_time:
+        raise HTTPException(status_code=400, detail="Start time must be strictly before end time")
+
+    # 2. Validate course exists
     course_id = payload.get("course_id")
     if isinstance(course_id, str):
         course_id = UUID(course_id)
+    if not course_id:
+        raise HTTPException(status_code=400, detail="Course selection is required")
 
-    course = await session.get(Course, course_id) if course_id else None
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Selected course does not exist in the database")
 
+    # 3. Validate subject belongs to course
+    subject_id = payload.get("subject_id")
+    if isinstance(subject_id, str):
+        subject_id = UUID(subject_id)
+
+    subject_name = str(payload.get("subject_name", "")).strip()
+    subject_code = str(payload.get("subject_code", "")).strip()
+
+    subject_obj = None
+    if subject_id:
+        subject_obj = await session.get(CourseSubject, subject_id)
+        if not subject_obj or subject_obj.course_id != course.id:
+            raise HTTPException(status_code=400, detail="Selected subject does not belong to this course")
+    else:
+        if subject_name or subject_code:
+            subject_obj = await session.scalar(
+                select(CourseSubject).where(
+                    CourseSubject.course_id == course.id,
+                    or_(
+                        func.lower(CourseSubject.name) == subject_name.lower(),
+                        func.lower(CourseSubject.code) == subject_code.lower(),
+                    )
+                )
+            )
+        if not subject_obj:
+            raise HTTPException(status_code=400, detail="Subject does not belong to this course")
+
+    subject_id = subject_obj.id
+    subject_name = subject_obj.name
+    subject_code = subject_obj.code
+    subject_color = subject_obj.color or payload.get("subject_color", "#3b82f6")
+
+    # 4. Validate teacher exists and is assigned
     teacher_id = payload.get("teacher_id")
     if teacher_id:
         if isinstance(teacher_id, str):
@@ -906,32 +873,48 @@ async def create_slot(
         if not teacher_user:
             teacher_prof = await session.get(TeacherProfile, teacher_id)
             if teacher_prof:
-                teacher_id = teacher_prof.user_id
-            else:
-                teacher_id = None
+                teacher_user = await session.get(User, teacher_prof.user_id)
+                teacher_id = teacher_user.id if teacher_user else None
 
-    subject_name = payload.get("subject_name")
-    if not subject_name and course:
-        await session.refresh(course, ["versions"])
-        subject_name = course.versions[0].title if course.versions else course.slug.replace("-", " ").title()
+        if not teacher_user or teacher_user.role != "teacher":
+            raise HTTPException(status_code=400, detail="Selected faculty is not a registered teacher")
 
-    subject_code = payload.get("subject_code")
-    if not subject_code and course:
-        subject_code = course.slug[:8].upper()
+        # Validate teacher is assigned to this subject
+        if subject_obj.teacher_id and subject_obj.teacher_id != teacher_user.id:
+            raise HTTPException(status_code=400, detail=f"Selected teacher is not assigned to teach {subject_obj.name}")
 
+    # 5. Validate teacher schedule conflict
+    day_of_week = str(payload.get("day_of_week", "Monday")).strip()
+    if teacher_id:
+        teacher_conflict = await session.scalar(
+            select(TimetableSlot).where(
+                TimetableSlot.teacher_id == teacher_id,
+                func.lower(TimetableSlot.day_of_week) == day_of_week.lower(),
+                TimetableSlot.start_time < end_time,
+                TimetableSlot.end_time > start_time,
+            )
+        )
+        if teacher_conflict:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Teacher has an existing class scheduled on {day_of_week} ({teacher_conflict.start_time} - {teacher_conflict.end_time})"
+            )
+
+    # 6. Create exactly ONE database row
     slot = TimetableSlot(
-        course_id=course_id,
+        course_id=course.id,
+        subject_id=subject_id,
         teacher_id=teacher_id,
-        day_of_week=payload.get("day_of_week", "Monday"),
-        start_time=payload.get("start_time", "09:00"),
-        end_time=payload.get("end_time", "10:30"),
-        period_number=payload.get("period_number", 1),
+        day_of_week=day_of_week,
+        start_time=start_time,
+        end_time=end_time,
+        period_number=int(payload.get("period_number", 1) or 1),
         slot_type=payload.get("slot_type", "lecture"),
-        room_or_venue=payload.get("room_or_venue", "Online / Classroom 101"),
+        room_or_venue=payload.get("room_or_venue", "Main Classroom"),
         meeting_url=payload.get("meeting_url"),
         subject_name=subject_name,
         subject_code=subject_code,
-        subject_color=payload.get("subject_color", "#3b82f6"),
+        subject_color=subject_color,
     )
     session.add(slot)
     await session.commit()
@@ -1370,105 +1353,4 @@ async def get_school_courses_and_syllabus(
     return courses_result
 
 
-async def generate_zoom_classes_from_timetable_service(
-    session: AsyncSession,
-    days_ahead: int = 7,
-) -> Dict[str, Any]:
-    """
-    Scans the weekly master timetable slots and automatically generates corresponding LMS LiveClasses
-    with integrated Zoom meetings for upcoming dates, ensuring idempotency.
-    """
-    from datetime import datetime, timedelta, timezone
-    from app.classroom.models import LiveClass
-    from app.classroom.schemas import LiveClassCreate
-    from app.classroom.service import schedule_school_live_class, ScheduleConflictError
-
-    now = datetime.now(timezone.utc)
-    slots = (
-        await session.scalars(
-            select(TimetableSlot)
-            .options(
-                selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
-                selectinload(TimetableSlot.subject),
-                selectinload(TimetableSlot.teacher).selectinload(TeacherProfile.skills),
-            )
-            .where(TimetableSlot.teacher_id.isnot(None), TimetableSlot.subject_id.isnot(None))
-        )
-    ).all()
-
-    teachers = (await session.scalars(select(User).where(User.role.in_(["teacher", "admin"])))).all()
-    teacher_user_map = {t.id: t for t in teachers}
-
-    t_profiles = (await session.scalars(select(TeacherProfile))).all()
-    profile_to_user = {p.id: p.user_id for p in t_profiles}
-
-    classes_created = 0
-    zoom_meetings_synced = 0
-
-    for day_offset in range(days_ahead):
-        target_date = (now + timedelta(days=day_offset)).date()
-        target_weekday = target_date.strftime("%A")
-
-        matching_slots = [s for s in slots if s.day_of_week.lower() == target_weekday.lower()]
-        for s in matching_slots:
-            if not s.section or not s.section.grade or not s.subject:
-                continue
-
-            try:
-                start_h, start_m = map(int, s.start_time.split(":"))
-                end_h, end_m = map(int, s.end_time.split(":"))
-            except Exception:
-                start_h, start_m = 9, 0
-                end_h, end_m = 10, 15
-
-            starts_at = datetime(target_date.year, target_date.month, target_date.day, start_h, start_m, tzinfo=timezone.utc)
-            ends_at = datetime(target_date.year, target_date.month, target_date.day, end_h, end_m, tzinfo=timezone.utc)
-
-            # Idempotency check
-            existing = await session.scalar(
-                select(LiveClass).where(
-                    LiveClass.grade_number == s.section.grade.grade_number,
-                    LiveClass.section_name == s.section.name,
-                    LiveClass.subject_code == s.subject.code,
-                    LiveClass.period_number == s.period_number,
-                    LiveClass.starts_at == starts_at,
-                )
-            )
-            if existing:
-                continue
-
-            teacher_user_id = profile_to_user.get(s.teacher_id)
-            teacher_user = teacher_user_map.get(teacher_user_id) if teacher_user_id else None
-            if not teacher_user and teachers:
-                teacher_user = teachers[0]
-
-            title = f"{s.section.grade.name} • {s.section.name}: {s.subject.name} (Period {s.period_number})"
-
-            create_data = LiveClassCreate(
-                title=title,
-                starts_at=starts_at,
-                ends_at=ends_at,
-                grade_number=s.section.grade.grade_number,
-                section_name=s.section.name,
-                subject_code=s.subject.code,
-                subject_name=s.subject.name,
-                period_number=s.period_number,
-                room_number=s.room_or_venue,
-                auto_create_zoom=True,
-            )
-
-            try:
-                new_class = await schedule_school_live_class(session, create_data, teacher_user)
-                classes_created += 1
-                if new_class.zoom_meeting_id:
-                    zoom_meetings_synced += 1
-            except ScheduleConflictError:
-                continue
-
-    return {
-        "status": "success",
-        "days_ahead": days_ahead,
-        "classes_created": classes_created,
-        "zoom_meetings_synced": zoom_meetings_synced,
-    }
 

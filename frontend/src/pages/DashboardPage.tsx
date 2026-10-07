@@ -21,14 +21,12 @@ import {
   getMyEnrollments,
   getAnnouncements,
   createAnnouncement,
-  generateTimetable,
   getMyTodayClasses,
   getSchoolCourses,
   recordTeacherLeave
 } from '../lib/api'
 import {
   BookOpen,
-  Cpu,
   Radio,
   Video,
   Calendar,
@@ -143,16 +141,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     return () => window.clearInterval(timer)
   }, [])
 
-  // Actions
-  const handleRunAiScheduler = async () => {
-    setActionLoading('scheduler')
-    try {
-      const res = await generateTimetable()
-      showToast(`AI Scheduler complete! ${res.total_slots_scheduled} slots, ${res.total_sections} sections.`, 'success')
-      loadDashboardData()
-    } catch (err: any) { showToast(err.message || 'Scheduler error.', 'error') }
-    finally { setActionLoading(null) }
-  }
 
   const handleApproveUser = async (userId: string, role: 'student' | 'teacher') => {
     setActionLoading(`approve-${userId}`)
@@ -247,11 +235,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
     .filter(slot => slot.day_of_week.toLowerCase() === activeDisplayDay.toLowerCase())
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
   const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes()
-  const isCurrentPeriod = (slot: TeacherTimetableSlot) => {
-    if (activeDisplayDay.toLowerCase() !== currentWeekday.toLowerCase()) return false
-    const toMin = (v: string) => { const [h, m] = v.split(':').map(Number); return h * 60 + m }
-    return currentMinutes >= toMin(slot.start_time) && currentMinutes < toMin(slot.end_time)
-  }
 
   // Today's classes for student directly derived from backend schedule endpoint
   const todayStudentSlots = studentTimetable
@@ -743,48 +726,63 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {todayTeacherSlots.map((slot, idx) => {
-                    const canLaunch = isCurrentPeriod(slot)
+                    const toMin = (v: string) => { const [h, m] = v.split(':').map(Number); return h * 60 + m }
+                    const startMin = toMin(slot.start_time)
+                    const endMin = toMin(slot.end_time)
+                    const isToday = activeDisplayDay.toLowerCase() === currentWeekday.toLowerCase()
+                    const isLiveNow = isToday && currentMinutes >= startMin && currentMinutes < endMin
+                    const isCompleted = isToday && currentMinutes >= endMin
+                    const isUpcoming = isToday ? currentMinutes < startMin : true
                     const sc = subjectColor(slot.subject_name)
+
                     return (
                       <div
                         key={idx}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '14px 18px', borderRadius: 8,
-                          background: canLaunch ? '#FFF8EE' : 'white',
-                          border: `1px solid ${canLaunch ? 'rgba(232,130,12,0.3)' : 'var(--border)'}`,
+                          background: isLiveNow ? '#FFF8EE' : 'white',
+                          border: `1px solid ${isLiveNow ? 'rgba(232,130,12,0.3)' : 'var(--border)'}`,
+                          borderLeft: `4px solid ${sc}`,
                           gap: 16
                         }}
                       >
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: sc.bg, color: sc.text }}>
-                              Period {slot.period_number}
-                            </span>
-                            <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{slot.start_time} – {slot.end_time}</span>
-                            {canLaunch && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--saffron)', background: 'var(--saffron-bg)', padding: '2px 6px', borderRadius: 4 }}>
-                                CURRENT
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            {isLiveNow && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#0A7955', background: '#E6F4EA', padding: '2px 8px', borderRadius: 4 }}>
+                                LIVE NOW
                               </span>
                             )}
+                            {isUpcoming && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--saffron)', background: 'var(--saffron-bg)', padding: '2px 8px', borderRadius: 4 }}>
+                                UPCOMING
+                              </span>
+                            )}
+                            {isCompleted && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-muted)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 4 }}>
+                                COMPLETED
+                              </span>
+                            )}
+                            <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{slot.start_time} – {slot.end_time}</span>
                           </div>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>
                             {slot.subject_name}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                            {slot.grade_name} • {slot.room_or_venue || 'Lab'}
+                            {slot.course_title ? `${slot.course_title} • ` : ''}{slot.room_or_venue || 'Main Classroom'}
                           </div>
                         </div>
 
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                           <button
                             onClick={() => handleInstantLaunchClass(slot)}
-                            disabled={!canLaunch || actionLoading === `launch-${slot.period_number}`}
+                            disabled={!isLiveNow || actionLoading === `launch-${slot.id || slot.slot_id || idx}`}
                             className="btn-primary btn-sm"
-                            style={{ opacity: canLaunch ? 1 : 0.4 }}
+                            style={{ opacity: isLiveNow ? 1 : 0.4 }}
                           >
-                            {actionLoading === `launch-${slot.period_number}` ? <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> : <Play style={{ width: 12, height: 12 }} />}
-                            {canLaunch ? 'Launch' : 'Waiting'}
+                            {actionLoading === `launch-${slot.id || slot.slot_id || idx}` ? <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> : <Play style={{ width: 12, height: 12 }} />}
+                            {isLiveNow ? 'Launch' : isUpcoming ? 'Upcoming' : 'Completed'}
                           </button>
                           <button
                             onClick={() => { setLeaveSlot(slot); setShowLeaveModal(true) }}
@@ -869,10 +867,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={handleRunAiScheduler} disabled={actionLoading === 'scheduler'} className="btn-primary" style={{ padding: '9px 18px', fontSize: 13 }}>
-                {actionLoading === 'scheduler' ? <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" /> : <Cpu style={{ width: 14, height: 14 }} />}
-                Run AI Scheduler
-              </button>
               <button onClick={() => setShowAnnouncementModal(true)} className="btn-ghost" style={{ padding: '9px 16px', fontSize: 13 }}>
                 <Bell style={{ width: 14, height: 14 }} />
                 Broadcast

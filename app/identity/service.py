@@ -34,20 +34,13 @@ async def register_user(session: AsyncSession, data: UserCreate) -> User:
         phone_number=data.phone_number,
         timezone=data.timezone,
         locale=data.locale,
-        role=data.role,
+        role="student",
         status="pending",
         email_verify_token=hash_token(raw_token),
         email_verify_expires=expires,
     )
     session.add(user)
     await session.flush()
-
-    # Link candidate to selected courses in database
-    if data.course_ids:
-        for cid in data.course_ids:
-            session.add(Enrollment(user_id=user.id, course_id=cid, status="active"))
-    elif data.course_id:
-        session.add(Enrollment(user_id=user.id, course_id=data.course_id, status="active"))
 
     await session.commit()
     await session.refresh(user)

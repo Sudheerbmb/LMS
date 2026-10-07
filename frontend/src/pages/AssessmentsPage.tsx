@@ -1196,7 +1196,7 @@ export const AssessmentsPage: React.FC<AssessmentsPageProps> = ({ user }) => {
             </div>
 
             <div className="p-3 rounded-2xl bg-neutral-100 text-xs text-[#64748B]">
-              <strong>Single-Attempt Policy:</strong> Assessment completed. Results have been recorded in your LENS state vector.
+              <strong>Single-Attempt Policy:</strong> Assessment completed. Results have been recorded in the LMS database.
             </div>
 
             <button

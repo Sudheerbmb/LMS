@@ -8,8 +8,6 @@ from app.courses.models import Course, CourseVersion
 from app.enrollment.models import Enrollment
 from app.identity.models import User
 from app.learning.models import ResourceProgress
-from app.learning.adaptive import record_evidence
-from app.learning.schemas import EvidenceCreate
 
 
 class ProgressAccessError(ValueError):
@@ -65,14 +63,6 @@ async def update_progress(
         )
     )
     enrollment.progress_percent = round((completed_count / total) * 100) if total else 0
-    if completed and not was_completed:
-        await record_evidence(session, user, EvidenceCreate(
-            course_id=course.id,
-            concept=resource.title,
-            evidence_type="practice",
-            score=1.0,
-            metadata={"resource_id": str(resource.id), "resource_type": resource.resource_type},
-        ))
     await session.commit()
     await session.refresh(progress)
     return progress

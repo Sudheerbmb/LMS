@@ -163,31 +163,6 @@ export type Announcement = { id: string; course_id?: string; title: string; cont
 
 export type Review = { id: string; course_id: string; user_id: string; rating: number; comment?: string; created_at: string }
 
-export type AdaptiveState = {
-  id: string; user_id: string; course_id: string | null; concept: string
-  mastery: number; retention: number; transfer: number; competency: number
-  misconception: number; uncertainty: number; evidence_adequacy: number; velocity: number
-  evidence_count: number; evidence_types: string[]; bottleneck: string; learning_mode: string
-  recommendation: { action: string; reason: string; concept: string; mode: string; priority: number; candidates?: Array<{ action: string; utility: number; estimated_minutes: number }> }
-  model_version: string
-}
-export type AdaptiveDashboard = {
-  user_id: string; states: AdaptiveState[]; overall_competency: number; needs_diagnostic: boolean
-  learning_patterns: { observations?: number; performance_by_evidence?: Record<string, number>; strongest_evidence_context?: string | null; best_observed_hour?: number | null; recurring_misconceptions?: Record<string, number>; notice?: string }
-  agent_plan: AdaptiveState['recommendation'][]
-}
-export type CohortLearner = { user_id: string; display_name: string; email: string; concept_count: number; average_competency: number; high_risk_concepts: number; primary_bottleneck: string }
-
-export const getMyAdaptiveDashboard = () => request<AdaptiveDashboard>('/api/v1/learning/adaptive/me')
-export const getStudentAdaptiveDashboard = (studentId: string) => request<AdaptiveDashboard>(`/api/v1/learning/adaptive/students/${studentId}`)
-export const getAdaptiveCohort = () => request<CohortLearner[]>('/api/v1/learning/adaptive/cohort')
-export const submitLearningEvidence = (payload: {
-  user_id?: string; course_id?: string; concept: string
-  evidence_type: 'diagnostic' | 'quiz' | 'retrieval' | 'practice' | 'transfer' | 'project' | 'teacher_observation'
-  score: number; difficulty?: number; attempts?: number; transfer_distance?: number; misconception_code?: string
-}) => request<AdaptiveState>('/api/v1/learning/adaptive/evidence', { method: 'POST', body: JSON.stringify(payload) })
-export const submitAdaptiveFeedback = (stateId: string, payload: { action: string; accepted?: boolean; helpfulness?: number; outcome_score?: number; notes?: string }) =>
-  request<{ id: string; status: string }>(`/api/v1/learning/adaptive/states/${stateId}/feedback`, { method: 'POST', body: JSON.stringify(payload) })
 
 // Identity & Auth
 
@@ -207,19 +182,6 @@ export const login = (payload: { email: string; password: string }) =>
 
 export const getCurrentUser = () => request<User>('/api/v1/identity/me')
 
-// Organizations / Tenancy
-
-export const getOrganizations = () => request<Organization[]>('/api/v1/tenants')
-
-export const createOrganization = (payload: { name: string; slug: string }) =>
-
-  request<Organization>('/api/v1/tenants', { method: 'POST', body: JSON.stringify(payload) })
-
-export const getOrgMembers = (orgId: string) => request<OrgMember[]>(`/api/v1/tenants/${orgId}/members`)
-
-export const inviteOrgMember = (orgId: string, email: string, role: string) =>
-
-  request<{ id: string; email: string }>(`/api/v1/tenants/${orgId}/invitations`, { method: 'POST', body: JSON.stringify({ email, role }) })
 
 // Courses
 
@@ -793,11 +755,6 @@ export const getMyTimetableSchedule = (params?: { day_of_week?: string }) => {
 export const syncCoursesToTimetable = () =>
   request<{ status: string; courses_synced: number; grades_synced: number; subjects_synced: number }>('/api/v1/timetable/sync-courses', { method: 'POST' })
 
-export const generateTimetable = () =>
-  request<TimetableGenerationResult>('/api/v1/timetable/generate', { method: 'POST' })
-
-export const seedTimetableDefaults = () =>
-  request<{ status: string; message: string; data: any }>('/api/v1/timetable/seed-defaults', { method: 'POST' })
 
 export const getTeachersWithFeedback = () => request<TeacherProfile[]>('/api/v1/timetable/teachers')
 
@@ -1012,6 +969,7 @@ export const updateSchoolCourse = (
 )
 
 export interface TeacherTimetableSlot {
+  id?: string
   slot_id?: string
   course_id?: string
   course_title?: string
@@ -1388,139 +1346,7 @@ export const getStudentTutorAssistance = (
 
 
 
-// ── LENS-Ω Adaptive Intelligence & SN1 Agent APIs ──────────────────────────
 
-export interface LensDiagnosticQuestion {
-  id: string
-  subject: string
-  concept: string
-  prompt: string
-  options: string[]
-  correct_index: number
-  difficulty: number
-  cognitive_level: string
-  misconception_tag?: string
-}
-
-export interface LensGenerateDiagnosticResponse {
-  status: string
-  grade_name: string
-  subjects: string[]
-  questions_count: number
-  questions: LensDiagnosticQuestion[]
-}
-
-export interface LensSubmitDiagnosticResponse {
-  status: string
-  result: {
-    score_percent: number
-    correct_count: number
-    total_questions: number
-  }
-  state_vector: {
-    student_id: string
-    student_name: string
-    grade_name: string
-    mastery: number
-    retention: number
-    transfer: number
-    misconception: number
-    competency: number
-    uncertainty: number
-    identifiability: number
-    learning_velocity: number
-    current_bottleneck: string
-    current_learning_mode: string
-    is_calibrated: boolean
-  }
-}
-
-export interface LensChatResponse {
-  status: string
-  query: string
-  response: string
-}
-
-export const generateLensDiagnostic = (
-  grade_name: string,
-  subjects: string[],
-  num_questions: number = 6
-) =>
-  request<LensGenerateDiagnosticResponse>('/api/v1/lens/diagnostic/generate', {
-    method: 'POST',
-    body: JSON.stringify({ grade_name, subjects, num_questions }),
-  })
-
-export const submitLensDiagnostic = (
-  grade_name: string,
-  subjects: string[],
-  answers: Record<string, number>,
-  questions: LensDiagnosticQuestion[]
-) =>
-  request<LensSubmitDiagnosticResponse>('/api/v1/lens/diagnostic/submit', {
-    method: 'POST',
-    body: JSON.stringify({ grade_name, subjects, answers, questions }),
-  })
-
-export const sendLensChat = (
-  query: string,
-  grade_name: string,
-  subjects: string[],
-  state_vector?: any
-) =>
-  request<LensChatResponse>('/api/v1/lens/chat', {
-    method: 'POST',
-    body: JSON.stringify({ query, grade_name, subjects, state_vector }),
-  })
-
-export interface LensDrillQuestion {
-  id: string
-  prompt: string
-  options: string[]
-  correct_index: number
-  difficulty: number
-  explanation: string
-  misconception_tag?: string
-}
-
-export interface LensGenerateDrillResponse {
-  status: string
-  concept: string
-  questions: LensDrillQuestion[]
-}
-
-export interface LensSubmitDrillResponse {
-  status: string
-  concept_id: string
-  concept_name: string
-  score_percent: number
-  correct_count: number
-  total_questions: number
-  updated_state: any
-}
-
-export const generateLensDrill = (grade_name: string, subject: string, concept_id: string, concept_name: string, num_questions: number = 2) =>
-  request<LensGenerateDrillResponse>('/api/v1/lens/drill/generate', {
-    method: 'POST',
-    body: JSON.stringify({ grade_name, subject, concept_id, concept_name, num_questions }),
-  })
-
-export const submitLensDrill = (payload: {
-  concept_id: string
-  concept_name: string
-  subject: string
-  grade_name: string
-  answers: Record<string, number>
-  questions: any[]
-  current_mastery: number
-  current_retention: number
-  current_attempts: number
-  current_correct: number
-}) =>
-  request<LensSubmitDrillResponse>('/api/v1/lens/drill/submit', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
 
 export const purgeLegacyData = () =>
   request<{ status: string; message: string }>('/api/v1/admin/purge-legacy-data', {
