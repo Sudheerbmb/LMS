@@ -15,6 +15,7 @@ import cloudinary.uploader
 from fastapi import (
     APIRouter,
     BackgroundTasks,
+    Body,
     Depends,
     File,
     Header,
@@ -455,17 +456,23 @@ async def join_live_class_endpoint(
 
 
 @router.put("/classes/{class_id}/status")
+@router.post("/classes/{class_id}/status")
 async def update_class_status_endpoint(
     class_id: UUID,
-    new_status: str = Query(..., pattern="^(scheduled|live|ended)$"),
+    new_status: Optional[str] = Query(None),
+    payload: Optional[Dict[str, Any]] = Body(None),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    updated = await update_live_class_status(session, class_id, new_status)
+    status_val = new_status or (payload.get("status") if payload else None) or (payload.get("new_status") if payload else None)
+    if not status_val or status_val not in ("scheduled", "live", "ended"):
+        raise HTTPException(status_code=400, detail="Invalid status. Must be scheduled, live, or ended.")
+
+    updated = await update_live_class_status(session, class_id, status_val)
     if not updated:
         raise HTTPException(status_code=404, detail="Live class not found")
 
-    if new_status == "ended":
+    if status_val == "ended":
         await room_manager.broadcast(str(class_id), {
             "type": "meeting_ended",
             "reason": "The instructor has ended this live class session for all participants."
