@@ -165,6 +165,20 @@ def _patch_missing_columns(connection: Connection) -> None:
         cols = {c["name"] for c in inspector.get_columns("enrollments")}
         _add_column("enrollments", "section_id", uuid_type, cols)
 
+    # 6. Timetable Slots Table
+    if "timetable_slots" in tables:
+        cols = {c["name"] for c in inspector.get_columns("timetable_slots")}
+        _add_column("timetable_slots", "course_id", uuid_type, cols)
+        _add_column("timetable_slots", "subject_name", "VARCHAR(200)", cols)
+        _add_column("timetable_slots", "subject_code", "VARCHAR(64)", cols)
+        _add_column("timetable_slots", "subject_color", "VARCHAR(32) DEFAULT '#3b82f6'", cols)
+        _add_column("timetable_slots", "meeting_url", "VARCHAR(500)", cols)
+        if is_postgres:
+            try:
+                connection.execute(text("ALTER TABLE timetable_slots ALTER COLUMN section_id DROP NOT NULL"))
+            except Exception:
+                pass
+
 
 
 async def purge_legacy_school_data(session: AsyncSession) -> None:
@@ -436,16 +450,11 @@ async def _bootstrap_defaults() -> None:
             await session.rollback()
             print(f"[Bootstrap] seed tech courses / enrollments error: {err}")
 
-        # 6. Synchronize Timetable Engine & Generate Schedule
+        # 6. Synchronize Course Structure (No AI Timetable Engine)
         try:
             await seed_school_defaults(session)
-            await session.commit()
-            await generate_school_timetable(session)
             await session.commit()
         except Exception as err:
             await session.rollback()
             print(f"[Bootstrap] timetable sync error: {err}")
-        except Exception as err:
-            await session.rollback()
-            print(f"[Bootstrap] generate_school_timetable: {err}")
 

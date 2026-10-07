@@ -491,39 +491,44 @@ export const flushAllNotifications = () => request<{ status: string; deleted_cou
 // ── Timetable Types & API ──────────────────────────────────────────────────
 
 export type TimetableSlot = {
-
   id: string
-
   day_of_week: string
-
   period_number: number
-
   start_time: string
-
   end_time: string
-
-  slot_type: 'standup' | 'lecture' | 'lab' | 'lunch' | 'break' | 'review' | 'assessment' | 'masterclass' | 'assembly' | 'recess' | 'dispersal'
-
+  slot_type: string
   room_or_venue: string
-
-  section_id: string
-
+  course_id?: string
+  course_title?: string
+  meeting_url?: string
+  section_id?: string
   section_name?: string
-
   grade_name?: string
-
   subject_id?: string
-
   subject_name?: string
-
   subject_code?: string
-
   subject_color?: string
-
   teacher_id?: string
-
   teacher_name?: string
+}
 
+export type TimetableSlotCreatePayload = {
+  course_id: string
+  subject_name: string
+  subject_code?: string
+  subject_color?: string
+  teacher_id?: string
+  day_of_week: string
+  start_time: string
+  end_time: string
+  period_number?: number
+  slot_type?: string
+  room_or_venue?: string
+  meeting_url?: string
+}
+
+export type TimetableSlotUpdatePayload = Partial<TimetableSlotCreatePayload> & {
+  subject_id?: string
 }
 
 export type SchoolSection = {
@@ -628,8 +633,9 @@ export type TimetableGenerationResult = {
 
 export const getGrades = () => request<SchoolGrade[]>('/api/v1/timetable/grades')
 
-export const getTimetableGrid = (params?: { section_id?: string; grade_id?: string; teacher_id?: string; day_of_week?: string }) => {
+export const getTimetableGrid = (params?: { course_id?: string; section_id?: string; grade_id?: string; teacher_id?: string; day_of_week?: string }) => {
   const query = new URLSearchParams()
+  if (params?.course_id) query.set('course_id', params.course_id)
   if (params?.section_id) query.set('section_id', params.section_id)
   if (params?.grade_id) query.set('grade_id', params.grade_id)
   if (params?.teacher_id) query.set('teacher_id', params.teacher_id)
@@ -766,10 +772,21 @@ export const swapSlots = (slotId1: string, slotId2: string) =>
 
   })
 
-export const updateSlot = (slotId: string, payload: { subject_id?: string; teacher_id?: string; room_or_venue?: string; slot_type?: string }) =>
+export const createTimetableSlot = (payload: TimetableSlotCreatePayload) =>
+  request<TimetableSlot>('/api/v1/timetable/slots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const updateSlot = (slotId: string, payload: TimetableSlotUpdatePayload) =>
   request<TimetableSlot>(`/api/v1/timetable/slots/${slotId}`, {
     method: 'PUT',
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+  })
+
+export const deleteTimetableSlot = (slotId: string) =>
+  request<{ status: string; message: string }>(`/api/v1/timetable/slots/${slotId}`, {
+    method: 'DELETE',
   })
 
 export const recordTeacherLeave = (payload: { teacher_id: string; day_of_week: string; reason: string }) =>

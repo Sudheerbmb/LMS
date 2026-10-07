@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -491,6 +491,7 @@ async def get_today_classes_for_user(
 async def get_timetable_grid(
     session: AsyncSession,
     user: Optional[User] = None,
+    course_id: Optional[UUID] = None,
     section_id: Optional[UUID] = None,
     grade_id: Optional[UUID] = None,
     teacher_id: Optional[UUID] = None,
@@ -500,25 +501,21 @@ async def get_timetable_grid(
     from app.courses.models import Course
     from app.enrollment.models import Enrollment
 
-    # If no slots exist yet, automatically generate them
-    slot_count = await session.scalar(select(func.count(TimetableSlot.id)))
-    if not slot_count or slot_count == 0:
-        await generate_school_timetable(session)
-
     query = (
         select(TimetableSlot)
         .options(
+            selectinload(TimetableSlot.course).selectinload(Course.versions),
+            selectinload(TimetableSlot.teacher),
             selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
             selectinload(TimetableSlot.subject),
-            selectinload(TimetableSlot.teacher).selectinload(TeacherProfile.skills),
         )
-        .order_by(TimetableSlot.period_number)
+        .order_by(TimetableSlot.day_of_week, TimetableSlot.period_number, TimetableSlot.start_time)
     )
 
     if day_of_week:
-        query = query.where(TimetableSlot.day_of_week == day_of_week)
+        query = query.where(TimetableSlot.day_of_week.ilike(day_of_week))
 
-    # 1. Student role: Strictly filter to enrolled courses and assigned sections/batches
+    # 1. Student role: Strictly filter to enrolled courses
     if user and user.role == "student":
         enrollments = (
             await session.scalars(
@@ -532,75 +529,77 @@ async def get_timetable_grid(
             return []
 
         enrolled_course_ids = [e.course_id for e in enrollments]
-        all_sections = (
-            await session.scalars(
-                select(SchoolSection).options(selectinload(SchoolSection.grade))
-            )
-        ).all()
+        sec_ids = [e.section_id for e in enrollments if e.section_id]
 
-        courses = (
-            await session.scalars(
-                select(Course)
-                .options(selectinload(Course.versions))
-                .where(Course.id.in_(enrolled_course_ids))
-            )
-        ).all()
-        course_map = {c.id: c for c in courses}
+        conds = [TimetableSlot.course_id.in_(enrolled_course_ids)]
+        if sec_ids:
+            conds.append(TimetableSlot.section_id.in_(sec_ids))
+        query = query.where(or_(*conds))
 
-        authorized_section_ids = set()
-        for e in enrollments:
-            c = course_map.get(e.course_id)
-            c_title = (c.versions[0].title if (c and c.versions) else (c.slug if c else "")).lower()
-            c_slug = (c.slug if c else "").lower()
-
-            matched_sec = None
-            if e.section_id:
-                matched_sec = next((s for s in all_sections if s.id == e.section_id), None)
-
-            if not matched_sec and c:
-                # Find matching section for course
-                for s in all_sections:
-                    if s.grade and (c_title in s.grade.name.lower() or c_slug in s.grade.name.lower()):
-                        matched_sec = s
-                        e.section_id = s.id
-                        session.add(e)
-                        break
-
-            if matched_sec:
-                authorized_section_ids.add(matched_sec.id)
-
-        if not authorized_section_ids:
-            return []
-
-        query = query.where(TimetableSlot.section_id.in_(list(authorized_section_ids)))
-        await session.commit()
-
-    # 2. Teacher role: Filter to teacher's own teaching schedule
+    # 2. Teacher role: Filter to teacher's assigned schedule
     elif user and user.role == "teacher":
+        t_ids = [user.id]
         prof = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == user.id))
         if prof:
-            query = query.where(TimetableSlot.teacher_id == prof.id)
-        elif teacher_id:
-            query = query.where(TimetableSlot.teacher_id == teacher_id)
+            t_ids.append(prof.id)
+        query = query.where(TimetableSlot.teacher_id.in_(t_ids))
 
-    # 3. Admin filters (if provided)
-    if user and user.role == "admin":
+    # 3. Filters (Admin or explicit query)
+    else:
+        if course_id:
+            query = query.where(TimetableSlot.course_id == course_id)
+        if teacher_id:
+            prof = await session.get(TeacherProfile, teacher_id)
+            if prof:
+                query = query.where(TimetableSlot.teacher_id.in_([teacher_id, prof.user_id]))
+            else:
+                query = query.where(TimetableSlot.teacher_id == teacher_id)
         if section_id:
             query = query.where(TimetableSlot.section_id == section_id)
-        if teacher_id:
-            query = query.where(TimetableSlot.teacher_id == teacher_id)
         if grade_id:
             query = query.join(TimetableSlot.section).where(SchoolSection.grade_id == grade_id)
 
     slots = (await session.scalars(query)).all()
 
-    teacher_user_ids = {s.teacher.user_id for s in slots if s.teacher and s.teacher.user_id}
-    users = (await session.scalars(select(User).where(User.id.in_(teacher_user_ids)))).all() if teacher_user_ids else []
-    user_name_map = {u.id: u.display_name for u in users}
+    # Collect any missing teacher user/profile display names
+    referenced_teacher_ids = {s.teacher_id for s in slots if s.teacher_id and not s.teacher}
+    user_name_map = {}
+    if referenced_teacher_ids:
+        users = (await session.scalars(select(User).where(User.id.in_(referenced_teacher_ids)))).all()
+        for u in users:
+            user_name_map[u.id] = u.display_name or u.email
+        profiles = (await session.scalars(select(TeacherProfile).where(TeacherProfile.id.in_(referenced_teacher_ids)))).all()
+        if profiles:
+            p_user_ids = [p.user_id for p in profiles]
+            p_users = (await session.scalars(select(User).where(User.id.in_(p_user_ids)))).all()
+            p_map = {pu.id: (pu.display_name or pu.email) for pu in p_users}
+            for p in profiles:
+                if p.id not in user_name_map and p.user_id in p_map:
+                    user_name_map[p.id] = p_map[p.user_id]
 
     result = []
     for s in slots:
-        t_name = user_name_map.get(s.teacher.user_id) if (s.teacher and s.teacher.user_id) else None
+        # Teacher display name
+        t_name = None
+        if s.teacher:
+            t_name = s.teacher.display_name or s.teacher.email
+        elif s.teacher_id:
+            t_name = user_name_map.get(s.teacher_id)
+
+        # Course title
+        c_title = None
+        if s.course:
+            if s.course.versions and len(s.course.versions) > 0:
+                c_title = s.course.versions[0].title
+            else:
+                c_title = s.course.slug.replace("-", " ").title()
+        elif s.section and s.section.grade:
+            c_title = s.section.grade.name
+
+        sub_name = s.subject_name or (s.subject.name if s.subject else c_title or "Scheduled Class")
+        sub_code = s.subject_code or (s.subject.code if s.subject else "CLS")
+        sub_color = s.subject_color or (s.subject.color if s.subject else "#3b82f6")
+
         result.append({
             "id": s.id,
             "day_of_week": s.day_of_week,
@@ -609,13 +608,16 @@ async def get_timetable_grid(
             "end_time": s.end_time,
             "slot_type": s.slot_type,
             "room_or_venue": s.room_or_venue,
+            "meeting_url": s.meeting_url,
+            "course_id": s.course_id,
+            "course_title": c_title,
             "section_id": s.section_id,
             "section_name": s.section.name if s.section else None,
             "grade_name": s.section.grade.name if s.section and s.section.grade else None,
             "subject_id": s.subject_id,
-            "subject_name": s.subject.name if s.subject else None,
-            "subject_code": s.subject.code if s.subject else None,
-            "subject_color": s.subject.color if s.subject else None,
+            "subject_name": sub_name,
+            "subject_code": sub_code,
+            "subject_color": sub_color,
             "teacher_id": s.teacher_id,
             "teacher_name": t_name,
         })
@@ -821,16 +823,170 @@ async def swap_slots(session: AsyncSession, slot_id_1: UUID, slot_id_2: UUID) ->
     }
 
 
-async def update_slot(session: AsyncSession, slot_id: UUID, payload: Dict[str, Any]) -> TimetableSlot:
+async def format_slot_read(session: AsyncSession, slot_id: UUID) -> Optional[Dict[str, Any]]:
+    """Loads a timetable slot and returns the enriched dictionary for TimetableSlotRead."""
+    from app.courses.models import Course
+
+    slot = await session.scalar(
+        select(TimetableSlot)
+        .options(
+            selectinload(TimetableSlot.course).selectinload(Course.versions),
+            selectinload(TimetableSlot.teacher),
+            selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
+            selectinload(TimetableSlot.subject),
+        )
+        .where(TimetableSlot.id == slot_id)
+    )
+    if not slot:
+        return None
+
+    teacher_name = None
+    if slot.teacher:
+        teacher_name = slot.teacher.display_name or slot.teacher.email
+    elif slot.teacher_id:
+        t_user = await session.get(User, slot.teacher_id)
+        if t_user:
+            teacher_name = t_user.display_name or t_user.email
+        else:
+            t_prof = await session.get(TeacherProfile, slot.teacher_id)
+            if t_prof:
+                p_user = await session.get(User, t_prof.user_id)
+                teacher_name = p_user.display_name if p_user else f"Teacher {t_prof.employee_id}"
+
+    course_title = None
+    if slot.course:
+        if slot.course.versions and len(slot.course.versions) > 0:
+            course_title = slot.course.versions[0].title
+        else:
+            course_title = slot.course.slug.replace("-", " ").title()
+    elif slot.section and slot.section.grade:
+        course_title = slot.section.grade.name
+
+    sub_name = slot.subject_name or (slot.subject.name if slot.subject else course_title or "Scheduled Class")
+    sub_code = slot.subject_code or (slot.subject.code if slot.subject else "CLS")
+    sub_color = slot.subject_color or (slot.subject.color if slot.subject else "#3b82f6")
+
+    return {
+        "id": slot.id,
+        "day_of_week": slot.day_of_week,
+        "period_number": slot.period_number,
+        "start_time": slot.start_time,
+        "end_time": slot.end_time,
+        "slot_type": slot.slot_type,
+        "room_or_venue": slot.room_or_venue,
+        "meeting_url": slot.meeting_url,
+        "course_id": slot.course_id,
+        "course_title": course_title,
+        "section_id": slot.section_id,
+        "section_name": slot.section.name if slot.section else None,
+        "grade_name": slot.section.grade.name if slot.section and slot.section.grade else None,
+        "subject_id": slot.subject_id,
+        "subject_name": sub_name,
+        "subject_code": sub_code,
+        "subject_color": sub_color,
+        "teacher_id": slot.teacher_id,
+        "teacher_name": teacher_name,
+    }
+
+
+async def create_slot(
+    session: AsyncSession,
+    payload: Dict[str, Any],
+    current_user: Optional[User] = None,
+) -> Optional[Dict[str, Any]]:
+    """Creates a new timetable slot dynamically linked to a course and teacher."""
+    from app.courses.models import Course
+
+    course_id = payload.get("course_id")
+    if isinstance(course_id, str):
+        course_id = UUID(course_id)
+
+    course = await session.get(Course, course_id) if course_id else None
+
+    teacher_id = payload.get("teacher_id")
+    if teacher_id:
+        if isinstance(teacher_id, str):
+            teacher_id = UUID(teacher_id)
+        teacher_user = await session.get(User, teacher_id)
+        if not teacher_user:
+            teacher_prof = await session.get(TeacherProfile, teacher_id)
+            if teacher_prof:
+                teacher_id = teacher_prof.user_id
+
+    subject_name = payload.get("subject_name")
+    if not subject_name and course:
+        await session.refresh(course, ["versions"])
+        subject_name = course.versions[0].title if course.versions else course.slug.replace("-", " ").title()
+
+    subject_code = payload.get("subject_code")
+    if not subject_code and course:
+        subject_code = course.slug[:8].upper()
+
+    slot = TimetableSlot(
+        course_id=course_id,
+        teacher_id=teacher_id,
+        day_of_week=payload.get("day_of_week", "Monday"),
+        start_time=payload.get("start_time", "09:00"),
+        end_time=payload.get("end_time", "10:30"),
+        period_number=payload.get("period_number", 1),
+        slot_type=payload.get("slot_type", "lecture"),
+        room_or_venue=payload.get("room_or_venue", "Online / Classroom 101"),
+        meeting_url=payload.get("meeting_url"),
+        subject_name=subject_name,
+        subject_code=subject_code,
+        subject_color=payload.get("subject_color", "#3b82f6"),
+    )
+    session.add(slot)
+    await session.commit()
+    await session.refresh(slot)
+
+    return await format_slot_read(session, slot.id)
+
+
+async def update_slot(
+    session: AsyncSession,
+    slot_id: UUID,
+    payload: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
     """Directly updates a timetable slot."""
     slot = await session.get(TimetableSlot, slot_id)
-    if slot:
-        for k, v in payload.items():
-            if v is not None and hasattr(slot, k):
-                setattr(slot, k, v)
-        await session.commit()
-        await session.refresh(slot)
-    return slot
+    if not slot:
+        return None
+
+    teacher_id = payload.get("teacher_id")
+    if teacher_id:
+        if isinstance(teacher_id, str):
+            teacher_id = UUID(teacher_id)
+        teacher_user = await session.get(User, teacher_id)
+        if not teacher_user:
+            teacher_prof = await session.get(TeacherProfile, teacher_id)
+            if teacher_prof:
+                slot.teacher_id = teacher_prof.user_id
+            else:
+                slot.teacher_id = teacher_id
+        else:
+            slot.teacher_id = teacher_id
+
+    for k, v in payload.items():
+        if k != "teacher_id" and v is not None and hasattr(slot, k):
+            setattr(slot, k, v)
+
+    await session.commit()
+    return await format_slot_read(session, slot_id)
+
+
+async def delete_slot(
+    session: AsyncSession,
+    slot_id: UUID,
+    current_user: Optional[User] = None,
+) -> bool:
+    """Deletes a timetable slot."""
+    slot = await session.get(TimetableSlot, slot_id)
+    if not slot:
+        return False
+    await session.delete(slot)
+    await session.commit()
+    return True
 
 
 async def get_all_teachers_with_feedback(session: AsyncSession) -> List[Dict[str, Any]]:

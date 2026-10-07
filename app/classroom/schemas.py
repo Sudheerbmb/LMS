@@ -59,9 +59,9 @@ class LiveClassRead(BaseModel):
 
 
 class TeacherTimetableSlotRead(BaseModel):
-    grade_number: int
-    grade_name: str
-    section_name: str
+    grade_number: Optional[int] = 1
+    grade_name: Optional[str] = "Course Track"
+    section_name: Optional[str] = "Main Batch"
     subject_code: str
     subject_name: str
     period_number: int
@@ -69,6 +69,9 @@ class TeacherTimetableSlotRead(BaseModel):
     start_time: str
     end_time: str
     room_or_venue: str
+    course_id: Optional[UUID] = None
+    course_title: Optional[str] = None
+    meeting_url: Optional[str] = None
 
 
 class EndClassSessionRequest(BaseModel):

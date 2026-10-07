@@ -9,6 +9,7 @@ from app.platform.models import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.identity.models import User
+    from app.courses.models import Course
 
 
 class SchoolGrade(UUIDMixin, TimestampMixin, Base):
@@ -89,7 +90,6 @@ class TeacherProfile(UUIDMixin, TimestampMixin, Base):
     skills: Mapped[list["TeacherSubjectSkill"]] = relationship("TeacherSubjectSkill", back_populates="teacher", cascade="all, delete-orphan")
     feedback: Mapped[list["TeacherFeedback"]] = relationship("TeacherFeedback", back_populates="teacher", cascade="all, delete-orphan")
     restrictions: Mapped[list["TeacherClassRestriction"]] = relationship("TeacherClassRestriction", back_populates="teacher", cascade="all, delete-orphan")
-    slots: Mapped[list["TimetableSlot"]] = relationship("TimetableSlot", back_populates="teacher")
 
 
 class TeacherSubjectSkill(Base):
@@ -140,23 +140,28 @@ class TimetableSlot(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "timetable_slots"
 
     day_of_week: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
-    period_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    period_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     start_time: Mapped[str] = mapped_column(String(8), nullable=False)
     end_time: Mapped[str] = mapped_column(String(8), nullable=False)
-    slot_type: Mapped[str] = mapped_column(String(24), nullable=False)
-    room_or_venue: Mapped[str] = mapped_column(String(64), nullable=False)
+    slot_type: Mapped[str] = mapped_column(String(32), default="lecture", nullable=False)
+    room_or_venue: Mapped[str] = mapped_column(String(128), default="Online / Classroom 101", nullable=False)
+    meeting_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
-    section_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("school_sections.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Dynamic links to Course and Teacher
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=True, index=True)
+    teacher_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    subject_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    subject_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    subject_color: Mapped[Optional[str]] = mapped_column(String(32), default="#3b82f6", nullable=True)
+
+    # Optional section & subject for backward compatibility
+    section_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("school_sections.id", ondelete="SET NULL"), nullable=True, index=True)
     subject_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("school_subjects.id", ondelete="SET NULL"), nullable=True, index=True)
-    teacher_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teacher_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
 
-    section: Mapped["SchoolSection"] = relationship("SchoolSection", back_populates="slots")
-    subject: Mapped[Optional["Subject"]] = relationship("Subject")
-    teacher: Mapped[Optional["TeacherProfile"]] = relationship("TeacherProfile", back_populates="slots")
-
-    __table_args__ = (
-        UniqueConstraint("day_of_week", "period_number", "section_id", name="uq_section_period"),
-    )
+    course: Mapped[Optional["Course"]] = relationship("Course", foreign_keys=[course_id])
+    teacher: Mapped[Optional["User"]] = relationship("User", foreign_keys=[teacher_id])
+    section: Mapped[Optional["SchoolSection"]] = relationship("SchoolSection", foreign_keys=[section_id], back_populates="slots")
+    subject: Mapped[Optional["Subject"]] = relationship("Subject", foreign_keys=[subject_id])
 
 
 class TimetableRule(UUIDMixin, TimestampMixin, Base):

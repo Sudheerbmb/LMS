@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const timetableLabel =
     user.role === 'admin'
-      ? 'Timetable Engine'
+      ? 'Timetable'
       : user.role === 'teacher'
       ? 'Faculty Schedule'
       : 'Batch Timetable'

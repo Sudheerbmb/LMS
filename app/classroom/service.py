@@ -66,15 +66,21 @@ async def get_teacher_timetable_slots_for_scheduling(
     if not profile:
         return []
 
+    teacher_filter = [teacher_user.id]
+    if profile:
+        teacher_filter.append(profile.id)
+
+    from app.courses.models import Course
     slots = (
         await session.scalars(
             select(TimetableSlot)
             .options(
+                selectinload(TimetableSlot.course).selectinload(Course.versions),
                 selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
                 selectinload(TimetableSlot.subject),
             )
-            .where(TimetableSlot.teacher_id == profile.id)
-            .order_by(TimetableSlot.period_number)
+            .where(TimetableSlot.teacher_id.in_(teacher_filter))
+            .order_by(TimetableSlot.day_of_week, TimetableSlot.period_number, TimetableSlot.start_time)
         )
     ).all()
 
@@ -82,22 +88,37 @@ async def get_teacher_timetable_slots_for_scheduling(
     seen = set()
 
     for s in slots:
-        if s.section and s.section.grade and s.subject:
-            key = (s.section.grade.grade_number, s.section.name, s.subject.code, s.period_number)
-            if key not in seen:
-                seen.add(key)
-                result.append({
-                    "grade_number": s.section.grade.grade_number,
-                    "grade_name": s.section.grade.name,
-                    "section_name": s.section.name,
-                    "subject_code": s.subject.code,
-                    "subject_name": s.subject.name,
-                    "period_number": s.period_number,
-                    "day_of_week": s.day_of_week,
-                    "start_time": s.start_time,
-                    "end_time": s.end_time,
-                    "room_or_venue": s.room_or_venue,
-                })
+        c_title = None
+        if s.course:
+            c_title = s.course.versions[0].title if s.course.versions else s.course.slug.replace("-", " ").title()
+        elif s.section and s.section.grade:
+            c_title = s.section.grade.name
+
+        sub_name = s.subject_name or (s.subject.name if s.subject else c_title or "Scheduled Class")
+        sub_code = s.subject_code or (s.subject.code if s.subject else "CLS")
+
+        g_num = s.section.grade.grade_number if (s.section and s.section.grade) else 1
+        g_name = s.section.grade.name if (s.section and s.section.grade) else (c_title or "Course Track")
+        sec_name = s.section.name if s.section else "Main Batch"
+
+        key = (g_num, sec_name, sub_code, s.day_of_week, s.period_number, s.start_time)
+        if key not in seen:
+            seen.add(key)
+            result.append({
+                "grade_number": g_num,
+                "grade_name": g_name,
+                "section_name": sec_name,
+                "subject_code": sub_code,
+                "subject_name": sub_name,
+                "period_number": s.period_number,
+                "day_of_week": s.day_of_week,
+                "start_time": s.start_time,
+                "end_time": s.end_time,
+                "room_or_venue": s.room_or_venue,
+                "course_id": s.course_id,
+                "course_title": c_title,
+                "meeting_url": s.meeting_url,
+            })
 
     if not result and profile.skills:
         for sk in profile.skills:

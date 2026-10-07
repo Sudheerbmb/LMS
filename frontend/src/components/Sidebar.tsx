@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const unreadCount = localNotifications.filter((n) => !n.read_at).length
 
   // Dynamic labels per role
-  const timetableLabel = user.role === 'admin' ? 'Timetable Engine' : user.role === 'teacher' ? 'My Schedule' : 'Timetable'
+  const timetableLabel = user.role === 'admin' ? 'Timetable' : user.role === 'teacher' ? 'My Schedule' : 'Timetable'
   const coursesLabel   = user.role === 'teacher' ? 'My Courses' : user.role === 'admin' ? 'Courses' : 'My Courses'
   const classroomLabel = user.role === 'teacher' ? 'Live Training' : user.role === 'admin' ? 'Live Classrooms' : 'Live Classes'
 

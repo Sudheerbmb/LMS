@@ -25,6 +25,7 @@ from app.timetable.models import (
 from app.timetable.schemas import (
     CurriculumCourseUpdate,
     SchoolGradeRead,
+    SlotCreateRequest,
     SlotSwapRequest,
     SlotUpdateRequest,
     SubjectRead,
@@ -41,7 +42,9 @@ from app.timetable.schemas import (
     TimetableSlotRead,
 )
 from app.timetable.service import (
+    create_slot,
     create_timetable_rule,
+    delete_slot,
     delete_timetable_rule,
     find_available_substitutes,
     generate_school_timetable,
@@ -113,10 +116,11 @@ async def get_my_schedule_endpoint(
 
 @router.get("/grid", response_model=List[TimetableSlotRead])
 async def get_grid_endpoint(
+    course_id: Optional[UUID] = Query(None, description="Filter by course ID"),
     section_id: Optional[UUID] = Query(None, description="Filter by section ID"),
     grade_id: Optional[UUID] = Query(None, description="Filter by grade ID"),
-    teacher_id: Optional[UUID] = Query(None, description="Filter by teacher profile ID"),
-    day_of_week: Optional[str] = Query(None, description="Filter by weekday (Monday - Friday)"),
+    teacher_id: Optional[UUID] = Query(None, description="Filter by teacher profile or user ID"),
+    day_of_week: Optional[str] = Query(None, description="Filter by weekday (Monday - Sunday)"),
     current_user: Optional[User] = Depends(get_optional_user),
     session: AsyncSession = Depends(get_session),
 ):
@@ -124,6 +128,7 @@ async def get_grid_endpoint(
     return await get_timetable_grid(
         session,
         user=current_user,
+        course_id=course_id,
         section_id=section_id,
         grade_id=grade_id,
         teacher_id=teacher_id,
@@ -210,17 +215,50 @@ async def swap_slots_endpoint(
     return result
 
 
+@router.post("/slots", response_model=TimetableSlotRead, status_code=status.HTTP_201_CREATED)
+async def create_slot_endpoint(
+    payload: SlotCreateRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Schedules a new timetable class linked to a course and teacher."""
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins or faculty can schedule timetable slots")
+    slot = await create_slot(session, payload.model_dump(), current_user=current_user)
+    if not slot:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create timetable slot")
+    return slot
+
+
 @router.put("/slots/{slot_id}", response_model=TimetableSlotRead)
 async def update_slot_endpoint(
     slot_id: UUID,
     payload: SlotUpdateRequest,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Directly updates a timetable slot (teacher assignment, subject, room)."""
+    """Directly updates a timetable slot (teacher assignment, course, subject, time, room)."""
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins or faculty can update timetable slots")
     slot = await update_slot(session, slot_id, payload.model_dump(exclude_unset=True))
     if not slot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Slot not found")
     return slot
+
+
+@router.delete("/slots/{slot_id}")
+async def delete_slot_endpoint(
+    slot_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Deletes a timetable slot."""
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins or faculty can delete timetable slots")
+    success = await delete_slot(session, slot_id, current_user=current_user)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Slot not found")
+    return {"status": "success", "message": "Timetable slot deleted"}
 
 
 # ── Teacher Absence / Leave Simulation ──────────────────────────────────────
