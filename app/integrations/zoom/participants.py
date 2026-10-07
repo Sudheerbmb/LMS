@@ -45,7 +45,7 @@ class ZoomParticipantsService:
                     params=params,
                 )
             except Exception as err:
-                logger.warning("Report endpoint failed for %s (%s). Falling back to /past_meetings participants...", meeting_param, err)
+                logger.debug("Report endpoint unavailable for %s (%s). Falling back to /past_meetings participants...", meeting_param, err)
                 # Fallback to past meetings endpoint
                 data = await self.client.get(
                     f"/past_meetings/{meeting_param}/participants",

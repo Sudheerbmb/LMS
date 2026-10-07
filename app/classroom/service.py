@@ -20,6 +20,7 @@ from app.classroom.models import (
 from app.classroom.schemas import LiveClassCreate, LiveClassReschedule
 from app.identity.models import User
 from app.integrations.zoom.schemas import ZoomClassSettings, ZoomParticipant
+from app.integrations.zoom.exceptions import ZoomNotFoundError
 from app.integrations.zoom.service import zoom_service
 from app.timetable.models import (
     SchoolGrade,
@@ -894,6 +895,10 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
                                 status="available",
                             ))
                     await session.commit()
+            except ZoomNotFoundError:
+                # 404 is expected: cloud recording hasn't been processed yet (takes a few minutes).
+                # This is normal for recent/short meetings. Do not log as warning.
+                logger.debug("Zoom cloud recording not ready yet for meeting %s (class %s) — will be available after processing.", live_class.zoom_meeting_id if live_class else "?", class_id)
             except Exception as e:
                 logger.warning("On-demand Zoom recording sync for class %s: %s", class_id, e)
 

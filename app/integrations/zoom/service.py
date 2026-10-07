@@ -9,7 +9,7 @@ from uuid import UUID
 
 from app.integrations.zoom.auth import zoom_oauth_manager
 from app.integrations.zoom.client import zoom_client
-from app.integrations.zoom.exceptions import ZoomApiError, ZoomAuthError, ZoomException
+from app.integrations.zoom.exceptions import ZoomApiError, ZoomAuthError, ZoomException, ZoomNotFoundError
 from app.integrations.zoom.meetings import zoom_meetings_service
 from app.integrations.zoom.participants import zoom_participants_service
 from app.integrations.zoom.recordings import zoom_recordings_service
@@ -152,6 +152,10 @@ class ZoomService:
             recordings = await self.recordings.get_meeting_recordings(meeting_id_or_uuid)
             transcript_text = await self.recordings.download_transcript_text(recordings)
             return recordings, transcript_text
+        except ZoomNotFoundError:
+            # 404 = cloud recording not processed yet (takes 5-30 min after meeting ends) — silently skip.
+            logger.debug("Zoom cloud recording not available yet for meeting %s (404 — processing in progress)", meeting_id_or_uuid)
+            return None, None
         except Exception as err:
             logger.warning("Could not fetch Zoom recordings/transcript for %s: %s", meeting_id_or_uuid, err)
             return None, None

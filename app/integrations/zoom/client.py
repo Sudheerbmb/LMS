@@ -82,7 +82,11 @@ class ZoomClient:
                     # Handle other non-2xx status codes
                     if resp.status_code >= 400:
                         err_text = resp.text
-                        logger.error("Zoom API Error %d on %s %s: %s", resp.status_code, method, path, err_text)
+                        # Use debug for 400 scope/permission errors (expected fallbacks, e.g. report:read scope missing)
+                        if resp.status_code == 400:
+                            logger.debug("Zoom API 400 on %s %s: %s", method, path, err_text)
+                        else:
+                            logger.error("Zoom API Error %d on %s %s: %s", resp.status_code, method, path, err_text)
                         raise ZoomApiError(
                             f"Zoom API request failed: {resp.status_code}",
                             status_code=resp.status_code,

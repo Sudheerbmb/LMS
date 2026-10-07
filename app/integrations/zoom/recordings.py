@@ -127,6 +127,8 @@ class ZoomRecordingsService:
                     separator = "&" if "?" in f.download_url else "?"
                     token_param = recordings.download_access_token or bearer_token
                     return f"{f.download_url}{separator}access_token={token_param}"
+        except ZoomNotFoundError:
+            logger.debug("Zoom MP4 recording not available yet for meeting %s (404 — cloud recording still processing)", meeting_id_or_uuid)
         except Exception as err:
             logger.warning("Error resolving MP4 video stream for %s: %s", meeting_id_or_uuid, err)
         return None
