@@ -323,7 +323,10 @@ async def purge_legacy_school_data(session: AsyncSession) -> None:
             WHERE email LIKE '%@school.edu' 
                OR display_name LIKE '%Class %'
                OR display_name LIKE '%Class-%'
-        )        """
+        )
+        """,
+        # 5. Delete legacy teacher profiles for non-faculty
+        """
         DELETE FROM teacher_profiles 
         WHERE user_id IN (
             SELECT id FROM users 
