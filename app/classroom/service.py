@@ -880,9 +880,13 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
 
     if not recs:
         live_class = await session.get(LiveClass, class_id)
-        if live_class and live_class.zoom_meeting_id and zoom_service.is_configured():
+        if live_class and (live_class.zoom_meeting_id or live_class.zoom_meeting_uuid) and zoom_service.is_configured():
             try:
-                recordings_data, transcript_data = await zoom_service.get_recordings_and_transcript_data(live_class.zoom_meeting_id)
+                meeting_target = live_class.zoom_meeting_uuid or live_class.zoom_meeting_id
+                recordings_data, transcript_data = await zoom_service.get_recordings_and_transcript_data(meeting_target)
+                if not recordings_data and live_class.zoom_meeting_id:
+                    recordings_data, transcript_data = await zoom_service.get_recordings_and_transcript_data(live_class.zoom_meeting_id)
+
                 if recordings_data and recordings_data.recording_files:
                     bearer_token = None
                     try:
@@ -963,10 +967,27 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
 
                     await session.commit()
             except ZoomNotFoundError:
-                # 404 is expected: cloud recording hasn't been processed yet (takes a few minutes).
-                logger.debug("Zoom cloud recording not ready yet for meeting %s (class %s) — will be available after processing.", live_class.zoom_meeting_id if live_class else "?", class_id)
+                logger.debug("Zoom cloud recording not ready yet for meeting %s (class %s)", live_class.zoom_meeting_id if live_class else "?", class_id)
             except Exception as e:
                 logger.warning("On-demand Zoom recording sync for class %s: %s", class_id, e)
+
+        # If class is ended but recording is still undergoing cloud encoding on Zoom/Vimeo
+        if not recs and live_class and (live_class.status == "ended" or live_class.recording_url):
+            v_url = live_class.recording_url
+            v_id = v_url.split("/")[-1].split("?")[0] if v_url and "vimeo" in v_url else None
+            recs.append(ClassRecording(
+                id=live_class.id,
+                class_id=live_class.id,
+                course_id=live_class.course_id,
+                subject_id=live_class.subject_id,
+                zoom_meeting_id=live_class.zoom_meeting_id,
+                file_type="MP4",
+                vimeo_url=v_url,
+                play_url=v_url,
+                vimeo_video_id=v_id,
+                status="READY" if v_url else "PROCESSING",
+                error_message=None if v_url else "Cloud recording is currently being processed by Zoom and synced to Vimeo. Please wait a few moments.",
+            ))
 
     return recs
 

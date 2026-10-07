@@ -22,9 +22,10 @@ class ZoomRecordingsService:
     async def get_meeting_recordings(self, meeting_id_or_uuid: int | str) -> ZoomMeetingRecordings:
         """
         Retrieves all cloud recording files and download tokens for a Zoom meeting.
+        Handles both integer Meeting IDs and base64-encoded Meeting UUIDs (with double URL encoding).
         """
-        meeting_param = str(meeting_id_or_uuid)
-        if meeting_param.startswith("/") or "//" in meeting_param:
+        meeting_param = str(meeting_id_or_uuid).strip()
+        if meeting_param.startswith("/") or "//" in meeting_param or any(c in meeting_param for c in ("+", "=", "/", "%")) or not meeting_param.isdigit():
             meeting_param = urllib.parse.quote(urllib.parse.quote(meeting_param, safe=""), safe="")
 
         data = await self.client.get(f"/meetings/{meeting_param}/recordings")
