@@ -433,7 +433,7 @@ export const AdminPage: React.FC<AdminPageProps> = () => {
             Acharya Institute Administration
           </h1>
           <p className="text-[#64748B] text-xs md:text-sm max-w-2xl font-normal leading-relaxed">
-            Configure multi-subject courses, manage student batch enrollments, assign specialized faculty, and control Zoom video classroom streams.
+            Configure multi-subject courses, manage student course enrollments, assign specialized faculty, and control Zoom video classroom streams.
           </p>
         </div>
 

@@ -12,8 +12,10 @@ class LiveClassCreate(BaseModel):
     meeting_url: Optional[str] = None
     recording_url: Optional[str] = None
     course_id: Optional[UUID] = None
+    subject_id: Optional[UUID] = None
+    timetable_slot_id: Optional[UUID] = None
     grade_number: Optional[int] = None
-    section_name: Optional[str] = "A"
+    section_name: Optional[str] = None
     subject_code: Optional[str] = None
     subject_name: Optional[str] = None
     period_number: Optional[int] = None
@@ -33,6 +35,8 @@ class LiveClassRead(BaseModel):
 
     id: UUID
     course_id: Optional[UUID] = None
+    subject_id: Optional[UUID] = None
+    timetable_slot_id: Optional[UUID] = None
     teacher_id: UUID
     teacher_name: Optional[str] = None
     title: str
@@ -59,19 +63,27 @@ class LiveClassRead(BaseModel):
 
 
 class TeacherTimetableSlotRead(BaseModel):
-    grade_number: Optional[int] = 1
-    grade_name: Optional[str] = "Course Track"
-    section_name: Optional[str] = "Main Batch"
+    slot_id: Optional[str] = None
+    course_id: Optional[str] = None
+    course_title: Optional[str] = None
+    subject_id: Optional[str] = None
     subject_code: str
     subject_name: str
-    period_number: int
+    subject_color: Optional[str] = "#FF7A00"
+    teacher_id: Optional[str] = None
+    teacher_name: Optional[str] = None
     day_of_week: str
     start_time: str
     end_time: str
-    room_or_venue: str
-    course_id: Optional[UUID] = None
-    course_title: Optional[str] = None
+    room_or_venue: Optional[str] = "Online Classroom"
     meeting_url: Optional[str] = None
+    status: str = "UPCOMING"
+    starts_at: Optional[str] = None
+    ends_at: Optional[str] = None
+    grade_number: Optional[int] = 1
+    grade_name: Optional[str] = "Course Track"
+    section_name: Optional[str] = ""
+    period_number: Optional[int] = 1
 
 
 class EndClassSessionRequest(BaseModel):

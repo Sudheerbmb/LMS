@@ -16,13 +16,15 @@ import {
   X,
   LayoutGrid,
   ListFilter,
-  CalendarDays
+  CalendarDays,
+  RotateCcw
 } from 'lucide-react'
 import {
   getTimetableGrid,
   createTimetableSlot,
   updateSlot,
   deleteTimetableSlot,
+  resetTimetableSchedule,
   getAdminCourses,
   getAdminUsers,
   type TimetableSlot,
@@ -110,6 +112,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
   const [showEditModal, setShowEditModal] = useState(false)
   const [slotToEdit, setSlotToEdit] = useState<TimetableSlot | null>(null)
   const [slotToDelete, setSlotToDelete] = useState<TimetableSlot | null>(null)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -431,6 +434,22 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
     }
   }
 
+  // Handle Reset Schedule (Admin Only)
+  const handleResetSchedule = async () => {
+    setSubmitting(true)
+    try {
+      const res = await resetTimetableSchedule()
+      setStatusToast({ type: 'success', text: res.message || 'Timetable schedule cleared.' })
+      setShowResetModal(false)
+      await loadTimetableData()
+    } catch (err: any) {
+      console.error('Failed to reset schedule:', err)
+      setStatusToast({ type: 'error', text: err.message || 'Failed to reset timetable schedule.' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   // Clear all filters
   const clearFilters = () => {
     setSelectedCourseFilter('all')
@@ -471,6 +490,18 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
             <RefreshCw className={`w-3.5 h-3.5 text-[#64748B] ${loading ? 'animate-spin text-[#FF7A00]' : ''}`} />
             <span>Refresh</span>
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => setShowResetModal(true)}
+              disabled={loading || submitting}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs md:text-sm font-medium transition-all shadow-xs disabled:opacity-50"
+              title="Reset Timetable Schedule"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
+              <span>Reset Schedule</span>
+            </button>
+          )}
 
           {isAdmin && (
             <button
@@ -737,7 +768,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                                 {slot.subject_code || 'CLS'}
                               </span>
                               <span className="text-[10px] text-[#64748B] font-medium capitalize">
-                                P{slot.period_number || 1} • {slot.slot_type}
+                                {slot.slot_type || 'Lecture'}
                               </span>
                             </div>
 
@@ -898,7 +929,7 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                               {slot.subject_code || 'CLS'}
                             </span>
                             <span className="text-xs text-[#64748B] font-medium capitalize">
-                              Period {slot.period_number || 1} • {slot.slot_type}
+                              {slot.slot_type || 'Lecture'}
                             </span>
                           </div>
 
@@ -1454,6 +1485,52 @@ export const TimetablePage: React.FC<{ user: User | null }> = ({ user: currentUs
                 className="px-3.5 py-1.5 rounded-lg bg-[#EF4444] hover:bg-rose-600 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50"
               >
                 {submitting ? 'Deleting...' : 'Delete Class'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESET TIMETABLE CONFIRMATION MODAL ──────────────────────────────── */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-md shadow-xl p-6 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-[#EF4444] flex-shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-[#0F172A]">Reset Timetable Schedule</h3>
+                <p className="text-xs text-[#64748B] leading-relaxed">
+                  This will clear all scheduled timetable class slots and orphan live sessions. Courses, subjects, faculty mentors, and student enrollments will remain completely intact.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-[#E2E8F0] text-xs space-y-1 text-[#64748B]">
+              <p className="font-semibold text-[#0F172A]">What happens next?</p>
+              <ul className="list-disc list-inside space-y-0.5 pt-0.5 text-[11px]">
+                <li>All obsolete slots and past schedule entries are removed.</li>
+                <li>The timetable will reset to a clean state.</li>
+                <li>You can immediately schedule fresh classes using live courses & teachers.</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F1F5F9]">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 rounded-xl bg-white border border-[#E2E8F0] hover:bg-slate-50 text-[#0F172A] text-xs font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResetSchedule}
+                disabled={submitting}
+                className="px-4 py-2 rounded-xl bg-[#EF4444] hover:bg-rose-600 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50"
+              >
+                {submitting ? 'Resetting Schedule...' : 'Confirm Reset'}
               </button>
             </div>
           </div>

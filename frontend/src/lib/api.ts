@@ -789,6 +789,11 @@ export const deleteTimetableSlot = (slotId: string) =>
     method: 'DELETE',
   })
 
+export const resetTimetableSchedule = () =>
+  request<{ status: string; message: string }>('/api/v1/timetable/reset-schedule', {
+    method: 'POST',
+  })
+
 export const recordTeacherLeave = (payload: { teacher_id: string; day_of_week: string; reason: string }) =>
 
   request<any>('/api/v1/timetable/leaves', { method: 'POST', body: JSON.stringify(payload) })
@@ -879,32 +884,34 @@ export const updateSchoolCourse = (
 )
 
 export interface TeacherTimetableSlot {
-
-  grade_number: number
-
-  grade_name: string
-
-  section_name: string
-
+  slot_id?: string
+  course_id?: string
+  course_title?: string
+  subject_id?: string
   subject_code: string
-
   subject_name: string
-
-  period_number: number
-
+  subject_color?: string
+  teacher_id?: string
+  teacher_name?: string
   day_of_week: string
-
   start_time: string
-
   end_time: string
-
-  room_or_venue: string
-
+  room_or_venue?: string
+  meeting_url?: string
+  status?: 'LIVE NOW' | 'UPCOMING'
+  starts_at?: string
+  ends_at?: string
+  grade_number?: number
+  grade_name?: string
+  section_name?: string
+  period_number?: number
 }
 
 export interface SchoolLiveClass {
   id: string
   course_id?: string
+  subject_id?: string
+  timetable_slot_id?: string
   title: string
   teacher_id: string
   teacher_name?: string
@@ -1009,6 +1016,9 @@ export const createSchoolLiveClass = (payload: {
   title: string
   starts_at: string
   ends_at: string
+  course_id?: string
+  subject_id?: string
+  timetable_slot_id?: string
   grade_number?: number
   section_name?: string
   subject_code?: string

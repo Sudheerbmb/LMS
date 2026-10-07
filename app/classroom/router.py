@@ -213,6 +213,9 @@ async def create_school_live_class_endpoint(
         live_class = await schedule_school_live_class(session, data, current_user)
         return {
             "id": live_class.id,
+            "course_id": live_class.course_id,
+            "subject_id": live_class.subject_id,
+            "timetable_slot_id": live_class.timetable_slot_id,
             "title": live_class.title,
             "teacher_id": live_class.teacher_id,
             "teacher_name": current_user.display_name,

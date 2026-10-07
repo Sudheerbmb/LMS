@@ -741,10 +741,9 @@ async def purge_legacy_data_endpoint(
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     from app.platform.database import purge_legacy_school_data
-    from app.timetable.service import sync_courses_to_timetable_curriculum, generate_school_timetable
+    from app.timetable.service import sync_courses_to_timetable_curriculum
     await purge_legacy_school_data(session)
     await sync_courses_to_timetable_curriculum(session)
-    await generate_school_timetable(session)
     return {"status": "success", "message": "Legacy school data purged and technical institute curriculum synchronized"}
 
 

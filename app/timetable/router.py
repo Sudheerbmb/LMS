@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -134,6 +134,45 @@ async def get_grid_endpoint(
         teacher_id=teacher_id,
         day_of_week=day_of_week,
     )
+
+
+@router.post("/reset-schedule", response_model=Dict[str, Any])
+async def reset_timetable_schedule_endpoint(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Admin-only operation to completely reset obsolete timetable slots and orphaned live classes,
+    while strictly preserving courses, subjects, users, teacher assignments, enrollments, and recordings.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can reset the timetable schedule.",
+        )
+
+    from app.classroom.models import LiveClass, ClassRecording
+    from app.timetable.models import TimetableSlot
+
+    try:
+        # 1. Remove all obsolete timetable slots
+        await session.execute(delete(TimetableSlot))
+
+        # 2. Remove live classes that have no recordings (preserve sessions with recordings!)
+        subq = select(ClassRecording.class_id).distinct()
+        await session.execute(
+            delete(LiveClass).where(LiveClass.id.not_in(subq))
+        )
+
+        await session.commit()
+    except Exception as exc:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to reset timetable schedule: {exc}") from exc
+
+    return {
+        "status": "success",
+        "message": "Timetable schedule cleared. You can now schedule fresh classes from the timetable.",
+    }
 
 
 # ── Dynamic Policy Rules Endpoints ──────────────────────────────────────────

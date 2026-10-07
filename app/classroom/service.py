@@ -46,97 +46,121 @@ async def get_teacher_timetable_slots_for_scheduling(
     session: AsyncSession, teacher_user: User
 ) -> List[Dict[str, Any]]:
     """
-    Retrieves the allowed timetable periods for this teacher according to the master schedule.
+    Retrieves current and upcoming scheduled classes for this teacher.
+    Strictly filters out ended classes (where ends_at <= now).
+    Enforces teacher subject assignment ownership.
     """
-    profile = await session.scalar(
-        select(TeacherProfile)
-        .options(selectinload(TeacherProfile.skills).selectinload(TeacherSubjectSkill.subject))
-        .where(TeacherProfile.user_id == teacher_user.id)
+    from datetime import datetime, time
+    import zoneinfo
+    from app.courses.models import Course, CourseSubject
+    from app.timetable.models import TimetableSlot
+
+    # LMS timezone (Asia/Kolkata / UTC+05:30)
+    try:
+        tz = zoneinfo.ZoneInfo(teacher_user.timezone or "Asia/Kolkata")
+    except Exception:
+        tz = zoneinfo.ZoneInfo("Asia/Kolkata")
+
+    now = datetime.now(tz)
+    current_weekday = now.strftime("%A")
+    today_date = now.date()
+
+    # Query master timetable slots
+    query = (
+        select(TimetableSlot)
+        .options(
+            selectinload(TimetableSlot.course).selectinload(Course.versions),
+            selectinload(TimetableSlot.course).selectinload(Course.subjects),
+            selectinload(TimetableSlot.teacher),
+        )
     )
-    if not profile:
-        profile = await session.scalar(
-            select(TeacherProfile)
-            .options(selectinload(TeacherProfile.skills).selectinload(TeacherSubjectSkill.subject))
-            .join(User, TeacherProfile.user_id == User.id)
-            .where(User.email == teacher_user.email)
-        )
-    if not profile:
-        profile = (await session.scalars(select(TeacherProfile).options(selectinload(TeacherProfile.skills).selectinload(TeacherSubjectSkill.subject)))).first()
 
-    if not profile:
-        return []
+    is_admin = teacher_user.role == "admin"
+    if not is_admin:
+        # Enforce teacher ownership: must be assigned to the slot
+        query = query.where(TimetableSlot.teacher_id == teacher_user.id)
 
-    teacher_filter = [teacher_user.id]
-    if profile:
-        teacher_filter.append(profile.id)
-
-    from app.courses.models import Course
-    slots = (
-        await session.scalars(
-            select(TimetableSlot)
-            .options(
-                selectinload(TimetableSlot.course).selectinload(Course.versions),
-                selectinload(TimetableSlot.section).selectinload(SchoolSection.grade),
-                selectinload(TimetableSlot.subject),
-            )
-            .where(TimetableSlot.teacher_id.in_(teacher_filter))
-            .order_by(TimetableSlot.day_of_week, TimetableSlot.period_number, TimetableSlot.start_time)
-        )
-    ).all()
+    slots = (await session.scalars(query)).all()
 
     result = []
     seen = set()
 
     for s in slots:
+        # Only return classes scheduled for today
+        if (s.day_of_week or "").strip().lower() != current_weekday.lower():
+            continue
+
+        # Parse start and end times
+        try:
+            sh, sm = map(int, s.start_time.strip().split(":"))
+            eh, em = map(int, s.end_time.strip().split(":"))
+            start_dt = datetime.combine(today_date, time(sh, sm), tzinfo=tz)
+            end_dt = datetime.combine(today_date, time(eh, em), tzinfo=tz)
+        except Exception:
+            continue
+
+        # Check ended status: if now >= end_dt, it has ENDED -> DO NOT SHOW!
+        if now >= end_dt:
+            continue
+
+        # Determine status: LIVE NOW or UPCOMING
+        if start_dt <= now < end_dt:
+            status_label = "LIVE NOW"
+        else:
+            status_label = "UPCOMING"
+
+        # Course Title
         c_title = None
         if s.course:
-            c_title = s.course.versions[0].title if s.course.versions else s.course.slug.replace("-", " ").title()
-        elif s.section and s.section.grade:
-            c_title = s.section.grade.name
+            if s.course.versions and len(s.course.versions) > 0:
+                c_title = s.course.versions[0].title
+            else:
+                c_title = s.course.slug.replace("-", " ").title()
 
-        sub_name = s.subject_name or (s.subject.name if s.subject else c_title or "Scheduled Class")
-        sub_code = s.subject_code or (s.subject.code if s.subject else "CLS")
+        # Subject ID from course
+        subject_id = None
+        if s.course and s.course.subjects:
+            match_sub = next(
+                (cs for cs in s.course.subjects if cs.code == s.subject_code or cs.name == s.subject_name),
+                None
+            )
+            if match_sub:
+                subject_id = match_sub.id
 
-        g_num = s.section.grade.grade_number if (s.section and s.section.grade) else 1
-        g_name = s.section.grade.name if (s.section and s.section.grade) else (c_title or "Course Track")
-        sec_name = s.section.name if s.section else "Main Batch"
+        sub_name = s.subject_name or c_title or "Technical Class"
+        sub_code = s.subject_code or "CLS"
 
-        key = (g_num, sec_name, sub_code, s.day_of_week, s.period_number, s.start_time)
-        if key not in seen:
-            seen.add(key)
-            result.append({
-                "grade_number": g_num,
-                "grade_name": g_name,
-                "section_name": sec_name,
-                "subject_code": sub_code,
-                "subject_name": sub_name,
-                "period_number": s.period_number,
-                "day_of_week": s.day_of_week,
-                "start_time": s.start_time,
-                "end_time": s.end_time,
-                "room_or_venue": s.room_or_venue,
-                "course_id": s.course_id,
-                "course_title": c_title,
-                "meeting_url": s.meeting_url,
-            })
+        dedup_key = (str(s.id), sub_code, s.start_time)
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
 
-    if not result and profile.skills:
-        for sk in profile.skills:
-            if sk.subject:
-                for g_num in [1, 2]:
-                    result.append({
-                        "grade_number": g_num,
-                        "grade_name": f"Track {g_num}",
-                        "section_name": "A",
-                        "subject_code": sk.subject.code,
-                        "subject_name": sk.subject.name,
-                        "period_number": 2,
-                        "day_of_week": "Monday",
-                        "start_time": "09:20",
-                        "end_time": "10:10",
-                        "room_or_venue": f"Tech Lab {g_num}01",
-                    })
+        result.append({
+            "slot_id": str(s.id),
+            "course_id": str(s.course_id) if s.course_id else None,
+            "course_title": c_title or "Technical Course",
+            "subject_id": str(subject_id) if subject_id else None,
+            "subject_code": sub_code,
+            "subject_name": sub_name,
+            "subject_color": s.subject_color or "#FF7A00",
+            "teacher_id": str(s.teacher_id) if s.teacher_id else str(teacher_user.id),
+            "teacher_name": s.teacher.display_name if s.teacher else teacher_user.display_name,
+            "day_of_week": s.day_of_week,
+            "start_time": s.start_time,
+            "end_time": s.end_time,
+            "room_or_venue": s.room_or_venue or "Main Classroom",
+            "meeting_url": s.meeting_url,
+            "status": status_label,
+            "starts_at": start_dt.isoformat(),
+            "ends_at": end_dt.isoformat(),
+            "grade_number": 1,
+            "grade_name": c_title or "Course Track",
+            "section_name": "",
+            "period_number": s.period_number or 1,
+        })
 
+    # Sort: LIVE NOW first, then chronologically by start_time
+    result.sort(key=lambda x: (0 if x["status"] == "LIVE NOW" else 1, x["start_time"]))
     return result
 
 
@@ -148,8 +172,8 @@ async def schedule_school_live_class(
 ) -> LiveClass:
     """
     Creates an LMS live classroom session and automatically provisions a matching Zoom meeting.
+    Preserves course_id, subject_id, teacher_id, and timetable_slot_id.
     """
-    # Check for teacher scheduling conflicts among active/scheduled sessions
     active_statuses = ["scheduled", "live", "in_progress"]
     overlap = await session.scalar(
         select(LiveClass).where(
@@ -160,19 +184,19 @@ async def schedule_school_live_class(
         )
     )
     if overlap:
-        # If this is an instant live broadcast launch for an already existing timetable slot:
-        is_instant_launch_for_same_slot = (
-            data.status == "live"
-            and data.period_number is not None
-            and overlap.period_number == data.period_number
-            and overlap.subject_code == data.subject_code
-            and overlap.grade_number == data.grade_number
-            and overlap.section_name == data.section_name
-        )
-        if is_instant_launch_for_same_slot:
+        # If this is an existing session or re-launch for the same scheduled slot:
+        if data.status == "live" or (data.timetable_slot_id and overlap.timetable_slot_id == data.timetable_slot_id):
             overlap.status = "live"
             overlap.starts_at = data.starts_at
             overlap.ends_at = data.ends_at
+            if data.title:
+                overlap.title = data.title
+            if data.timetable_slot_id:
+                overlap.timetable_slot_id = data.timetable_slot_id
+            if data.course_id:
+                overlap.course_id = data.course_id
+            if data.subject_id:
+                overlap.subject_id = data.subject_id
             if data.room_number:
                 overlap.room_number = data.room_number
             await session.commit()
@@ -182,7 +206,7 @@ async def schedule_school_live_class(
         raise ScheduleConflictError("Teacher has a scheduling conflict during this time period")
 
     duration_mins = max(15, int((data.ends_at - data.starts_at).total_seconds() / 60))
-    topic = data.title or f"{data.subject_name or 'Live Class'} - Class {data.grade_number or ''}{data.section_name or ''}"
+    topic = data.title or f"{data.subject_name or 'Live Class'}"
 
     zoom_meeting_id = None
     zoom_meeting_uuid = None
@@ -191,14 +215,14 @@ async def schedule_school_live_class(
     zoom_password = None
     zoom_status = "scheduled"
 
-    # 1. Automatically create Zoom meeting if configured
+    # Automatically create Zoom meeting if configured
     if data.auto_create_zoom and zoom_service.is_configured():
         try:
             zoom_resp = await zoom_service.create_meeting_for_class(
                 topic=topic,
                 start_time_dt=data.starts_at,
                 duration_minutes=duration_mins,
-                agenda=f"Acharya LMS Class {data.grade_number or ''}-{data.section_name or ''} {data.subject_name or ''}",
+                agenda=f"Acharya LMS: {data.subject_name or 'Technical Session'}",
                 settings=ZoomClassSettings(
                     auto_recording="cloud",
                     waiting_room=True,
@@ -216,13 +240,15 @@ async def schedule_school_live_class(
                 zoom_status = "scheduled"
                 logger.info("Created Zoom meeting %s for LiveClass: %s", zoom_meeting_id, topic)
         except Exception as exc:
-            logger.error("Zoom meeting creation encountered an error: %s. Continuing with LMS direct room.", exc)
+            logger.error("Zoom meeting creation encountered an error: %s. Continuing with direct room.", exc)
 
-    fallback_meeting_url = zoom_join_url or data.meeting_url or f"/classroom/call?room=room_{data.grade_number or 9}_{data.subject_code or 'CLASS'}_{int(datetime.now().timestamp())}"
+    fallback_meeting_url = zoom_join_url or data.meeting_url or f"/classroom/call?room=room_{data.subject_code or 'CLASS'}_{int(datetime.now().timestamp())}"
 
     live_class = LiveClass(
         organization_id=organization_id,
         course_id=data.course_id,
+        subject_id=data.subject_id,
+        timetable_slot_id=data.timetable_slot_id,
         teacher_id=teacher.id,
         title=data.title,
         starts_at=data.starts_at,
@@ -230,11 +256,11 @@ async def schedule_school_live_class(
         meeting_url=fallback_meeting_url,
         status=data.status or "scheduled",
         grade_number=data.grade_number,
-        section_name=data.section_name or "A",
+        section_name="",  # NO BATCH
         subject_code=data.subject_code,
         subject_name=data.subject_name,
         period_number=data.period_number,
-        room_number=data.room_number or (f"Room {data.grade_number}01" if data.grade_number else "Virtual Room"),
+        room_number=data.room_number or "Main Classroom",
         zoom_meeting_id=zoom_meeting_id,
         zoom_meeting_uuid=zoom_meeting_uuid,
         zoom_join_url=zoom_join_url,
@@ -506,8 +532,16 @@ async def get_school_live_classes(
     teachers = (await session.scalars(select(User).where(User.id.in_(teacher_ids)))).all() if teacher_ids else []
     t_map = {t.id: t.display_name for t in teachers}
 
+    utc_now = datetime.now(timezone.utc)
+    updated_status = False
+
     result = []
     for c in classes:
+        # Auto-transition ended classes
+        if c.ends_at and c.ends_at < utc_now and c.status in ("scheduled", "live", "in_progress"):
+            c.status = "ended"
+            updated_status = True
+
         is_host = (user.role == "admin" or c.teacher_id == user.id)
         rec_url = c.recording_url
         if not rec_url:
@@ -520,6 +554,9 @@ async def get_school_live_classes(
 
         result.append({
             "id": c.id,
+            "course_id": c.course_id,
+            "subject_id": c.subject_id,
+            "timetable_slot_id": c.timetable_slot_id,
             "title": c.title,
             "teacher_id": c.teacher_id,
             "teacher_name": t_map.get(c.teacher_id, "Teacher"),
@@ -529,7 +566,7 @@ async def get_school_live_classes(
             "recording_url": rec_url,
             "status": c.status,
             "grade_number": c.grade_number,
-            "section_name": c.section_name,
+            "section_name": c.section_name or "",
             "subject_code": c.subject_code,
             "subject_name": c.subject_name,
             "period_number": c.period_number,
@@ -542,6 +579,12 @@ async def get_school_live_classes(
             "zoom_status": c.zoom_status or c.status,
             "zoom_last_synced_at": c.zoom_last_synced_at,
         })
+
+    if updated_status:
+        try:
+            await session.commit()
+        except Exception:
+            pass
 
     return result
 

@@ -384,13 +384,10 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
   const [loading, setLoading] = useState(true)
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [scheduleMode, setScheduleMode] = useState<'timetable' | 'instant'>('instant')
-  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
-  const [instantSection, setInstantSection] = useState<string>('Batch A')
-  const [instantSubjectCode, setInstantSubjectCode] = useState<string>('PY-101')
-  const [instantSubject, setInstantSubject] = useState<string>('Python Core & Advanced OOP')
+  const [selectedLaunchCourseId, setSelectedLaunchCourseId] = useState<string>('')
+  const [selectedLaunchSubjectId, setSelectedLaunchSubjectId] = useState<string>('')
+  const [selectedLaunchSlotId, setSelectedLaunchSlotId] = useState<string>('')
   const [customTitle, setCustomTitle] = useState('')
-  const instantLaunch = true
   const [submittingSchedule, setSubmittingSchedule] = useState(false)
   const [flushingClasses, setFlushingClasses] = useState(false)
   const [syncingRecordingId, setSyncingRecordingId] = useState<string | null>(null)
@@ -1061,15 +1058,7 @@ export const ClassroomPage: React.FC<ClassroomPageProps> = ({ user }) => {
     return true
   })
 
-  const activeSelectedCourse = availableCourses.find(c => c.slug === selectedCourseSlug || c.id === selectedCourseSlug) || availableCourses[0]
-  const availableSubjectsForCourse = activeSelectedCourse ? (
-    isTeacher
-      ? activeSelectedCourse.subjects.filter(s =>
-          s.teacher_id === user.id ||
-          (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
-        )
-      : activeSelectedCourse.subjects
-  ) : []
+
 
   // Timetable-Synchronized Auto-End Countdown Computation
   const scheduledDurationSeconds = activeCallRoom
@@ -3883,94 +3872,44 @@ const handleTriggerTeacherCopilot = async (
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (teacherSlots.length === 0) return
     setSubmittingSchedule(true)
 
     try {
-      const now = new Date()
-      const startIso = now.toISOString()
-      const endIso = new Date(now.getTime() + 45 * 60 * 1000).toISOString()
-
-      const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-
-      // Order slots: today's slots first, then other weekdays
-      const todaySlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() === currentDayName)
-      const otherSlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() !== currentDayName)
-      const upcomingTeacherSlots = todaySlots.length > 0 ? [...todaySlots, ...otherSlots] : teacherSlots
-
-      const enrolledCourseIds = new Set(enrollments.map(e => e.course_id))
-      const availableCourses = adminCourses.filter(c => {
-        if (isTeacher) {
-          return c.subjects.some(s =>
-            s.teacher_id === user.id ||
-            (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
-          )
-        }
-        if (isStudent) {
-          return enrolledCourseIds.has(c.id)
-        }
-        return true
-      })
-
-      const activeCourse = availableCourses.find(c => c.slug === selectedCourseSlug || c.id === selectedCourseSlug) || availableCourses[0]
-      const availableSubjects = activeCourse ? (
-        isTeacher
-          ? activeCourse.subjects.filter(s =>
-              s.teacher_id === user.id ||
-              (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
-            )
-          : activeCourse.subjects
-      ) : []
-
-      let grade_number = 1
-      let section_name = 'Batch-01'
-      let subject_code = availableSubjects[0]?.code || 'PY-101'
-      let subject_name = availableSubjects[0]?.name || 'Python Core & Advanced OOP'
-      let period_number: number | undefined = undefined
-      let room_number = 'Virtual Zoom Room'
-
-      if (scheduleMode === 'timetable' && upcomingTeacherSlots.length > 0) {
-        const selectedSlot = upcomingTeacherSlots[selectedSlotIndex] || upcomingTeacherSlots[0]
-        grade_number = selectedSlot.grade_number
-        section_name = selectedSlot.section_name
-        subject_code = selectedSlot.subject_code
-        subject_name = selectedSlot.subject_name
-        period_number = selectedSlot.period_number
-        room_number = selectedSlot.room_or_venue || 'Virtual Zoom Room'
-      } else {
-        const cIdx = adminCourses.findIndex(c => c.id === activeCourse?.id || c.slug === activeCourse?.slug)
-        grade_number = cIdx >= 0 ? cIdx + 1 : 1
-        section_name = instantSection || 'Batch-01'
-        subject_code = instantSubjectCode || availableSubjects[0]?.code || 'TECH'
-        subject_name = instantSubject || (availableSubjects.find(s => s.code === subject_code)?.name || 'Technical Session')
-        room_number = 'Virtual Zoom Room'
+      const selectedSlot = teacherSlots.find(s => s.slot_id === selectedLaunchSlotId) || teacherSlots[0]
+      if (!selectedSlot) {
+        alert('Please select a valid scheduled class.')
+        return
       }
 
-      const courseTitle = activeCourse?.title || 'Technical Course'
-      const title = customTitle.trim() || `${subject_name} (${courseTitle} • ${section_name})`
+      const now = new Date()
+      const startIso = selectedSlot.starts_at || now.toISOString()
+      const endIso = selectedSlot.ends_at || new Date(now.getTime() + 60 * 60 * 1000).toISOString()
+      const title = customTitle.trim() || selectedSlot.subject_name || 'Live Class Session'
 
       const created = await createSchoolLiveClass({
         title,
         starts_at: startIso,
         ends_at: endIso,
-        grade_number,
-        section_name,
-        subject_code,
-        subject_name,
-        period_number,
-        room_number,
-        status: instantLaunch ? 'live' : 'scheduled'
+        grade_number: selectedSlot.grade_number || 1,
+        section_name: '',
+        subject_code: selectedSlot.subject_code,
+        subject_name: selectedSlot.subject_name,
+        room_number: selectedSlot.room_or_venue || 'Main Classroom',
+        status: 'live',
+        course_id: selectedSlot.course_id || undefined,
+        subject_id: selectedSlot.subject_id || undefined,
+        timetable_slot_id: selectedSlot.slot_id || undefined,
+        auto_create_zoom: true,
       })
 
       setShowScheduleModal(false)
       setCustomTitle('')
       await loadClassroomData()
-
-      if (instantLaunch) {
-        await handleJoinClass(created)
-      }
+      await handleJoinClass(created)
     } catch (err) {
-      console.error('Failed to schedule class:', err)
-      alert('Failed to schedule class. Please verify constraints.')
+      console.error('Failed to launch live class:', err)
+      alert('Failed to launch live class. Please verify constraints.')
     } finally {
       setSubmittingSchedule(false)
     }
@@ -6595,7 +6534,7 @@ const handleTriggerTeacherCopilot = async (
               className="px-4 py-2.5 rounded-2xl bg-[#FF7A18] hover:bg-[#EA6C0A] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#FF7A18]/25 transition-all cursor-pointer shrink-0"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>Launch Class</span>
+              <span>Launch Live Class</span>
             </button>
           )}
         </div>
@@ -6616,7 +6555,6 @@ const handleTriggerTeacherCopilot = async (
         if (!featuredClass) return null
 
         const isLive = featuredClass.status === 'live'
-        const cleanBatch = featuredClass.section_name?.startsWith('Batch') ? featuredClass.section_name : `Batch ${featuredClass.section_name || '01'}`
         const cleanTitle = featuredClass.title || 'Python with Generative AI (GenAI)'
         const cleanSubject = featuredClass.subject_name || 'Autonomous AI Agents & FastAPI Deployment'
 
@@ -6673,7 +6611,7 @@ const handleTriggerTeacherCopilot = async (
                       👤 {featuredClass.teacher_name ? `Prof. ${featuredClass.teacher_name}` : 'Prof. Sarah Connor'}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      🏫 {featuredClass.room_number || `Sandbox Lab 1A (${cleanBatch})`}
+                      🏫 {featuredClass.room_number || 'Main Classroom'}
                     </span>
                   </div>
                 </div>
@@ -6867,195 +6805,190 @@ const handleTriggerTeacherCopilot = async (
         })()}
       </div>
 
-      {/* ── 5. MINIMAL SCHEDULE MODAL ── */}
+      {/* ── 5. LAUNCH LIVE CLASS MODAL ── */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-black/[0.08] rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-150 text-neutral-900">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#F28C28] fill-[#F28C28]" />
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-150 text-neutral-900">
+            <div className="flex items-center justify-between mb-1.5">
+              <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#FF7A00] fill-[#FF7A00]" />
                 Launch Live Class
               </h2>
               <button
                 onClick={() => setShowScheduleModal(false)}
-                className="text-neutral-400 hover:text-neutral-700 text-lg font-bold cursor-pointer"
+                className="text-neutral-400 hover:text-neutral-700 text-lg font-bold cursor-pointer transition-colors"
               >
                 &times;
               </button>
             </div>
-            <p className="text-xs text-neutral-500 mb-5">
-              Start an instant live Zoom video lecture. Status automatically syncs with student timetables.
+            <p className="text-xs text-neutral-500 mb-5 leading-relaxed">
+              Start a scheduled Zoom class. The class status will sync automatically.
             </p>
 
-            {/* Mode Switcher */}
-            <div className="grid grid-cols-2 gap-1.5 mb-4 p-1 rounded-xl bg-neutral-100">
-              <button
-                type="button"
-                onClick={() => setScheduleMode('instant')}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  scheduleMode === 'instant'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Instant Module</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setScheduleMode('timetable')}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  scheduleMode === 'timetable'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>From Timetable Slot</span>
-              </button>
-            </div>
+            {teacherSlots.length === 0 ? (
+              <div className="text-center py-6 px-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF3EA] border border-[#FFDEC4] text-[#FF7A00] flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-bold text-neutral-900 mb-1">
+                  No scheduled classes are currently available.
+                </h3>
+                <p className="text-xs text-neutral-500 max-w-sm mx-auto mb-6">
+                  Schedule a class from the timetable before launching a live class.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (() => {
+              const coursesWithSlots = Array.from(
+                new Map(
+                  teacherSlots.map(s => {
+                    const cid = s.course_id || s.course_title || 'course'
+                    const title = s.course_title || (adminCourses.find(c => c.id === s.course_id)?.title) || 'Technical Course'
+                    return [cid, { id: cid, title }]
+                  })
+                ).values()
+              )
 
-            <form onSubmit={handleScheduleSubmit} className="space-y-4">
-              {scheduleMode === 'timetable' ? (() => {
-                const now = new Date()
-                const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-                const todaySlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() === currentDayName)
-                const otherSlots = teacherSlots.filter(s => (s.day_of_week || '').toLowerCase() !== currentDayName)
-                const allSlots = todaySlots.length > 0 ? [...todaySlots, ...otherSlots] : teacherSlots
+              const activeCourseId = selectedLaunchCourseId || coursesWithSlots[0]?.id || ''
+              const slotsForCourse = teacherSlots.filter(s =>
+                !activeCourseId || s.course_id === activeCourseId || s.course_title === activeCourseId
+              )
 
-                return (
+              const subjectsWithSlots = Array.from(
+                new Map(
+                  slotsForCourse.map(s => {
+                    const sid = s.subject_id || s.subject_code || 'subject'
+                    return [sid, { id: sid, name: s.subject_name, code: s.subject_code }]
+                  })
+                ).values()
+              )
+
+              const activeSubjectId = selectedLaunchSubjectId || subjectsWithSlots[0]?.id || ''
+              const matchingSlots = slotsForCourse.filter(s =>
+                !activeSubjectId || (s.subject_id && s.subject_id === activeSubjectId) || s.subject_code === activeSubjectId
+              )
+
+              const selectedSlot = (matchingSlots.find(s => s.slot_id === selectedLaunchSlotId) || matchingSlots[0] || teacherSlots[0])
+
+              return (
+                <form onSubmit={handleScheduleSubmit} className="space-y-4">
+                  {/* Course Field */}
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                      Select Assigned Timetable Slot:
-                    </label>
-                    {allSlots.length === 0 ? (
-                      <div className="text-xs text-amber-900 bg-amber-50 p-3 rounded-xl border border-amber-200">
-                        <p className="font-semibold">No timetable slots assigned yet.</p>
-                        <p className="text-[11px] text-amber-700 mt-0.5">
-                          Switch to <strong>Instant Module</strong> to broadcast any subject.
-                        </p>
-                      </div>
-                    ) : (
-                      <select
-                        value={selectedSlotIndex}
-                        onChange={e => setSelectedSlotIndex(Number(e.target.value))}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
-                      >
-                        {allSlots.map((s, idx) => (
-                          <option key={idx} value={idx}>
-                            {s.day_of_week} P{s.period_number} &bull; {s.subject_name} ({s.start_time} - {s.end_time}, Batch {s.section_name})
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                )
-              })() : (
-                <div className="space-y-3 p-3.5 rounded-xl bg-neutral-50 border border-black/[0.06]">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                        Course
-                      </label>
-                      <select
-                        value={selectedCourseSlug || availableCourses[0]?.slug || ''}
-                        onChange={e => {
-                          const slug = e.target.value
-                          setSelectedCourseSlug(slug)
-                          const crs = availableCourses.find(c => c.slug === slug || c.id === slug)
-                          if (crs) {
-                            const allowedSubs = isTeacher
-                              ? crs.subjects.filter(s =>
-                                  s.teacher_id === user.id ||
-                                  (s.teacher_name && user.display_name && s.teacher_name.toLowerCase() === user.display_name.toLowerCase())
-                                )
-                              : crs.subjects
-                            if (allowedSubs.length > 0) {
-                              setInstantSubjectCode(allowedSubs[0].code)
-                              setInstantSubject(allowedSubs[0].name)
-                            }
-                          }
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
-                      >
-                        {availableCourses.map((c) => (
-                          <option key={c.id} value={c.slug}>
-                            {c.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                        Batch
-                      </label>
-                      <select
-                        value={instantSection}
-                        onChange={e => setInstantSection(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
-                      >
-                        <option value="Batch-01">Batch-01</option>
-                        <option value="Batch-02">Batch-02</option>
-                        <option value="Weekend Batch">Weekend Batch</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                      Subject Module
+                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                      Course
                     </label>
                     <select
-                      value={instantSubjectCode || availableSubjectsForCourse[0]?.code || ''}
+                      value={activeCourseId}
                       onChange={e => {
-                        const code = e.target.value
-                        setInstantSubjectCode(code)
-                        const found = availableSubjectsForCourse.find(s => s.code === code)
-                        if (found) setInstantSubject(found.name)
+                        const newCid = e.target.value
+                        setSelectedLaunchCourseId(newCid)
+                        setSelectedLaunchSubjectId('')
+                        setSelectedLaunchSlotId('')
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-black/[0.1] text-xs text-neutral-800 focus:outline-none focus:border-[#F28C28] cursor-pointer"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
                     >
-                      {availableSubjectsForCourse.map((s) => (
-                        <option key={s.id || s.code} value={s.code}>
-                          {s.code}: {s.name}
+                      {coursesWithSlots.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
                         </option>
                       ))}
                     </select>
                   </div>
-                </div>
-              )}
 
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                  Session Topic (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={customTitle}
-                  onChange={e => setCustomTitle(e.target.value)}
-                  placeholder="e.g. Chapter 4: Live Discussion & Lab Practice"
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-black/[0.1] text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#F28C28]"
-                />
-              </div>
+                  {/* Subject Field */}
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                      Subject
+                    </label>
+                    <select
+                      value={activeSubjectId}
+                      onChange={e => {
+                        const newSid = e.target.value
+                        setSelectedLaunchSubjectId(newSid)
+                        setSelectedLaunchSlotId('')
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                    >
+                      {subjectsWithSlots.map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-black/[0.06]">
-                <button
-                  type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-500 hover:text-neutral-800 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingSchedule}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#171717] hover:bg-neutral-800 text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Video className="w-3.5 h-3.5 text-[#F28C28]" />
-                  <span>{submittingSchedule ? 'Launching Zoom...' : 'Launch Zoom Classroom'}</span>
-                </button>
-              </div>
-            </form>
+                  {/* Scheduled Class Field */}
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                      Scheduled Class
+                    </label>
+                    <select
+                      value={selectedSlot?.slot_id || ''}
+                      onChange={e => setSelectedLaunchSlotId(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FF7A00] cursor-pointer"
+                    >
+                      {matchingSlots.map(slot => (
+                        <option key={slot.slot_id} value={slot.slot_id}>
+                          {slot.status === 'LIVE NOW' ? 'LIVE NOW' : 'UPCOMING'} • {slot.subject_name} ({slot.start_time} – {slot.end_time})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* If class is upcoming: show starting note */}
+                  {selectedSlot && selectedSlot.status === 'UPCOMING' && (
+                    <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#FF7A00] shrink-0" />
+                        <span>This class starts at <strong>{selectedSlot.start_time}</strong>.</span>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/60 text-amber-900">
+                        Early Launch Allowed
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Session Topic (Optional) */}
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                      Session Topic (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={customTitle}
+                      onChange={e => setCustomTitle(e.target.value)}
+                      placeholder="e.g. Chapter 4: Live Discussion & Lab Practice"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-[#FF7A00]"
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduleModal(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submittingSchedule || !selectedSlot}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#FF7A00] hover:bg-[#E56E00] text-white shadow-sm shadow-[#FF7A00]/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <Video className="w-3.5 h-3.5 text-white" />
+                      <span>{submittingSchedule ? 'Launching Zoom...' : 'Launch Zoom Classroom'}</span>
+                    </button>
+                  </div>
+                </form>
+              )
+            })()}
           </div>
         </div>
       )}

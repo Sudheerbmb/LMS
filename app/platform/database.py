@@ -132,6 +132,8 @@ def _patch_missing_columns(connection: Connection) -> None:
         cols = {c["name"] for c in inspector.get_columns("live_classes")}
         _add_column("live_classes", "organization_id", uuid_type, cols)
         _add_column("live_classes", "course_id", uuid_type, cols)
+        _add_column("live_classes", "subject_id", uuid_type, cols)
+        _add_column("live_classes", "timetable_slot_id", uuid_type, cols)
         _add_column("live_classes", "grade_number", "INTEGER", cols)
         _add_column("live_classes", "section_name", "VARCHAR(32)", cols)
         _add_column("live_classes", "subject_code", "VARCHAR(16)", cols)

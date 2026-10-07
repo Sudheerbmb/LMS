@@ -196,13 +196,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
       const now = new Date()
       const end = new Date(now.getTime() + 45 * 60 * 1000)
       const res = await createSchoolLiveClass({
-        title: `${slot.subject_name} Live Session (${slot.grade_name || 'Course'} • Batch ${slot.section_name})`,
+        title: `${slot.subject_name} Live Session (${slot.grade_name || 'Course'})`,
         starts_at: now.toISOString(), ends_at: end.toISOString(),
-        grade_number: slot.grade_number, section_name: slot.section_name,
+        grade_number: slot.grade_number, section_name: '',
         subject_code: slot.subject_code, subject_name: slot.subject_name,
         period_number: slot.period_number, room_number: slot.room_or_venue, status: 'live'
       })
-      showToast(`Launching ${slot.subject_name} (Batch ${slot.section_name})...`, 'success')
+      showToast(`Launching ${slot.subject_name}...`, 'success')
       const zoomUrl = res.zoom_start_url || res.zoom_join_url || res.meeting_url
       if (zoomUrl && (zoomUrl.startsWith('http://') || zoomUrl.startsWith('https://'))) window.open(zoomUrl, '_blank')
       setCurrentTab('classroom')
@@ -350,7 +350,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                   {activeLiveClass.title}
                 </span>
                 <span style={{ fontSize: 12, color: '#B91C1C', opacity: 0.85 }} className="hidden sm:inline">
-                  • {activeLiveClass.teacher_name || 'Faculty'} (Batch {activeLiveClass.section_name})
+                  • {activeLiveClass.teacher_name || 'Faculty'}
                 </span>
               </div>
               <button
@@ -414,7 +414,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                                 {slot.subject_name || slot.grade_name || 'Class Session'}
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                                {slot.teacher_name ? `${slot.teacher_name} • ` : ''}{slot.section_name ? `Batch ${slot.section_name} • ` : ''}{slot.room_or_venue || 'Auditorium'}
+                                {slot.teacher_name ? `${slot.teacher_name} • ` : ''}{slot.room_or_venue || 'Auditorium'}
                               </div>
                             </div>
                           </div>
@@ -480,7 +480,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                               {enroll.course_title || enroll.subject_name || 'Technical Course'}
                             </h4>
                             <p style={{ margin: 0, fontSize: 11.5, color: 'var(--ink-3)' }}>
-                              Batch {enroll.section_name || 'A'}
+                              Enrolled Track
                             </p>
                           </div>
 
@@ -549,7 +549,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                                 {cls.title}
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                                {cls.teacher_name || 'Faculty'} • {cls.subject_name || 'Lecture'} • Batch {cls.section_name}
+                                {cls.teacher_name || 'Faculty'} • {cls.subject_name || 'Lecture'}
                               </div>
                             </div>
                           </div>
@@ -772,7 +772,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                             {slot.subject_name}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                            {slot.grade_name} • Batch {slot.section_name} • {slot.room_or_venue || 'Lab'}
+                            {slot.grade_name} • {slot.room_or_venue || 'Lab'}
                           </div>
                         </div>
 
@@ -1025,7 +1025,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, summary, set
                           {cls.title}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                          {cls.teacher_name || 'Faculty'} • Batch {cls.section_name}
+                          {cls.teacher_name || 'Faculty'}
                         </div>
                       </div>
                       <span style={{

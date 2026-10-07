@@ -32,6 +32,12 @@ class LiveClass(UUIDMixin, TimestampMixin, Base):
     course_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=True, index=True
     )
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("course_subjects.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    timetable_slot_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("timetable_slots.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     teacher_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
