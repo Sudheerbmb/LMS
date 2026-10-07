@@ -3766,9 +3766,15 @@ const handleTriggerTeacherCopilot = async (
 
     if (zoomUrl) {
       window.open(zoomUrl, '_blank', 'noopener,noreferrer')
+    } else if (liveClass.meeting_url) {
+      const url = liveClass.meeting_url.startsWith('http')
+        ? liveClass.meeting_url
+        : `${window.location.origin}${liveClass.meeting_url.startsWith('/') ? '' : '/'}${liveClass.meeting_url}`
+      window.open(url, '_blank', 'noopener,noreferrer')
     } else {
-      alert('Zoom meeting link is currently being generated. Please wait a moment and try again.')
-      return
+      // In-app WebRTC classroom room fallback
+      const fallbackUrl = `${window.location.origin}/classroom?room=${liveClass.id}`
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
     }
 
     if (liveClass.status === 'scheduled' && isHost) {
