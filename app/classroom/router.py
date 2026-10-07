@@ -1073,70 +1073,126 @@ async def get_or_transcribe_class(class_id_str: str, session: AsyncSession) -> t
     meeting_id = live_class.zoom_meeting_id if live_class else None
     if meeting_id and zoom_service.is_configured():
         try:
-            _, z_transcript = await zoom_service.get_recordings_and_transcript(meeting_id)
-            if z_transcript and z_transcript.strip():
-                try:
-                    session.add(ClassTranscript(
-                        class_id=c_uuid,
-                        zoom_meeting_id=meeting_id,
-                        raw_text=z_transcript.strip(),
-                        status="available"
-                    ))
-                    await session.commit()
-                except Exception:
-                    await session.rollback()
-                    live_class = await session.get(LiveClass, c_uuid)
-                return z_transcript.strip(), [], live_class
+            _, transcript_data = await zoom_service.get_recordings_and_transcript_data(meeting_id)
+            if transcript_data:
+                raw_text = transcript_data.get("raw_text")
+                vtt_content = transcript_data.get("vtt_content")
+                segments = transcript_data.get("segments") or []
+                topics = transcript_data.get("topics") or []
+
+                if raw_text and raw_text.strip():
+                    try:
+                        session.add(ClassTranscript(
+                            class_id=c_uuid,
+                            zoom_meeting_id=meeting_id,
+                            vtt_content=vtt_content,
+                            raw_text=raw_text.strip(),
+                            segments_json=segments,
+                            summary_json={"topics": topics, "chapters": topics},
+                            status="available"
+                        ))
+                        live_class.transcript_text = raw_text.strip()
+                        live_class.transcript_segments = segments
+                        if topics:
+                            live_class.summary_json = {"topics": topics, "chapters": topics}
+                        await session.commit()
+                    except Exception:
+                        await session.rollback()
+                        live_class = await session.get(LiveClass, c_uuid)
+                    return raw_text.strip(), segments, live_class
         except Exception as z_err:
-            logger.warning("Could not fetch Zoom transcript for class %s: %s", c_uuid, z_err)
+            logger.debug("Could not fetch Zoom transcript for class %s: %s", c_uuid, z_err)
 
-    # 3. Generate structured lecture transcript so student always has full lecture notes & AI Q&A
-    title = (live_class.title if live_class else None) or "Technical Masterclass"
-    subject = (live_class.subject_name if live_class else None) or "Software Engineering"
-    grade_num = (live_class.grade_number if live_class else None) or 1
+    return None, [], live_class
 
-    prompt = f"""You are a master educator. Generate a verbatim, highly educational lecture transcript of a live teaching session for:
-Title: "{title}"
-Subject: "{subject}"
-Track: {grade_num}
 
-Include detailed teacher explanations, step-by-step concepts, real-world examples, classroom interactions, and key summary takeaways.
-Format with clean timestamps (e.g. [00:00] Teacher: ..., [05:00] Teacher: ...)."""
-
-    generated = await call_groq_llm([
-        {"role": "system", "content": "You are a master technical instructor generating a realistic, comprehensive lecture transcript."},
-        {"role": "user", "content": prompt}
-    ], max_tokens=1000)
-
-    if not generated or not generated.strip():
-        # Fallback technical lecture transcript
-        generated = f"""[00:00] Teacher: Welcome everyone to today's live technical masterclass on "{title}".
-[02:15] Teacher: Today we are diving deep into core architectural patterns and production best practices in {subject}.
-[05:30] Teacher: Let's review the fundamental principles: modular design, decoupled state management, and resilient async workflows.
-[10:00] Teacher: Notice how we handle exceptions gracefully at boundary layers and prevent common concurrency pitfalls.
-[15:45] Teacher: Let's run a live benchmark comparing synchronous execution against structured async coroutines.
-[22:30] Student: How do we manage connection pools and governor limits under high load?
-[24:10] Teacher: Excellent question! Always use connection pooling with explicit timeout boundaries and batch queries to avoid governor limits.
-[30:00] Teacher: In summary, remember to follow clean code principles, test your edge cases, and sync your changes with your team repository."""
-
-    clean_text = generated.strip()
+@router.get("/classes/{class_id}/transcript")
+async def get_class_transcript_endpoint(
+    class_id: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """
+    Returns the verbatim transcript for the class with exact timestamps, structured segments, and chapter topics.
+    """
     try:
-        session.add(ClassTranscript(
-            class_id=c_uuid,
-            zoom_meeting_id=meeting_id,
-            raw_text=clean_text,
-            status="available"
-        ))
-        await session.commit()
+        c_uuid = UUID(class_id)
     except Exception:
-        await session.rollback()
-        # Query again using c_uuid directly without touching expired live_class attributes
-        existing = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == c_uuid))
-        if existing and existing.raw_text:
-            clean_text = existing.raw_text.strip()
-        live_class = await session.get(LiveClass, c_uuid)
+        raise HTTPException(status_code=400, detail="Invalid class UUID")
 
-    return clean_text, [], live_class
+    live_class = await session.get(LiveClass, c_uuid)
+    if not live_class:
+        raise HTTPException(status_code=404, detail="Live class not found")
+
+    t_rec = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == c_uuid))
+
+    raw_text = (t_rec.raw_text if t_rec else None) or live_class.transcript_text
+    segments = (t_rec.segments_json if t_rec else None) or live_class.transcript_segments or []
+    summary_json = (t_rec.summary_json if t_rec else None) or live_class.summary_json or {}
+    topics = summary_json.get("topics") or summary_json.get("chapters") or []
+
+    # If no transcript yet in DB, check Zoom on-demand
+    if not raw_text and live_class.zoom_meeting_id and zoom_service.is_configured():
+        try:
+            _, transcript_data = await zoom_service.get_recordings_and_transcript_data(live_class.zoom_meeting_id)
+            if transcript_data:
+                raw_text = transcript_data.get("raw_text")
+                vtt_content = transcript_data.get("vtt_content")
+                segments = transcript_data.get("segments") or []
+                topics = transcript_data.get("topics") or []
+
+                if raw_text:
+                    live_class.transcript_text = raw_text
+                if segments:
+                    live_class.transcript_segments = segments
+                if topics:
+                    summary_json["topics"] = topics
+                    summary_json["chapters"] = topics
+                    live_class.summary_json = summary_json
+
+                if not t_rec:
+                    t_rec = ClassTranscript(
+                        class_id=c_uuid,
+                        zoom_meeting_id=live_class.zoom_meeting_id,
+                        vtt_content=vtt_content,
+                        raw_text=raw_text,
+                        segments_json=segments,
+                        summary_json={"topics": topics, "chapters": topics},
+                        status="available",
+                    )
+                    session.add(t_rec)
+                else:
+                    t_rec.raw_text = raw_text
+                    t_rec.vtt_content = vtt_content
+                    t_rec.segments_json = segments
+                    t_rec.summary_json = {"topics": topics, "chapters": topics}
+                await session.commit()
+        except Exception as err:
+            logger.debug("On-demand Zoom transcript fetch note: %s", err)
+
+    if raw_text and not segments:
+        from app.integrations.zoom.recordings import zoom_recordings_service
+        segments = zoom_recordings_service.parse_vtt_to_segments(raw_text)
+        if segments:
+            topics = zoom_recordings_service.extract_topics_from_segments(segments, raw_text)
+            if not summary_json.get("topics"):
+                summary_json["topics"] = topics
+                summary_json["chapters"] = topics
+
+    return {
+        "id": str(t_rec.id) if t_rec else None,
+        "class_id": str(c_uuid),
+        "title": live_class.title,
+        "subject_name": live_class.subject_name,
+        "has_transcript": bool(raw_text),
+        "raw_text": raw_text,
+        "transcript_text": raw_text,
+        "segments": segments,
+        "segments_json": segments,
+        "topics": topics,
+        "summary_json": summary_json,
+        "status": "available" if raw_text else "processing",
+    }
 
 
 @router.post("/classes/{class_id}/ai-doubt")

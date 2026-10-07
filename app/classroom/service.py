@@ -819,6 +819,49 @@ async def execute_vimeo_upload_task(
             if live_class:
                 live_class.recording_url = v_url
 
+                # Fetch and sync transcript if available from Zoom
+                if live_class.zoom_meeting_id and zoom_service.is_configured():
+                    try:
+                        _, transcript_data = await zoom_service.get_recordings_and_transcript_data(live_class.zoom_meeting_id)
+                        if transcript_data:
+                            raw_text = transcript_data.get("raw_text")
+                            vtt_content = transcript_data.get("vtt_content")
+                            segments = transcript_data.get("segments") or []
+                            topics = transcript_data.get("topics") or []
+
+                            if raw_text:
+                                live_class.transcript_text = raw_text
+                            if segments:
+                                live_class.transcript_segments = segments
+                            if topics:
+                                cur_summary = live_class.summary_json or {}
+                                cur_summary["topics"] = topics
+                                cur_summary["chapters"] = topics
+                                live_class.summary_json = cur_summary
+
+                            existing_ts = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == live_class.id))
+                            if not existing_ts:
+                                session.add(ClassTranscript(
+                                    class_id=live_class.id,
+                                    zoom_meeting_id=live_class.zoom_meeting_id,
+                                    vtt_content=vtt_content,
+                                    raw_text=raw_text,
+                                    segments_json=segments,
+                                    summary_json={"topics": topics, "chapters": topics},
+                                    status="available",
+                                ))
+                            else:
+                                if raw_text:
+                                    existing_ts.raw_text = raw_text
+                                if vtt_content:
+                                    existing_ts.vtt_content = vtt_content
+                                if segments:
+                                    existing_ts.segments_json = segments
+                                if topics:
+                                    existing_ts.summary_json = {"topics": topics, "chapters": topics}
+                    except Exception as t_err:
+                        logger.debug("Transcript sync during Vimeo upload task: %s", t_err)
+
             await session.commit()
             logger.info("Successfully uploaded ClassRecording %s to Vimeo: %s (ID: %s)", recording_id, v_url, v_id)
         except Exception as exc:
@@ -839,7 +882,7 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
         live_class = await session.get(LiveClass, class_id)
         if live_class and live_class.zoom_meeting_id and zoom_service.is_configured():
             try:
-                recordings_data, transcript_text = await zoom_service.get_recordings_and_transcript(live_class.zoom_meeting_id)
+                recordings_data, transcript_data = await zoom_service.get_recordings_and_transcript_data(live_class.zoom_meeting_id)
                 if recordings_data and recordings_data.recording_files:
                     bearer_token = None
                     try:
@@ -884,20 +927,43 @@ async def get_class_recordings(session: AsyncSession, class_id: UUID) -> List[Cl
                         if not live_class.recording_url and (rf.play_url or rf.download_url):
                             live_class.recording_url = rf.play_url or rf.download_url
 
-                    if transcript_text and not live_class.transcript_text:
-                        live_class.transcript_text = transcript_text
+                    if transcript_data:
+                        raw_text = transcript_data.get("raw_text")
+                        vtt_content = transcript_data.get("vtt_content")
+                        segments = transcript_data.get("segments") or []
+                        topics = transcript_data.get("topics") or []
+
+                        if raw_text and not live_class.transcript_text:
+                            live_class.transcript_text = raw_text
+                        if segments and not live_class.transcript_segments:
+                            live_class.transcript_segments = segments
+                        if topics and not live_class.summary_json:
+                            live_class.summary_json = {"topics": topics, "chapters": topics}
+
                         existing_ts = await session.scalar(select(ClassTranscript).where(ClassTranscript.class_id == class_id))
                         if not existing_ts:
                             session.add(ClassTranscript(
                                 class_id=class_id,
                                 zoom_meeting_id=live_class.zoom_meeting_id,
-                                raw_text=transcript_text,
+                                vtt_content=vtt_content,
+                                raw_text=raw_text,
+                                segments_json=segments,
+                                summary_json={"topics": topics, "chapters": topics},
                                 status="available",
                             ))
+                        else:
+                            if raw_text:
+                                existing_ts.raw_text = raw_text
+                            if vtt_content:
+                                existing_ts.vtt_content = vtt_content
+                            if segments:
+                                existing_ts.segments_json = segments
+                            if topics:
+                                existing_ts.summary_json = {"topics": topics, "chapters": topics}
+
                     await session.commit()
             except ZoomNotFoundError:
                 # 404 is expected: cloud recording hasn't been processed yet (takes a few minutes).
-                # This is normal for recent/short meetings. Do not log as warning.
                 logger.debug("Zoom cloud recording not ready yet for meeting %s (class %s) — will be available after processing.", live_class.zoom_meeting_id if live_class else "?", class_id)
             except Exception as e:
                 logger.warning("On-demand Zoom recording sync for class %s: %s", class_id, e)

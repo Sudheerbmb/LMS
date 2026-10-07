@@ -480,42 +480,157 @@ export function App() {
               </button>
             </p>
 
-            {/* Subtle Expandable Demo Access Panel */}
+            {/* Sample Login Accounts (1-Click Quick Fill) */}
             {authMode === 'login' && (
-              <details style={{
+              <div style={{
                 marginTop: 20,
-                borderTop: '1px solid var(--border)',
-                paddingTop: 14,
-                fontSize: 11
+                borderTop: '1px solid var(--border-med)',
+                paddingTop: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12
               }}>
-                <summary style={{
-                  cursor: 'pointer',
-                  color: 'var(--ink-3)',
-                  fontWeight: 600,
-                  userSelect: 'none',
-                  outline: 'none'
-                }}>
-                  System Admin Quick Access
-                </summary>
-
-                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Admin</span>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => { setAuthEmail('admin@example.com'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
-                        style={{ padding: '4px 8px', borderRadius: 6, background: 'var(--canvas-warm)', border: '1px solid var(--border-med)', fontSize: 11, fontWeight: 600, color: 'var(--ink)', cursor: 'pointer' }}
-                      >
-                        System Admin
-                      </button>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 11, color: 'var(--ink-2)', margin: 0 }}>
-                    Create Faculty, Students, Courses, and Timetables dynamically via the Admin console.
-                  </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    ⚡ Sample Quick-Fill Accounts
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>1-Click Login</span>
                 </div>
-              </details>
+
+                {/* Faculty Group */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--saffron-d)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                    Faculty (Course Instructors)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setAuthEmail('sarah.fullstack@institute.edu'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: 10,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      title="Dr. Sarah Connor - Full Stack Web Dev Faculty"
+                    >
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>Dr. Sarah Connor</span>
+                      <span style={{ fontSize: 9, color: '#64748b' }}>Full Stack Faculty</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setAuthEmail('alan.genai@institute.edu'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: 10,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      title="Dr. Alan Turing - Generative AI & Deep Learning Faculty"
+                    >
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>Dr. Alan Turing</span>
+                      <span style={{ fontSize: 9, color: '#64748b' }}>Gen AI Faculty</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Students Group */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                    Enrolled Scholars (Students)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setAuthEmail('alex.student@institute.edu'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: 10,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      title="Alex Mercer - Student"
+                    >
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>Alex Mercer</span>
+                      <span style={{ fontSize: 9, color: '#64748b' }}>Full Stack Student</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setAuthEmail('priya.student@institute.edu'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: 10,
+                        background: 'var(--canvas-warm)',
+                        border: '1px solid var(--border-med)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      title="Priya Sharma - Student"
+                    >
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>Priya Sharma</span>
+                      <span style={{ fontSize: 9, color: '#64748b' }}>Gen AI Student</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* System Admin */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                    Administration
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthEmail('admin@example.com'); setAuthPassword('ChangeMe123!'); setAuthError(''); }}
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px',
+                      borderRadius: 10,
+                      background: 'var(--canvas-warm)',
+                      border: '1px solid var(--border-med)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: 'var(--ink)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                    title="System Admin - Full LMS Management"
+                  >
+                    <span style={{ fontWeight: 700, color: '#1e293b' }}>System Admin</span>
+                    <span style={{ fontSize: 10, color: '#64748b' }}>admin@example.com</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

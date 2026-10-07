@@ -145,15 +145,22 @@ class ZoomService:
         """
         Retrieves cloud recordings and downloads the audio transcript text if available.
         """
+        recs, data = await self.get_recordings_and_transcript_data(meeting_id_or_uuid)
+        raw_text = data.get("raw_text") if data else None
+        return recs, raw_text
+
+    async def get_recordings_and_transcript_data(self, meeting_id_or_uuid: int | str) -> tuple[Optional[ZoomMeetingRecordings], Optional[dict]]:
+        """
+        Retrieves cloud recordings and downloads full transcript data (text, segments, topics).
+        """
         if not self.is_configured():
             return None, None
 
         try:
             recordings = await self.recordings.get_meeting_recordings(meeting_id_or_uuid)
-            transcript_text = await self.recordings.download_transcript_text(recordings)
-            return recordings, transcript_text
+            transcript_data = await self.recordings.download_transcript_data(recordings)
+            return recordings, transcript_data
         except ZoomNotFoundError:
-            # 404 = cloud recording not processed yet (takes 5-30 min after meeting ends) — silently skip.
             logger.debug("Zoom cloud recording not available yet for meeting %s (404 — processing in progress)", meeting_id_or_uuid)
             return None, None
         except Exception as err:

@@ -323,29 +323,16 @@ async def purge_legacy_school_data(session: AsyncSession) -> None:
             WHERE email LIKE '%@school.edu' 
                OR display_name LIKE '%Class %'
                OR display_name LIKE '%Class-%'
-        )
-        """,
-        """
-        DELETE FROM class_attendances 
-        WHERE student_email LIKE '%@school.edu'
-        """,
-        """
-        DELETE FROM teacher_subject_skills 
-        WHERE teacher_id IN (
-            SELECT tp.id FROM teacher_profiles tp
-            JOIN users u ON tp.user_id = u.id
-            WHERE u.email LIKE '%@school.edu'
-               OR u.display_name LIKE '%Class %'
-        )
-        """,
-        """
+        )        """
         DELETE FROM teacher_profiles 
         WHERE user_id IN (
             SELECT id FROM users 
-            WHERE email LIKE '%@school.edu'
+            WHERE email LIKE '%@school.edu' 
                OR (role = 'teacher' AND email NOT IN (
                     'sarah.connor@institute.edu',
                     'alan.turing@institute.edu',
+                    'sarah.fullstack@institute.edu',
+                    'alan.genai@institute.edu',
                     'marc.b@institute.edu',
                     'fred.l@institute.edu',
                     'dan.a@institute.edu',
@@ -373,12 +360,11 @@ async def purge_legacy_school_data(session: AsyncSession) -> None:
 
 
 async def _bootstrap_defaults() -> None:
-    """Ensure essential System Admin account and Organization exist so admin can log in and manage the LMS.
-    Strictly NO auto-seeding of courses, subjects, teachers, students, enrollments, or timetable slots.
-    """
+    """Ensure essential System Admin account, sample Faculty, and sample Student accounts exist."""
     from app.identity.models import User
     from app.identity.security import hash_password
     from app.tenancy.models import Organization
+    from app.timetable.models import TeacherProfile
 
     admins = [
         ("admin@example.com", "System Admin", "ChangeMe123!"),
@@ -386,6 +372,16 @@ async def _bootstrap_defaults() -> None:
     ]
     if settings.bootstrap_admin_email and settings.bootstrap_admin_password:
         admins.append((settings.bootstrap_admin_email.lower(), settings.bootstrap_admin_name, settings.bootstrap_admin_password))
+
+    faculty_members = [
+        ("sarah.fullstack@institute.edu", "Dr. Sarah Connor", "ChangeMe123!", "Full Stack Web Development & Distributed Systems Faculty", "EMP-FS-101"),
+        ("alan.genai@institute.edu", "Dr. Alan Turing", "ChangeMe123!", "Generative AI & Deep Learning Faculty", "EMP-AI-102"),
+    ]
+
+    students = [
+        ("alex.student@institute.edu", "Alex Mercer", "ChangeMe123!", "Full Stack Engineering Scholar"),
+        ("priya.student@institute.edu", "Priya Sharma", "ChangeMe123!", "Generative AI & Machine Learning Scholar"),
+    ]
 
     async with SessionFactory() as session:
         # 1. Clean up legacy school dummy accounts & outdated users
@@ -429,6 +425,69 @@ async def _bootstrap_defaults() -> None:
         except Exception as err:
             await session.rollback()
             print(f"[Bootstrap] ensure admins: {err}")
+
+        # 4. Ensure Faculty (Full Stack & Gen AI)
+        try:
+            for email, name, pwd, headline, emp_id in faculty_members:
+                u = await session.scalar(select(User).where(User.email == email.lower()))
+                if not u:
+                    u = User(
+                        email=email.lower(),
+                        display_name=name,
+                        headline=headline,
+                        password_hash=hash_password(pwd),
+                        role="teacher",
+                        status="active",
+                        email_verified=True,
+                    )
+                    session.add(u)
+                    await session.flush()
+                else:
+                    u.password_hash = hash_password(pwd)
+                    u.role = "teacher"
+                    u.status = "active"
+                    u.headline = headline
+                    u.email_verified = True
+                    await session.flush()
+
+                tp = await session.scalar(select(TeacherProfile).where(TeacherProfile.user_id == u.id))
+                if not tp:
+                    session.add(TeacherProfile(
+                        user_id=u.id,
+                        employee_id=emp_id,
+                        qualification="Ph.D / M.Tech in Computer Science",
+                        max_daily_periods=6,
+                        rating_avg=5.0,
+                    ))
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure faculty: {err}")
+
+        # 5. Ensure Students
+        try:
+            for email, name, pwd, headline in students:
+                u = await session.scalar(select(User).where(User.email == email.lower()))
+                if not u:
+                    session.add(User(
+                        email=email.lower(),
+                        display_name=name,
+                        headline=headline,
+                        password_hash=hash_password(pwd),
+                        role="student",
+                        status="active",
+                        email_verified=True,
+                    ))
+                else:
+                    u.password_hash = hash_password(pwd)
+                    u.role = "student"
+                    u.status = "active"
+                    u.headline = headline
+                    u.email_verified = True
+            await session.commit()
+        except Exception as err:
+            await session.rollback()
+            print(f"[Bootstrap] ensure students: {err}")
 
 
 async def flush_all_operational_data(session: AsyncSession) -> dict[str, Any]:
