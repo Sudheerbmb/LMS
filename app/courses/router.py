@@ -188,37 +188,60 @@ async def get_my_courses(
     return result
 
 
-@router.get("/hierarchy/{course_id}", response_model=StudentCourseDetailRead)
-@router.get("/{course_id}/hierarchy", response_model=StudentCourseDetailRead)
-async def get_course_hierarchy(
-    course_id: UUID,
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+async def fetch_authoritative_course_detail(
+    session: AsyncSession,
+    course_identifier: str,
+    current_user: User,
 ) -> StudentCourseDetailRead:
-    """Returns course and its first-class subjects with dynamic counts and assigned teachers."""
-    await _verify_course_enrollment(session, current_user, course_id)
-    course = await session.scalar(
-        select(Course)
-        .where(Course.id == course_id)
-        .options(selectinload(Course.versions), selectinload(Course.subjects))
-    )
+    """Authoritative course resolution by UUID or slug, with enrollment auth & true subjects."""
+    course_uuid = None
+    try:
+        course_uuid = UUID(course_identifier)
+    except (ValueError, AttributeError):
+        course_uuid = None
+
+    if course_uuid:
+        course = await session.scalar(
+            select(Course)
+            .where(Course.id == course_uuid)
+            .options(selectinload(Course.versions), selectinload(Course.subjects))
+        )
+    else:
+        course = await session.scalar(
+            select(Course)
+            .where(Course.slug == course_identifier)
+            .options(selectinload(Course.versions), selectinload(Course.subjects))
+        )
+
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+
+    # Authorize: Students must be enrolled in course.id
+    await _verify_course_enrollment(session, current_user, course.id)
 
     title = course.versions[0].title if course.versions else course.slug.replace("-", " ").title()
     desc = course.versions[0].description if course.versions else None
 
+    # Prefetch teachers for subjects
+    teacher_ids = [s.teacher_id for s in course.subjects if s.teacher_id]
+    teachers_by_id = {}
+    if teacher_ids:
+        t_users = (await session.scalars(select(User).where(User.id.in_(teacher_ids)))).all()
+        teachers_by_id = {u.id: u for u in t_users}
+
     subjects_res = []
     for s in course.subjects:
         teacher_info = None
-        if s.teacher_id:
-            teacher_user = await session.get(User, s.teacher_id)
-            if teacher_user:
-                teacher_info = SubjectTeacherInfo(
-                    id=teacher_user.id,
-                    display_name=teacher_user.display_name,
-                    email=teacher_user.email,
-                )
+        teachers_list = []
+        if s.teacher_id and s.teacher_id in teachers_by_id:
+            teacher_user = teachers_by_id[s.teacher_id]
+            teacher_info = SubjectTeacherInfo(
+                id=teacher_user.id,
+                name=teacher_user.display_name,
+                display_name=teacher_user.display_name,
+                email=teacher_user.email,
+            )
+            teachers_list = [teacher_info]
 
         classes_cnt = await session.scalar(
             select(func.count(TimetableSlot.id)).where(
@@ -252,6 +275,7 @@ async def get_course_hierarchy(
                 color=s.color or "#FF7A00",
                 order_index=s.order_index,
                 teacher=teacher_info,
+                teachers=teachers_list,
                 scheduled_classes_count=classes_cnt,
                 recordings_count=recs_cnt,
                 resources_count=res_cnt,
@@ -261,10 +285,22 @@ async def get_course_hierarchy(
     return StudentCourseDetailRead(
         id=course.id,
         slug=course.slug,
+        name=title,
         title=title,
         description=desc,
         subjects=subjects_res,
     )
+
+
+@router.get("/hierarchy/{course_identifier}", response_model=StudentCourseDetailRead)
+@router.get("/{course_identifier}/hierarchy", response_model=StudentCourseDetailRead)
+async def get_course_hierarchy(
+    course_identifier: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> StudentCourseDetailRead:
+    """Returns course and its first-class subjects with dynamic counts and assigned teachers."""
+    return await fetch_authoritative_course_detail(session, course_identifier, current_user)
 
 
 @router.get("/subjects/{subject_id}", response_model=SubjectDetailRead)
@@ -290,6 +326,7 @@ async def get_subject_detail(
         if teacher_user:
             teacher_info = SubjectTeacherInfo(
                 id=teacher_user.id,
+                name=teacher_user.display_name,
                 display_name=teacher_user.display_name,
                 email=teacher_user.email,
             )
@@ -325,6 +362,7 @@ async def get_subject_detail(
         color=subject.color or "#FF7A00",
         order_index=subject.order_index,
         teacher=teacher_info,
+        teachers=[teacher_info] if teacher_info else [],
         scheduled_classes_count=classes_cnt,
         recordings_count=recs_cnt,
         resources_count=res_cnt,
@@ -561,17 +599,14 @@ async def create_subject_resource(
 
 # ── Generic Course Detail ─────────────────────────────────────────────────────
 
-@router.get("/{course_id}", response_model=CourseDetailRead)
+@router.get("/{course_identifier}", response_model=StudentCourseDetailRead)
 async def get_one(
-    course_id: UUID,
+    course_identifier: str,
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(get_current_user),
-) -> CourseDetailRead:
-    try:
-        course = await get_course(session, course_id)
-        return CourseDetailRead.model_validate(course)
-    except LMSError as exc:
-        raise _err(exc) from exc
+    current_user: User = Depends(get_current_user),
+) -> StudentCourseDetailRead:
+    """Authoritative endpoint returning course metadata and its first-class subjects."""
+    return await fetch_authoritative_course_detail(session, course_identifier, current_user)
 
 
 @router.patch("/{course_id}", response_model=CourseRead)

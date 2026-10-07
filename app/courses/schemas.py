@@ -128,6 +128,7 @@ class ReviewRead(BaseModel):
 class SubjectTeacherInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
+    name: str | None = None
     display_name: str
     email: str
 
@@ -143,6 +144,7 @@ class SubjectDetailRead(BaseModel):
     color: str = "#FF7A00"
     order_index: int = 1
     teacher: SubjectTeacherInfo | None = None
+    teachers: list[SubjectTeacherInfo] = []
     scheduled_classes_count: int = 0
     recordings_count: int = 0
     resources_count: int = 0
@@ -162,6 +164,7 @@ class StudentCourseDetailRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     slug: str
+    name: str
     title: str
     description: str | None = None
     subjects: list[SubjectDetailRead] = []

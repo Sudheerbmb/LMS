@@ -10,6 +10,7 @@ import type {
 } from '../lib/api'
 import { 
   getMyCourses, 
+  getCourseDetail,
   getCourseHierarchy, 
   getSubjectClasses, 
   getSubjectRecordings, 
@@ -48,7 +49,9 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
   const [currentView, setCurrentView] = useState<'list' | 'course' | 'subject'>('list')
   
   // Selected entities
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [selectedCourseData, setSelectedCourseData] = useState<StudentCourseHierarchy | null>(null)
+  const [hierarchyError, setHierarchyError] = useState<string | null>(null)
   const [selectedSubject, setSelectedSubject] = useState<LMSCourseSubject | null>(null)
 
   // Data lists
@@ -97,13 +100,17 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
 
   // Handle open course detail
   const handleOpenCourse = async (courseId: string) => {
+    setSelectedCourseId(courseId)
     setCurrentView('course')
     setLoadingHierarchy(true)
+    setHierarchyError(null)
+    setSelectedCourseData(null)
     try {
-      const hierarchy = await getCourseHierarchy(courseId)
+      const hierarchy = await getCourseDetail(courseId).catch(() => getCourseHierarchy(courseId))
       setSelectedCourseData(hierarchy)
-    } catch (err) {
-      console.error('Failed to load course hierarchy:', err)
+    } catch (err: any) {
+      console.error('Failed to load course details:', err)
+      setHierarchyError(err.message || 'Unable to load course.')
       setSelectedCourseData(null)
     } finally {
       setLoadingHierarchy(false)
@@ -133,8 +140,10 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
 
   const handleBackToCourses = () => {
     setCurrentView('list')
+    setSelectedCourseId(null)
     setSelectedCourseData(null)
     setSelectedSubject(null)
+    setHierarchyError(null)
   }
 
   const handleBackToCourseDetail = () => {
@@ -679,10 +688,28 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
                 <Clock className="w-5 h-5 animate-spin mr-2 text-[#FF7A00]" />
                 Loading course details...
               </div>
+            ) : hierarchyError ? (
+              <div className="py-6">
+                <div className="p-5 rounded-xl bg-red-50/80 border border-red-200 text-red-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-sm text-red-900">Unable to load course.</h3>
+                      <p className="text-xs text-red-600 mt-0.5">{hierarchyError}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => selectedCourseId && handleOpenCourse(selectedCourseId)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors shrink-0"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
             ) : selectedCourseData ? (
               <div>
                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {selectedCourseData.title}
+                  {selectedCourseData.name || selectedCourseData.title}
                 </h1>
                 {selectedCourseData.description && (
                   <p className="mt-2 text-base text-slate-600 max-w-3xl leading-relaxed">
@@ -695,89 +722,90 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ user }) => {
                   </span>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-slate-500">Course could not be loaded.</p>
-            )}
+            ) : null}
           </div>
         </div>
 
         {/* Subjects list */}
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-              SUBJECTS
-            </h2>
-            <span className="text-xs text-slate-500 font-medium">
-              Click a subject to view live classes, recordings, and resources
-            </span>
-          </div>
+        {!loadingHierarchy && !hierarchyError && selectedCourseData && (
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                SUBJECTS
+              </h2>
+              <span className="text-xs text-slate-500 font-medium">
+                Click a subject to view live classes, recordings, and resources
+              </span>
+            </div>
 
-          {loadingHierarchy ? (
-            <div className="py-12 text-center text-slate-400">Loading subjects...</div>
-          ) : selectedCourseData && selectedCourseData.subjects.length > 0 ? (
-            <div className="space-y-4">
-              {selectedCourseData.subjects.map((subj, idx) => {
-                const tName = subj.teacher?.display_name || 'Assigned Instructor'
+            {selectedCourseData.subjects.length > 0 ? (
+              <div className="space-y-4">
+                {selectedCourseData.subjects.map((subj, idx) => {
+                  const teacherDisplay = subj.teachers?.[0]?.name 
+                    || subj.teacher?.name 
+                    || subj.teacher?.display_name 
+                    || 'Assigned Instructor'
 
-                return (
-                  <div
-                    key={subj.id}
-                    className="bg-white border border-slate-200 hover:border-[#FF7A00] rounded-xl p-5 shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-lg bg-orange-50 border border-orange-200 text-[#FF7A00] font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
-                        {idx + 1}
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">
-                            {subj.code}
-                          </span>
-                          <h3 className="font-bold text-slate-900 text-base">
-                            {subj.name}
-                          </h3>
-                        </div>
-
-                        <div className="mt-2 text-xs text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="font-medium text-slate-800 flex items-center gap-1">
-                            <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                            Teacher: {tName}
-                          </span>
-                          <span>•</span>
-                          <span>{subj.scheduled_classes_count} scheduled classes</span>
-                          <span>•</span>
-                          <span>{subj.recordings_count} recordings</span>
-                          <span>•</span>
-                          <span>{subj.resources_count} resources</span>
-                        </div>
-
-                        {subj.description && (
-                          <p className="text-xs text-slate-500 mt-2 line-clamp-1">
-                            {subj.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleOpenSubject(subj)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-[#FF7A00] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors self-start md:self-auto shrink-0"
+                  return (
+                    <div
+                      key={subj.id}
+                      className="bg-white border border-slate-200 hover:border-[#FF7A00] rounded-xl p-5 shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
                     >
-                      Open Subject
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="bg-white border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500">
-              <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold">This course has no subjects assigned yet.</p>
-            </div>
-          )}
-        </div>
+                      <div className="flex items-start gap-4">
+                        <div className="w-9 h-9 rounded-lg bg-orange-50 border border-orange-200 text-[#FF7A00] font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 1}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">
+                              {subj.code}
+                            </span>
+                            <h3 className="font-bold text-slate-900 text-base">
+                              {subj.name}
+                            </h3>
+                          </div>
+
+                          <div className="mt-2 text-xs text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className="font-medium text-slate-800 flex items-center gap-1">
+                              <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                              Teacher: {teacherDisplay}
+                            </span>
+                            <span>•</span>
+                            <span>{subj.scheduled_classes_count} scheduled classes</span>
+                            <span>•</span>
+                            <span>{subj.recordings_count} recordings</span>
+                            <span>•</span>
+                            <span>{subj.resources_count} resources</span>
+                          </div>
+
+                          {subj.description && (
+                            <p className="text-xs text-slate-500 mt-2 line-clamp-1">
+                              {subj.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleOpenSubject(subj)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-[#FF7A00] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors self-start md:self-auto shrink-0"
+                      >
+                        Open Subject
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="bg-white border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500">
+                <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-sm font-semibold">This course has no subjects assigned yet.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }

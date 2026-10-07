@@ -239,7 +239,7 @@ export const getCourses = (params?: { search?: string; status?: string; level?: 
 
 }
 
-export const getCourseDetail = (courseId: string) => request<Course>(`/api/v1/courses/${courseId}`)
+export const getCourseDetail = (courseIdentifier: string) => request<StudentCourseHierarchy>(`/api/v1/courses/${courseIdentifier}`)
 
 export const createCourse = (payload: { organization_id: string; slug: string; title: string; description?: string }) =>
 
@@ -259,6 +259,7 @@ export const addCourseReview = (courseId: string, payload: { rating: number; com
 
 export interface SubjectTeacher {
   id: string
+  name?: string
   display_name: string
   email: string
 }
@@ -273,6 +274,7 @@ export interface LMSCourseSubject {
   color: string
   order_index: number
   teacher?: SubjectTeacher | null
+  teachers?: SubjectTeacher[]
   scheduled_classes_count: number
   recordings_count: number
   resources_count: number
@@ -290,6 +292,7 @@ export interface StudentCourse {
 export interface StudentCourseHierarchy {
   id: string
   slug: string
+  name?: string
   title: string
   description?: string
   subjects: LMSCourseSubject[]
@@ -342,9 +345,9 @@ export interface LMSResource {
 }
 
 export const getMyCourses = () => request<StudentCourse[]>('/api/v1/courses/my-courses')
-
-export const getCourseHierarchy = (courseId: string) =>
-  request<StudentCourseHierarchy>(`/api/v1/courses/hierarchy/${courseId}`)
+ 
+export const getCourseHierarchy = (courseIdentifier: string) =>
+  request<StudentCourseHierarchy>(`/api/v1/courses/hierarchy/${courseIdentifier}`)
 
 export const getSubjectDetail = (subjectId: string) =>
   request<LMSCourseSubject>(`/api/v1/courses/subjects/${subjectId}`)

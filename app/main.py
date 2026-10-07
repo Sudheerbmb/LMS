@@ -12,7 +12,7 @@ from typing import Optional
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.assessment import models as assessment_models  # noqa: F401
@@ -109,7 +109,23 @@ app.include_router(lens_router)
 app.include_router(mcp_router)
 app.include_router(agents_router)
 
+from app.courses.router import fetch_authoritative_course_detail
+from app.courses.schemas import StudentCourseDetailRead
+from app.identity.auth import get_current_user
+from app.identity.models import User
+from app.platform.database import get_session
+from sqlalchemy.ext.asyncio import AsyncSession
+
 ZOOM_SECRET_TOKEN = settings.zoom_secret_token or os.getenv("ZOOM_SECRET_TOKEN")
+
+
+@app.get("/courses/{course_identifier}", response_model=StudentCourseDetailRead)
+async def direct_course_detail(
+    course_identifier: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> StudentCourseDetailRead:
+    return await fetch_authoritative_course_detail(session, course_identifier, current_user)
 
 
 @app.get("/")
